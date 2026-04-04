@@ -308,18 +308,38 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <!-- PULPIT -->
     <div class="page active" id="page-pulpit">
       <div class="stats-row">
-        <div class="stat"><div class="stat-lbl">Zamówienia dziś</div><div class="stat-val">7</div><div class="stat-sub stat-up">↑ 2 więcej niż wczoraj</div></div>
-        <div class="stat"><div class="stat-lbl">Przychód dziś</div><div class="stat-val">341 zł</div><div class="stat-sub stat-up">↑ +18%</div></div>
-        <div class="stat"><div class="stat-lbl">Śr. wartość</div><div class="stat-val">48 zł</div><div class="stat-sub">w tym miesiącu: 44 zł</div></div>
-        <div class="stat"><div class="stat-lbl">Klienci online</div><div class="stat-val">34</div><div class="stat-sub">zarejestrowanych</div></div>
+        <div class="stat">
+          <div class="stat-lbl">Zamówienia dziś</div>
+          <div class="stat-val" id="dash-orders-today">—</div>
+          <div class="stat-sub" id="dash-orders-sub">oczekuje na dane</div>
+        </div>
+        <div class="stat">
+          <div class="stat-lbl">Przychód dziś</div>
+          <div class="stat-val" id="dash-revenue-today">—</div>
+          <div class="stat-sub" id="dash-revenue-sub">ze wszystkich zamówień</div>
+        </div>
+        <div class="stat">
+          <div class="stat-lbl">Śr. wartość zamówienia</div>
+          <div class="stat-val" id="dash-avg-order">—</div>
+          <div class="stat-sub" id="dash-avg-sub">dziś</div>
+        </div>
+        <div class="stat">
+          <div class="stat-lbl">Klienci w bazie</div>
+          <div class="stat-val" id="dash-customers">—</div>
+          <div class="stat-sub" id="dash-customers-sub">zarejestrowanych</div>
+        </div>
       </div>
+
+      <!-- Aktywne zamówienia na pulpicie -->
+      <div id="dash-active-orders" style="margin-bottom:16px;"></div>
+
       <div class="dash-grid">
-        <div class="dash-tile" onclick="go('zamowienia',document.querySelector('.ni:nth-child(2)'))"><div class="dt-icon">📋</div><div class="dt-title">Lista zamówień</div><div class="dt-sub">Zobacz wszystkie zamówienia</div></div>
-        <div class="dash-tile" onclick="go('przerwy',null)"><div class="dt-icon">⏸</div><div class="dt-title">Przerwy w pracy</div><div class="dt-sub">Ustaw przerwę w pracy</div></div>
-        <div class="dash-tile" onclick="go('menu',null)"><div class="dt-icon">🍽</div><div class="dt-title">Modyfikuj menu</div><div class="dt-sub">Dodaj, usuń lub zmień dania</div></div>
-        <div class="dash-tile" onclick="go('strefy',null)"><div class="dt-icon">🛵</div><div class="dt-title">Obszary dostaw</div><div class="dt-sub">Zmień lub dodaj obszar dostawy</div></div>
-        <div class="dash-tile" onclick="go('marketing',null)"><div class="dt-icon">📈</div><div class="dt-title">Marketing auto.</div><div class="dt-sub">Sprawdź kampanie</div></div>
-        <div class="dash-tile" onclick="go('importexport',null)"><div class="dt-icon">↕</div><div class="dt-title">Import / Eksport</div><div class="dt-sub">Przenieś dane klientów</div></div>
+        <div class="dash-tile" onclick="go('zamowienia',document.getElementById('nav-zamowienia'))"><div class="dt-icon">📋</div><div class="dt-title">Lista zamówień</div><div class="dt-sub" id="dash-tile-orders">Zobacz wszystkie zamówienia</div></div>
+        <div class="dash-tile" onclick="go('daniednia',document.querySelector('.ni[onclick*=daniednia]'))"><div class="dt-icon">⭐</div><div class="dt-title">Danie dnia</div><div class="dt-sub" id="dash-tile-daily">Ustaw dzisiejsze danie</div></div>
+        <div class="dash-tile" onclick="go('menu',document.querySelector('.ni[onclick*=menu]'))"><div class="dt-icon">🍽</div><div class="dt-title">Modyfikuj menu</div><div class="dt-sub">Dodaj, usuń lub zmień dania</div></div>
+        <div class="dash-tile" onclick="go('strefy',document.querySelector('.ni[onclick*=strefy]'))"><div class="dt-icon">🛵</div><div class="dt-title">Obszary dostaw</div><div class="dt-sub">Strefy i stawki dostawy</div></div>
+        <div class="dash-tile" onclick="go('klienci',document.getElementById('nav-klienci'))"><div class="dt-icon">👥</div><div class="dt-title">Klienci</div><div class="dt-sub" id="dash-tile-custs">Baza klientów</div></div>
+        <div class="dash-tile" onclick="go('importexport',document.querySelector('.ni[onclick*=importexport]'))"><div class="dt-icon">↕</div><div class="dt-title">Import / Eksport</div><div class="dt-sub">Przenieś dane klientów</div></div>
       </div>
     </div>
 
@@ -1203,9 +1223,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="checkbox" id="acc-send-sms" style="width:16px;height:16px;accent-color:var(--brown);">
-          <span>Wyślij SMS do klienta z potwierdzeniem i czasem realizacji</span>
+          <span>Powiadom klienta o przyjęciu zamówienia</span>
         </label>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Telefon: <strong id="acc-phone"></strong></div>
+        <div id="acc-sms-info" style="margin-top:6px;padding:8px 10px;border-radius:var(--r);font-size:12px;line-height:1.5;"></div>
+        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-top:6px;">📞 Telefon klienta: <span id="acc-phone" style="font-family:monospace;letter-spacing:1px;"></span></div>
       </div>
     </div>
     <div class="modal-ft">
@@ -1423,7 +1444,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia};
   if(renders[id]) renders[id]();
 }
 
@@ -1569,26 +1590,28 @@ function renderOrderCard(o){
   const timing = o.timing?`<span class="ord-meta-chip">⏰ ${o.timing}</span>`:'';
   const comment = o.comment?`<div style="margin-top:8px;padding:8px 10px;background:rgba(200,146,42,.06);border:1px solid rgba(200,146,42,.15);border-radius:var(--r);font-size:12px;"><strong>💬 Uwagi klienta:</strong> ${o.comment}</div>`:'' ;
 
-  // Actions
+  // Actions — pokaż odpowiednie przyciski zależnie od statusu
   let actions = '';
-  if(ordTab !== 'archive'){
-    if(o.status==='pending'){
-      actions = `
-        <button class="btn-accept" onclick="openAcceptModal('${o.id}')">✓ Przyjmij zamówienie</button>
-        <button class="btn-reject" onclick="rejectOrd('${o.id}')">✕ Odrzuć</button>
-        ${o.phone?`<a class="btn-call" href="tel:${o.phone.replace(/\s/g,'')}">📞 Zadzwoń</a>`:''}`;
-    } else if(o.status==='accepted'){
-      actions = `
-        ${o.type==='delivery'?`<button class="btn-delivering" onclick="setOrdStatus('${o.id}','delivering')">🚗 Wyruszyło</button>`:`<button class="btn-ready" onclick="setOrdStatus('${o.id}','ready')">🔔 Gotowe do odbioru</button>`}
-        <button class="btn-sms" onclick="openSmsModal('${o.id}')">📱 SMS</button>
-        ${o.phone?`<a class="btn-call" href="tel:${o.phone.replace(/\s/g,'')}">📞 Zadzwoń</a>`:''}
-        <button class="btn-done" onclick="setOrdStatus('${o.id}','done')">✓ Zrealizowane</button>`;
-    } else if(o.status==='delivering'||o.status==='ready'){
-      actions = `
-        <button class="btn-done" onclick="setOrdStatus('${o.id}','done')">✓ Zrealizowane</button>
-        <button class="btn-sms" onclick="openSmsModal('${o.id}')">📱 SMS</button>
-        ${o.phone?`<a class="btn-call" href="tel:${o.phone.replace(/\s/g,'')}">📞 Zadzwoń</a>`:''}`;
-    }
+  if(o.status === 'pending'){
+    actions = `
+      <button class="btn-accept" onclick="openAcceptModal('${o.id}')" style="flex:1;min-width:160px;">✓ Przyjmij zamówienie</button>
+      ${o.phone?`<a class="btn-call" href="tel:${o.phone.replace(/\s/g,'')}">📞 Zadzwoń</a>`:''}
+      <button class="btn-reject" onclick="rejectOrd('${o.id}')">✕ Odrzuć</button>`;
+  } else if(o.status === 'accepted'){
+    actions = `
+      ${o.type==='delivery'
+        ? `<button class="btn-delivering" onclick="setOrdStatus('${o.id}','delivering')">🚗 Wyruszyło</button>`
+        : `<button class="btn-ready" onclick="setOrdStatus('${o.id}','ready')">🔔 Gotowe do odbioru</button>`}
+      <button class="btn-sms" onclick="openSmsModal('${o.id}')">📱 SMS do klienta</button>
+      ${o.phone?`<a class="btn-call" href="tel:${o.phone.replace(/\s/g,'')}">📞 Zadzwoń</a>`:''}
+      <button class="btn-done" onclick="setOrdStatus('${o.id}','done')">✓ Zrealizowane</button>`;
+  } else if(o.status === 'delivering' || o.status === 'ready'){
+    actions = `
+      <button class="btn-done" onclick="setOrdStatus('${o.id}','done')" style="flex:1;">✓ Zrealizowane — zamknij zamówienie</button>
+      <button class="btn-sms" onclick="openSmsModal('${o.id}')">📱 SMS</button>
+      ${o.phone?`<a class="btn-call" href="tel:${o.phone.replace(/\s/g,'')}">📞 Zadzwoń</a>`:''}`;
+  } else if(o.status === 'done'){
+    actions = `<span style="font-size:12px;color:var(--muted2);">✓ Zrealizowane ${o.doneAt||''}</span>`;
   }
 
   return `<div class="order-card ${cardClass}" id="ocard-${o.id}">
@@ -1633,6 +1656,27 @@ function openAcceptModal(id){
   document.getElementById('acc-custom-time').style.display='none';
   document.getElementById('acc-send-sms').checked = !!o.phone;
   document.getElementById('acc-phone').textContent = o.phone||'brak';
+
+  // Pokaż info o statusie SMS
+  const hasToken = !!(S('smsapi-token'));
+  const smsInfo = document.getElementById('acc-sms-info');
+  if(!o.phone){
+    smsInfo.style.background = 'rgba(239,68,68,.06)';
+    smsInfo.style.border = '1px solid rgba(239,68,68,.15)';
+    smsInfo.innerHTML = '❌ Klient nie podał numeru telefonu — nie można wysłać powiadomienia.';
+    document.getElementById('acc-send-sms').checked = false;
+    document.getElementById('acc-send-sms').disabled = true;
+  } else if(!hasToken){
+    smsInfo.style.background = 'rgba(200,146,42,.06)';
+    smsInfo.style.border = '1px solid rgba(200,146,42,.2)';
+    smsInfo.innerHTML = '⚠️ <strong>SMS nie jest skonfigurowany.</strong> Zadzwoń do klienta lub wpisz token SMSAPI w <em>Strefy dostaw → SMS</em>.<br>Po przyjęciu zobaczysz numer do zadzwonienia.';
+    document.getElementById('acc-send-sms').disabled = false;
+  } else {
+    smsInfo.style.background = 'rgba(45,74,47,.06)';
+    smsInfo.style.border = '1px solid rgba(45,74,47,.2)';
+    smsInfo.innerHTML = '✅ <strong>SMS zostanie wysłany automatycznie</strong> przez SMSAPI z potwierdzeniem i czasem realizacji.';
+    document.getElementById('acc-send-sms').disabled = false;
+  }
   openModal('mo-accept-order');
 }
 function acceptOrdFinal(){
@@ -1640,21 +1684,31 @@ function acceptOrdFinal(){
   if(!o) return;
   const timingSelect = document.getElementById('acc-timing-select').value;
   const customTime = document.getElementById('acc-custom-time-inp').value;
-  let timing = '';
   const timeMap = {'asap':'Jak najszybciej','15':'~15 min','20':'~20 min','25':'~25 min','30':'~30 min','45':'~45 min','60':'~60 min'};
-  timing = timingSelect==='custom' ? (customTime||'ustalony') : (timeMap[timingSelect]||'jak najszybciej');
+  const timing = timingSelect==='custom' ? (customTime||'ustalony') : (timeMap[timingSelect]||'jak najszybciej');
+
   o.status = 'accepted';
   o.timing = timing;
   o.acceptedAt = new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'});
   W('orders', orders);
-  // Wyślij SMS
-  if(document.getElementById('acc-send-sms').checked && o.phone){
+
+  // SMS jeśli token skonfigurowany i zaznaczono checkbox
+  const smsChecked = document.getElementById('acc-send-sms').checked;
+  const hasToken = !!(S('smsapi-token'));
+
+  if(smsChecked && hasToken && o.phone){
     sendSmsToCustomer(o, 'accepted');
+    toast(`✅ Zamówienie ${acceptingOrderId} przyjęte — SMS wysłany do klienta`);
+  } else if(smsChecked && !hasToken && o.phone){
+    // Brak tokenu — pokaż numer do ręcznego kontaktu
+    toast(`✅ Przyjęto! Zadzwoń do klienta: ${o.phone} — czas: ${timing}`);
+  } else {
+    toast(`✅ Zamówienie ${acceptingOrderId} przyjęte — czas: ${timing}`);
   }
+
   closeModal('mo-accept-order');
   stopAlarm();
   renderOrders();
-  toast(`✅ Zamówienie ${acceptingOrderId} przyjęte — czas: ${timing}`);
 }
 
 // ── STATUS TRANSITIONS ──
@@ -1801,7 +1855,96 @@ function toggleStatusManual(){
 }
 setInterval(checkOpenStatus, 60000);
 
-// ── STREFY DOSTAW ──
+// ── DASHBOARD ──
+function renderDashboard(){
+  const today = new Date().toLocaleDateString('pl');
+  const allOrders = [...orders, ...archive];
+
+  // Zamówienia i przychód dziś
+  const todayOrders = allOrders.filter(o => {
+    const d = o.date || o.time; // fallback
+    return o.date === today || (!o.date && true); // jeśli brak daty — pokaż wszystkie bieżące
+  });
+  // Bezpieczniej: licz wszystkie zamówienia z dzisiaj po czasie
+  const todayReal = allOrders.filter(o => o.date === today);
+  const ordCount  = todayReal.length || orders.length; // fallback na bieżące
+  const revenue   = todayReal.reduce((s,o)=>s+(parseFloat(o.total)||0),0) ||
+                    orders.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
+  const avg       = ordCount > 0 ? (revenue / ordCount) : 0;
+  const pending   = orders.filter(o=>o.status==='pending').length;
+  const active    = orders.filter(o=>o.status==='accepted'||o.status==='delivering'||o.status==='ready').length;
+
+  // Ustaw wartości
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+
+  set('dash-orders-today', ordCount);
+  set('dash-revenue-today', revenue > 0 ? revenue.toFixed(2)+' zł' : '0,00 zł');
+  set('dash-avg-order',    avg > 0 ? avg.toFixed(2)+' zł' : '—');
+  set('dash-customers',    customers.length);
+
+  // Podtytuły
+  const ordSub = document.getElementById('dash-orders-sub');
+  if(ordSub){
+    if(pending > 0) {
+      ordSub.innerHTML = `<span style="color:var(--rust);font-weight:700;">⏳ ${pending} czeka na akceptację</span>`;
+    } else if(active > 0){
+      ordSub.innerHTML = `<span style="color:var(--green2);font-weight:700;">✓ ${active} w realizacji</span>`;
+    } else if(ordCount > 0){
+      ordSub.textContent = 'Wszystkie obsłużone ✓';
+    } else {
+      ordSub.textContent = 'Brak zamówień dziś';
+    }
+  }
+  const revSub = document.getElementById('dash-revenue-sub');
+  if(revSub) revSub.textContent = todayReal.length > 0 ? `z ${todayReal.length} zamówień dziś` : 'łącznie z bieżących';
+
+  const avgSub = document.getElementById('dash-avg-sub');
+  if(avgSub) avgSub.textContent = ordCount > 0 ? `z ${ordCount} zamówień` : 'brak danych';
+
+  const custSub = document.getElementById('dash-customers-sub');
+  if(custSub){
+    const withStamps = customers.filter(c=>(c.stamps||0)>0).length;
+    custSub.textContent = withStamps > 0 ? `${withStamps} z pieczątkami` : 'w bazie danych';
+  }
+
+  // Tile zamówień
+  const ordTile = document.getElementById('dash-tile-orders');
+  if(ordTile){
+    if(pending > 0) ordTile.innerHTML = `<span style="color:var(--rust);font-weight:700;">🔔 ${pending} nowe — kliknij aby obsłużyć</span>`;
+    else if(active > 0) ordTile.innerHTML = `<span style="color:var(--green2);">✓ ${active} w trakcie realizacji</span>`;
+    else ordTile.textContent = 'Brak aktywnych zamówień';
+  }
+
+  // Tile kuchnia dnia
+  const dailyTile = document.getElementById('dash-tile-daily');
+  if(dailyTile){
+    const d = S('daily-dish');
+    if(d && d.name) dailyTile.textContent = `Dziś: ${d.name.slice(0,35)}${d.name.length>35?'…':''}`;
+    else dailyTile.innerHTML = `<span style="color:var(--rust);">⚠ Nie ustawiono — kliknij aby ustawić</span>`;
+  }
+
+  // Aktywne zamówienia na pulpicie (skrócona lista)
+  const activeBox = document.getElementById('dash-active-orders');
+  if(activeBox){
+    const urgent = orders.filter(o=>o.status==='pending'||o.status==='accepted').slice(0,3);
+    if(urgent.length){
+      activeBox.innerHTML = `<div style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Aktywne zamówienia</div>`+
+        urgent.map(o=>`
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="go('zamowienia',document.getElementById('nav-zamowienia'))">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:800;color:var(--brown);">${o.id}</span>
+              <span style="font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;background:${o.status==='pending'?'rgba(184,76,43,.12)':'rgba(45,74,47,.1)'};color:${o.status==='pending'?'var(--rust)':'var(--green2)'};">${o.status==='pending'?'Do akceptacji':'W realizacji'}</span>
+              <span style="font-size:12px;color:var(--muted);">${o.customer||''} · ${o.items?.slice(0,40)||''}</span>
+            </div>
+            <span style="font-weight:700;color:var(--gold);white-space:nowrap;">${o.total} zł</span>
+          </div>`).join('');
+    } else {
+      activeBox.innerHTML = '';
+    }
+  }
+}
+
+
 let deliveryZones = S('delivery-zones') || [
   {km:2,   label:'Strefa 1 (0–2 km)',   cost:8,  color:'#22c55e', alpha:'22'},
   {km:4,   label:'Strefa 2 (2–4 km)',   cost:10, color:'#f59e0b', alpha:'22'},
@@ -3447,6 +3590,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 // ── INIT ──
 checkOpenStatus();
+renderDashboard();
 renderOrders();
 renderQR();
 updateAlarm();
@@ -3457,6 +3601,7 @@ setInterval(()=>{
     orders = fresh;
     renderOrders();
     updateAlarm();
+    renderDashboard();
   }
 }, 4000);
 </script>
