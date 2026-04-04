@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hirschówka Bistro Mielec — Śniadania, Obiady, Kawy | Zamów Online</title>
+<meta name="description" content="Domowa kuchnia w sercu Mielca. Śniadania od 7:00, obiady dnia, wypieki i kawy. Zamów online z dowozem. ul. Mickiewicza 17, Mielec. Tel. 511 707 232.">
+<meta name="keywords" content="bistro mielec, śniadania mielec, obiady mielec, kawa mielec, zamów jedzenie mielec, hirschówka bistro, lunch mielec, bajgiel mielec, dowóz jedzenia mielec">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Hirschówka Bistro Mielec — Zamów Online">
+<meta property="og:description" content="Domowe śniadania od 7:00, obiady dnia, wypieki i kawy. Zamów z dowozem na terenie Mielca.">
+<meta property="og:type" content="restaurant">
+<meta property="og:locale" content="pl_PL">
+<link rel="canonical" href="https://hirschowkabistro.pl/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Hirschówka Bistro","address":{"@type":"PostalAddress","streetAddress":"Mickiewicza 17","addressLocality":"Mielec","postalCode":"39-300","addressCountry":"PL"},"telephone":"+48511707232","url":"https://hirschowkabistro.pl","servesCuisine":["Polish","Breakfast","Coffee"],"priceRange":"$$","openingHours":["Mo-Fr 07:00-16:00"]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   DESIGN TOKENS — warm bistro palette
+════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#F9F5EE; --cream2:#F2EBD9; --cream3:#EDE0C8;
+  --brown:#3B2512; --brown2:#6B3F1E; --brown3:#5C3920;
+  --gold:#C8922A; --gold2:#E8A83A; --gold3:#A87420;
+  --rust:#B84C2B; --rust2:#963E22;
+  --green:#2D4A2F; --green2:#3D6040;
+  --text:#2A1A0E; --muted:#7A5C3E; --muted2:#A08060;
+  --white:#FEFCF8; --off-white:#F5F0E8;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'Lato',sans-serif;
+  --r:6px; --r2:12px; --r3:20px;
+  --shadow:0 2px 12px rgba(59,37,18,.1);
+  --shadow-lg:0 8px 40px rgba(59,37,18,.15);
+}
+html{scroll-behavior:smooth;background:var(--cream);}
+body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-x:hidden;}
+
+/* ════ NAV ════ */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;height:68px;
+  background:rgba(249,245,238,.97);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(59,37,18,.08);
+  transition:box-shadow .3s;
+}
+.nav.scrolled{box-shadow:0 2px 24px rgba(59,37,18,.12);}
+.nav-logo{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);text-decoration:none;letter-spacing:-.3px;}
+.nav-logo span{color:var(--gold);}
+.nav-links{display:flex;gap:32px;list-style:none;align-items:center;}
+.nav-links a{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--brown);}
+.nav-cta{background:var(--rust);color:var(--white)!important;padding:9px 22px;border-radius:var(--r);transition:background .2s!important;}
+.nav-cta:hover{background:var(--brown2)!important;}
+.nav-cart{
+  display:flex;align-items:center;gap:7px;
+  background:var(--brown);color:var(--cream);
+  border:none;border-radius:var(--r);padding:9px 20px;
+  font-size:12px;font-weight:700;letter-spacing:.5px;
+  cursor:pointer;font-family:var(--sans);transition:background .2s;
+}
+.nav-cart:hover{background:var(--brown2);}
+.cart-badge{
+  background:var(--gold);color:var(--brown);border-radius:50%;
+  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;
+}
+.nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+.nav-burger span{display:block;width:24px;height:2px;background:var(--brown);border-radius:1px;transition:.3s;}
+
+/* ════ HERO ════ */
+.hero{
+  min-height:100vh;display:grid;grid-template-columns:1fr 340px;
+  align-items:center;gap:0;padding:100px 48px 60px;
+  position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 80% at 85% 40%,rgba(200,146,42,.07) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 60% at 10% 80%,rgba(184,76,43,.05) 0%,transparent 60%);
+}
+.hero-pattern{
+  position:absolute;inset:0;
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(59,37,18,.012) 40px,rgba(59,37,18,.012) 41px);
+}
+.hero-content{position:relative;z-index:2;max-width:580px;}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:20px;
+}
+.hero-tag .live-dot{width:8px;height:8px;border-radius:50%;background:var(--green2);animation:blink 1.4s ease infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+.hero h1{
+  font-family:var(--serif);font-size:clamp(44px,5.5vw,72px);font-weight:900;
+  color:var(--brown);line-height:1.05;margin-bottom:16px;letter-spacing:-.5px;
+}
+.hero h1 em{font-style:italic;color:var(--rust);}
+.hero-sub{
+  font-size:17px;color:var(--muted);line-height:1.7;
+  font-weight:300;margin-bottom:12px;max-width:480px;
+}
+.hero-clock-row{
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;color:var(--muted);margin-bottom:32px;
+  font-weight:400;
+}
+.hero-clock-row .clock-val{font-weight:700;color:var(--brown);}
+.hero-clock-row .open-chip{
+  background:rgba(45,74,47,.1);color:var(--green);
+  border:1px solid rgba(45,74,47,.2);border-radius:99px;
+  padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.5px;
+}
+.hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:40px;}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--brown);color:var(--cream);
+  border:none;border-radius:var(--r);
+  padding:15px 32px;font-size:13px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;cursor:pointer;font-family:var(--sans);
+  transition:background .2s,transform .15s;text-decoration:none;
+}
+.btn-primary:hover{background:var(--brown2);transform:translateY(-1px);}
+.btn-ghost{
+  font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;border-bottom:1px solid currentColor;
+  padding-bottom:2px;transition:color .2s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);
+}
+.btn-ghost:hover{color:var(--brown);}
+.hero-stats{display:flex;gap:28px;}
+.hstat .num{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--brown);}
+.hstat .lbl{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+
+/* HERO CARD (right side) */
+.hero-card{
+  position:relative;z-index:2;
+  background:var(--white);border-radius:var(--r3);
+  padding:32px 28px;box-shadow:var(--shadow-lg);
+  border:1px solid rgba(59,37,18,.07);
+}
+.hero-card-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.hero-card-open{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green2);margin-bottom:16px;display:flex;align-items:center;gap:6px;}
+.hero-card-open::before{content:'●';font-size:8px;}
+.hours-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.hours-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.hours-row .day{color:var(--muted);}.hours-row .time{font-weight:700;color:var(--brown);}
+.hours-row.today .day,.hours-row.today .time{color:var(--rust);font-weight:700;}
+.hero-card-divider{height:1px;background:rgba(59,37,18,.08);margin:16px 0;}
+.hero-card-contact{font-size:13px;color:var(--muted);line-height:1.8;}
+.hero-card-contact a{color:var(--brown);font-weight:700;text-decoration:none;}
+.hero-card-addr{font-size:12px;color:var(--muted2);margin-top:6px;}
+
+/* ════ TICKER ════ */
+.ticker-bar{background:var(--rust);overflow:hidden;padding:0;}
+.ticker-inner{display:flex;animation:ticker 28s linear infinite;white-space:nowrap;}
+.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:12px 40px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);}
+.ticker-dot{color:var(--gold2);font-size:18px;}
+@keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+/* ════ SECTION HEADERS ════ */
+.section-header{text-align:center;margin-bottom:48px;}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);display:inline-flex;align-items:center;gap:12px;margin-bottom:14px;}
+.section-tag::before,.section-tag::after{content:'';display:block;width:40px;height:1px;background:var(--gold);}
+.section-title{font-family:var(--serif);font-size:clamp(34px,4vw,50px);font-weight:700;color:var(--brown);line-height:1.1;}
+
+/* ════ DAILY DISH ════ */
+.daily-section{padding:80px 48px;background:var(--cream2);}
+.daily-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
+.daily-text .daily-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rust);margin-bottom:10px;}
+.daily-text h2{font-family:var(--serif);font-size:clamp(32px,3.5vw,46px);font-weight:700;color:var(--brown);line-height:1.1;margin-bottom:16px;}
+.daily-text p{font-size:15px;color:var(--muted);line-height:1.7;font-weight:300;margin-bottom:24px;}
+.daily-features{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
+.daily-feat{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);}
+.feat-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+.daily-plate{background:var(--white);border-radius:var(--r3);padding:36px;text-align:center;box-shadow:var(--shadow-lg);position:relative;}
+.daily-plate-badge{position:absolute;top:-12px;right:20px;background:var(--rust);color:var(--white);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:var(--r);}
+.daily-plate-emoji{font-size:72px;display:block;margin-bottom:14px;}
+.daily-plate-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);margin-bottom:6px;}
+.daily-plate-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
+.daily-plate-price{display:flex;align-items:center;justify-content:center;gap:12px;}
+.dpp{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--gold);}
+.dpp-tag{background:var(--green);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:var(--r);}
+
+/* ════ KUCHNIA DNIA ════ */
+.kitchen-section{padding:64px 48px;background:var(--brown);}
+.kitchen-inner{max-width:1100px;margin:0 auto;}
+.kitchen-header{text-align:center;margin-bottom:36px;}
+.kitchen-header .section-tag{color:var(--gold);}
+.kitchen-header .section-tag::before,.kitchen-header .section-tag::after{background:var(--gold);}
+.kitchen-header h2{font-family:var(--serif);font-size:clamp(28px,3vw,40px);font-weight:700;color:var(--white);margin-top:8px;}
+.kitchen-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.kitchen-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r2);overflow:hidden;transition:background .2s;}
+.kitchen-card:hover{background:rgba(255,255,255,.09);}
+.kitchen-card-img{width:100%;height:200px;object-fit:cover;display:block;}
+.kitchen-card-img-ph{width:100%;height:200px;display:flex;align-items:center;justify-content:center;font-size:72px;background:rgba(255,255,255,.04);}
+.kitchen-card-body{padding:20px;}
+.kitchen-card-type{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.kitchen-card-name{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--white);margin-bottom:6px;line-height:1.2;}
+.kitchen-card-desc{font-size:13px;color:rgba(255,255,255,.55);line-height:1.55;margin-bottom:14px;}
+.kitchen-card-price{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--gold);}
+.kitchen-card-add{background:rgba(255,255,255,.1);color:var(--white);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:background .15s;float:right;}
+.kitchen-card-add:hover{background:rgba(255,255,255,.18);}
+.kitchen-set-bar{background:linear-gradient(135deg,rgba(200,146,42,.2),rgba(200,146,42,.08));border:1px solid rgba(200,146,42,.3);border-radius:var(--r2);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.kitchen-set-info h3{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--white);}
+.kitchen-set-info p{font-size:13px;color:rgba(255,255,255,.5);margin-top:2px;}
+.kitchen-set-price{display:flex;align-items:baseline;gap:8px;}
+.kitchen-set-price .price-big{font-family:var(--serif);font-size:36px;font-weight:700;color:var(--gold);}
+.kitchen-set-price .price-old{font-size:16px;color:rgba(255,255,255,.3);text-decoration:line-through;}
+.kitchen-set-btn{background:var(--gold);color:var(--brown);border:none;border-radius:var(--r);padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;}
+.kitchen-set-btn:hover{opacity:.9;}
+
+/* ════ DELIVERY BAR — tylko menu anchor ════ */
+.del-bar{
+  background:var(--white);border-bottom:1px solid rgba(59,37,18,.08);
+  padding:0 48px;display:flex;align-items:center;gap:0;
+  position:sticky;top:68px;z-index:100;box-shadow:0 2px 8px rgba(59,37,18,.06);
+}
+.addr-pill{
+  margin-left:auto;display:flex;align-items:center;gap:6px;
+  background:var(--cream2);border:1px solid rgba(59,37,18,.12);
+  border-radius:var(--r);padding:8px 16px;font-size:12px;
+  color:var(--muted);cursor:pointer;font-family:var(--sans);font-weight:700;
+  transition:background .15s;
+}
+.addr-pill:hover{background:var(--cream3);}
+
+/* ════ PROMO CARDS ════ */
+.promos-section{padding:32px 48px;background:var(--brown);}
+.promos-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.promo-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r2);padding:24px 20px;position:relative;overflow:hidden;transition:background .2s;}
+.promo-card:hover{background:rgba(255,255,255,.09);}
+.promo-badge{display:inline-block;background:var(--gold);color:var(--brown);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:var(--r);margin-bottom:14px;}
+.promo-card h3{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--white);line-height:1.2;margin-bottom:8px;}
+.promo-card p{font-size:13px;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px;}
+.promo-price{font-family:var(--serif);font-size:32px;font-weight:900;color:var(--gold2);}
+.promo-price-old{font-size:13px;color:rgba(255,255,255,.3);text-decoration:line-through;margin-left:6px;}
+
+/* ════ MENU ════ */
+.menu-section{padding:80px 48px;background:var(--white);}
+.menu-inner{max-width:1100px;margin:0 auto;}
+.cat-tabs-wrap{display:flex;gap:0;margin-bottom:40px;border-bottom:2px solid var(--cream2);flex-wrap:wrap;}
+.ctab{
+  padding:12px 24px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;
+}
+.ctab.on{color:var(--brown);border-bottom-color:var(--brown);}
+.cat-sec{margin-bottom:48px;}
+.cat-head{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--brown);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--cream2);}
+.menu-grid{display:flex;flex-direction:column;gap:0;}
+
+.irow{
+  display:flex;align-items:center;padding:14px 0;
+  border-bottom:1px solid rgba(59,37,18,.06);gap:14px;
+  cursor:pointer;transition:background .12s;border-radius:var(--r);
+}
+.irow:hover{background:var(--cream);}
+.irow:hover{padding:14px 8px;}
+.irow.unavail{opacity:.35;pointer-events:none;}
+.irow-info{flex:1;min-width:0;}
+.ibadges{display:flex;gap:4px;margin-bottom:3px;}
+.ib{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:2px;}
+.ib-new{background:rgba(45,74,47,.1);color:var(--green2);}
+.ib-out{background:rgba(184,76,43,.1);color:var(--rust);}
+.iname{font-size:14px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:3px;}
+.idesc{font-size:12px;color:var(--muted);line-height:1.4;}
+.iphoto{width:72px;height:72px;border-radius:var(--r2);object-fit:cover;flex-shrink:0;}
+.iprice{font-size:15px;font-weight:700;color:var(--gold);white-space:nowrap;}
+.ipfrom{font-size:11px;color:var(--muted2);margin-right:2px;}
+.iadd{
+  background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);
+  padding:9px 16px;font-size:12px;font-weight:700;letter-spacing:.3px;
+  cursor:pointer;font-family:var(--sans);white-space:nowrap;flex-shrink:0;
+  transition:background .15s;
+}
+.iadd:hover{background:var(--brown2);}
+
+/* ════ LOYALTY ════ */
+.loyalty-section{padding:80px 48px;background:var(--cream2);}
+.loyalty-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
+.loy-stamps-wrap{background:var(--white);border-radius:var(--r3);padding:32px;box-shadow:var(--shadow);}
+.loy-stamps-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0 20px;}
+.stamp{
+  aspect-ratio:1;border-radius:50%;
+  border:2px solid rgba(59,37,18,.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--muted2);
+}
+.stamp.done{background:var(--gold);border-color:var(--gold);color:var(--white);box-shadow:0 2px 8px rgba(200,146,42,.35);}
+.stamp.reward{border-color:var(--rust);color:var(--rust);}
+.loy-cta-row{display:flex;gap:8px;margin-top:16px;}
+.loy-input{
+  flex:1;padding:10px 14px;border:1.5px solid rgba(59,37,18,.15);border-radius:var(--r);
+  font-size:14px;font-family:var(--sans);color:var(--text);background:var(--cream);
+  transition:border-color .2s;
+}
+.loy-input:focus{outline:none;border-color:var(--brown);}
+.loy-btn{
+  background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);
+  padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);
+}
+
+/* ════ REVIEWS ════ */
+.reviews-section{padding:80px 48px;background:var(--white);}
+.reviews-inner{max-width:1100px;margin:0 auto;}
+.reviews-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px;}
+.rating-block{display:flex;align-items:center;gap:16px;}
+.rating-num{font-family:var(--serif);font-size:56px;font-weight:700;color:var(--brown);}
+.rating-info .stars{font-size:22px;color:var(--gold);letter-spacing:2px;}
+.rating-info .count{font-size:13px;color:var(--muted);margin-top:2px;}
+.google-btn{
+  display:flex;align-items:center;gap:8px;
+  background:var(--cream);border:1.5px solid rgba(59,37,18,.15);border-radius:var(--r);
+  padding:10px 18px;font-size:12px;font-weight:700;color:var(--muted);
+  cursor:pointer;font-family:var(--sans);text-decoration:none;transition:background .15s;
+}
+.google-btn:hover{background:var(--cream2);}
+.g-icon{font-size:18px;font-weight:900;color:#4285f4;}
+.reviews-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.review-card{background:var(--cream);border:1px solid rgba(59,37,18,.08);border-radius:var(--r2);padding:20px;}
+.rev-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.rev-av{width:40px;height:40px;border-radius:50%;background:var(--brown);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--cream);flex-shrink:0;}
+.rev-name{font-size:14px;font-weight:700;color:var(--brown);}
+.rev-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:2px;}
+.rev-stars{color:var(--gold);}
+.rev-text{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* ════ NEWSLETTER ════ */
+.newsletter-section{padding:80px 48px;background:var(--brown);}
+.newsletter-inner{max-width:700px;margin:0 auto;text-align:center;}
+.newsletter-inner .section-tag{color:var(--gold2);}
+.newsletter-inner .section-tag::before,.newsletter-inner .section-tag::after{background:var(--gold2);}
+.newsletter-inner h2{font-family:var(--serif);font-size:clamp(32px,4vw,48px);font-weight:700;color:var(--white);margin-bottom:16px;}
+.newsletter-inner p{font-size:15px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:32px;}
+.nl-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:20px;}
+.nl-tab{
+  padding:8px 24px;border-radius:var(--r);border:1.5px solid rgba(255,255,255,.2);
+  font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  cursor:pointer;font-family:var(--sans);background:transparent;color:rgba(255,255,255,.5);
+  transition:all .15s;
+}
+.nl-tab.on{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4);color:var(--white);}
+.nl-form-row{display:flex;gap:10px;max-width:440px;margin:0 auto 12px;}
+.nl-input{
+  flex:1;padding:13px 16px;border:1.5px solid rgba(255,255,255,.15);border-radius:var(--r);
+  font-size:14px;font-family:var(--sans);background:rgba(255,255,255,.07);color:var(--white);
+}
+.nl-input::placeholder{color:rgba(255,255,255,.35);}
+.nl-input:focus{outline:none;border-color:rgba(255,255,255,.4);}
+.nl-btn{
+  background:var(--gold);color:var(--brown);border:none;border-radius:var(--r);
+  padding:13px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);
+  white-space:nowrap;transition:background .15s;
+}
+.nl-btn:hover{background:var(--gold2);}
+.nl-consent{display:flex;gap:8px;align-items:flex-start;justify-content:center;max-width:440px;margin:0 auto;}
+.nl-consent input{width:16px;height:16px;accent-color:var(--gold);flex-shrink:0;margin-top:2px;}
+.nl-consent label{font-size:11px;color:rgba(255,255,255,.4);line-height:1.5;cursor:pointer;}
+.nl-consent label a{color:rgba(255,255,255,.6);}
+#nl-result{font-size:13px;text-align:center;margin-top:10px;}
+
+/* ════ SEO TAGS ════ */
+.seo-section{padding:32px 48px;background:var(--cream2);border-top:1px solid rgba(59,37,18,.08);}
+.seo-inner{max-width:1100px;margin:0 auto;}
+.seo-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.seo-tags{display:flex;flex-wrap:wrap;gap:8px;}
+.seo-tag{background:var(--white);border:1px solid rgba(59,37,18,.1);border-radius:99px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.seo-tag:hover{background:rgba(200,146,42,.1);border-color:var(--gold);color:var(--brown);}
+
+/* ════ INFO + MAP ════ */
+.contact-section{padding:80px 48px;background:var(--white);}
+.contact-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:72px;}
+.contact-info h2{font-family:var(--serif);font-size:clamp(30px,3vw,42px);font-weight:700;color:var(--brown);margin-bottom:10px;}
+.contact-info>p{font-size:15px;color:var(--muted);line-height:1.6;font-weight:300;margin-bottom:36px;}
+.contact-row{display:flex;gap:14px;align-items:flex-start;margin-bottom:24px;}
+.contact-icon{width:42px;height:42px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.contact-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:3px;}
+.contact-val{font-size:15px;color:var(--brown);font-weight:700;}
+.contact-val a{color:var(--brown);text-decoration:none;}.contact-val a:hover{color:var(--rust);}
+.map-wrap{background:var(--cream2);border-radius:var(--r2);overflow:hidden;border:1px solid rgba(59,37,18,.08);}
+.map-wrap iframe{width:100%;height:340px;border:none;display:block;}
+
+/* ════ FOOTER ════ */
+.footer{background:var(--brown);padding:40px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.footer-logo{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--cream);}.footer-logo span{color:var(--gold);}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap;}
+.footer-links a{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(249,245,238,.35);text-decoration:none;transition:color .2s;}
+.footer-links a:hover{color:var(--gold);}
+.footer-copy{font-size:12px;color:rgba(249,245,238,.25);width:100%;text-align:center;padding-top:20px;border-top:1px solid rgba(249,245,238,.06);}
+
+/* ════ SHEETS / OVERLAYS ════ */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
+.ov.open{opacity:1;pointer-events:all;}
+.sheet{
+  background:var(--white);border-radius:24px 24px 0 0;
+  width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
+  transform:translateY(30px);transition:transform .25s;
+  padding-bottom:24px;box-shadow:0 -4px 40px rgba(59,37,18,.15);
+}
+.ov.open .sheet{transform:translateY(0);}
+.sh-hd{padding:16px 22px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid rgba(59,37,18,.08);position:sticky;top:0;background:var(--white);z-index:10;}
+.sh-hd h3{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--brown);line-height:1.35;flex:1;margin-right:10px;}
+.sh-cl{background:var(--cream2);border:none;color:var(--muted);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.sh-cl:hover{background:var(--cream3);}
+
+/* ADDONS */
+.ag{padding:14px 22px;border-bottom:1px solid rgba(59,37,18,.08);}
+.ag-ttl{font-size:13px;font-weight:700;color:var(--brown);display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.ag-req{font-size:10px;font-weight:700;background:rgba(200,146,42,.12);color:var(--gold3);padding:2px 8px;border-radius:var(--r);text-transform:uppercase;}
+.ag-hint{font-size:11px;color:var(--muted2);margin-bottom:8px;}
+.ao{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(59,37,18,.06);cursor:pointer;}
+.ao:last-child{border-bottom:none;}
+.ao-l{display:flex;align-items:center;gap:10px;}
+.rdo,.chk{width:19px;height:19px;border-radius:50%;border:2px solid rgba(59,37,18,.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.chk{border-radius:5px;}
+.rdo.on,.chk.on{background:var(--brown);border-color:var(--brown);}
+.rdo.on::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--cream);}
+.chk.on::after{content:'✓';font-size:11px;font-weight:800;color:var(--cream);}
+.ao-n{font-size:14px;color:var(--text);}
+.ao-p{font-size:13px;color:var(--muted);}
+
+.qty-row{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;}
+.qctrl{display:flex;align-items:center;gap:14px;}
+.qbtn{width:38px;height:38px;border-radius:50%;background:var(--cream2);border:1.5px solid rgba(59,37,18,.15);color:var(--brown);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.qbtn:hover{background:var(--cream3);}
+.qnum{font-size:18px;font-weight:700;color:var(--brown);min-width:24px;text-align:center;}
+.addmain{flex:1;margin-left:14px;background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:background .15s;}
+.addmain:hover{background:var(--brown2);}
+
+/* CROSS */
+.cross-ok{background:rgba(45,74,47,.08);border-bottom:1px solid rgba(45,74,47,.15);padding:10px 22px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--green);}
+.cross-sub{font-size:11px;font-weight:700;color:var(--muted);padding:12px 22px 6px;text-transform:uppercase;letter-spacing:.5px;}
+.cross-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 22px 16px;}
+.ccrd{background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.ccrd:hover{border-color:var(--gold);}
+.ccrd .cimg{width:100%;height:80px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:30px;}
+.ccrd .cb{padding:10px 12px;}
+.ccrd .cn{font-size:12px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:4px;}
+.ccrd .cp{font-size:13px;font-weight:700;color:var(--gold);}
+.ccrd .ca{width:100%;background:var(--cream2);border:1px solid rgba(59,37,18,.1);color:var(--brown);border-radius:var(--r);padding:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:6px;transition:all .15s;}
+.ccrd .ca:hover{background:var(--brown);color:var(--cream);}
+.cross-cont{margin:0 22px 16px;background:transparent;border:1.5px solid rgba(59,37,18,.12);color:var(--muted);border-radius:var(--r);padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:center;display:block;width:calc(100% - 44px);transition:background .15s;}
+.cross-cont:hover{background:var(--cream);}
+
+/* CART */
+.ci{padding:14px 22px;border-bottom:1px solid rgba(59,37,18,.08);display:flex;gap:12px;align-items:flex-start;}
+.ci-info{flex:1;}
+.ci-name{font-size:14px;font-weight:700;color:var(--brown);margin-bottom:3px;}
+.ci-mods{font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:6px;}
+.ci-qty{display:flex;align-items:center;gap:8px;}
+.ciqb{width:26px;height:26px;border-radius:50%;background:var(--cream2);border:1px solid rgba(59,37,18,.12);color:var(--brown);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cin{font-size:14px;font-weight:700;color:var(--brown);min-width:18px;text-align:center;}
+.cidel{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:17px;margin-left:4px;}
+.ci-price{font-size:14px;font-weight:700;color:var(--gold);white-space:nowrap;}
+
+.ot-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:12px 22px 4px;}
+.ot-row{display:flex;align-items:center;justify-content:space-between;padding:8px 22px;border-bottom:1px solid rgba(59,37,18,.06);}
+.ot-name{font-size:13px;color:var(--text);}
+.ot-r{display:flex;align-items:center;gap:8px;}
+.ot-price{font-size:13px;font-weight:700;color:var(--gold);}
+.ot-add{background:var(--cream2);border:1px solid rgba(59,37,18,.1);color:var(--brown);border-radius:var(--r);padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+
+.cs-sum{padding:14px 22px;}
+.csr{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;}
+.cs-total{font-size:18px;font-weight:800;color:var(--brown);border-top:1px solid rgba(59,37,18,.1);padding-top:10px;margin-top:8px;}
+.cs-total span:last-child{color:var(--gold);}
+
+.cpwrap{padding:0 22px 12px;}
+.cplbl{font-size:12px;color:var(--muted);margin-bottom:5px;}
+.cprow{display:flex;gap:8px;}
+.cpin{flex:1;padding:9px 12px;border:1.5px solid rgba(59,37,18,.12);border-radius:var(--r);font-size:13px;font-family:var(--sans);background:var(--cream);color:var(--text);}
+.cpin:focus{outline:none;border-color:var(--brown);}
+.cpbtn{background:var(--cream2);border:1.5px solid rgba(59,37,18,.12);color:var(--brown);border-radius:var(--r);padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+
+.sblk{padding:14px 22px;border-bottom:1px solid rgba(59,37,18,.08);}
+.sblk h4{font-size:13px;font-weight:700;color:var(--brown);margin-bottom:10px;}
+.dopts{display:flex;flex-direction:column;gap:7px;}
+.dopt{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--r);border:1.5px solid rgba(59,37,18,.1);cursor:pointer;transition:all .15s;}
+.dopt.on{border-color:var(--brown);background:rgba(59,37,18,.04);}
+.dor{width:16px;height:16px;border-radius:50%;border:2px solid rgba(59,37,18,.2);flex-shrink:0;transition:all .15s;}
+.dopt.on .dor{border-color:var(--brown);background:var(--brown);}
+.dlbl{font-size:14px;font-weight:600;color:var(--text);}
+.dsub{font-size:12px;color:var(--muted);}
+
+.finp{width:100%;padding:10px 14px;border:1.5px solid rgba(59,37,18,.12);border-radius:var(--r);font-size:14px;font-family:var(--sans);background:var(--cream);color:var(--text);margin-bottom:8px;}
+.finp:focus{outline:none;border-color:var(--brown);}
+.zinf{background:var(--cream2);border:1px solid rgba(59,37,18,.1);border-radius:var(--r);padding:9px 12px;font-size:12px;color:var(--muted);margin-top:4px;}
+
+.payopts{display:flex;flex-direction:column;gap:6px;}
+.payopt{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:var(--r);border:1.5px solid rgba(59,37,18,.1);cursor:pointer;transition:all .15s;}
+.payopt.on{border-color:var(--brown);background:rgba(59,37,18,.04);}
+.payopt-l{display:flex;align-items:center;gap:9px;}
+.dor2{width:16px;height:16px;border-radius:50%;border:2px solid rgba(59,37,18,.2);flex-shrink:0;}
+.payopt.on .dor2{border-color:var(--brown);background:var(--brown);}
+.pname{font-size:14px;font-weight:500;color:var(--text);}
+.pbdg{font-size:10px;font-weight:700;background:var(--cream2);color:var(--muted);padding:2px 7px;border-radius:4px;}
+
+.crow{display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;}
+.crow input[type=checkbox]{width:16px;height:16px;accent-color:var(--brown);flex-shrink:0;margin-top:2px;}
+.crow label{font-size:12px;color:var(--muted);line-height:1.5;cursor:pointer;}
+.crow label a{color:var(--brown);}
+.order-btn{width:100%;background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);padding:16px;font-size:16px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:var(--sans);margin-top:8px;transition:background .15s;}
+.order-btn:hover{background:var(--brown2);}
+
+/* SUCCESS */
+.success-box{background:rgba(45,74,47,.08);border:1px solid rgba(45,74,47,.2);border-radius:var(--r2);padding:28px;margin:16px 22px;text-align:center;}
+.success-box .si{font-size:48px;margin-bottom:10px;}
+.success-box h3{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--green);margin-bottom:8px;}
+.success-box p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+.sbk{background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);padding:11px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--brown);color:var(--cream);padding:12px 24px;border-radius:var(--r);font-size:13px;font-weight:700;z-index:999;opacity:0;transition:all .25s;white-space:nowrap;max-width:90vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ════ RESPONSIVE — MOBILE ════ */
+@media(max-width:900px){
+  .nav{padding:0 20px;}
+  .nav-links{display:none;}
+  .nav-links.open{display:flex;flex-direction:column;gap:0;position:fixed;top:68px;left:0;right:0;background:var(--cream);border-bottom:1px solid rgba(59,37,18,.1);padding:10px 0;z-index:300;}
+  .nav-links.open li{padding:0;}
+  .nav-links.open a{display:block;padding:14px 24px;}
+  .nav-burger{display:flex;}
+
+  .hero{grid-template-columns:1fr;padding:90px 20px 48px;}
+  .hero-card{display:none;}
+  .hero h1{font-size:38px;}
+
+  .daily-section,.loyalty-section,.contact-section{padding:56px 20px;}
+  .daily-inner,.loyalty-inner,.contact-inner{grid-template-columns:1fr;gap:40px;}
+
+  .kitchen-section{padding:48px 20px;}
+  .kitchen-grid{grid-template-columns:1fr;}
+  .kitchen-set-bar{flex-direction:column;text-align:center;}
+  .kitchen-set-price{justify-content:center;}
+  .kitchen-set-btn{width:100%;}
+
+  .promos-section{padding:32px 20px;}
+  .promos-inner{grid-template-columns:1fr;}
+
+  .menu-section{padding:56px 20px;}
+  .cat-tabs-wrap{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;}
+  .cat-tabs-wrap::-webkit-scrollbar{display:none;}
+
+  .reviews-section{padding:56px 20px;}
+  .reviews-grid{grid-template-columns:1fr;}
+
+  .newsletter-section{padding:56px 20px;}
+  .nl-form-row{flex-direction:column;}
+  .nl-btn{width:100%;}
+
+  .seo-section{padding:24px 20px;}
+  .contact-section,.footer{padding:48px 20px;}
+
+  .del-bar{padding:0 16px;}
+
+  .sheet{max-width:100%;}
+}
+
+@media(max-width:480px){
+  .hero-stats{gap:16px;}
+  .hstat .num{font-size:20px;}
+  .hero-actions{flex-direction:column;align-items:flex-start;}
+  .reviews-header{flex-direction:column;align-items:flex-start;}
+  .cross-grid{grid-template-columns:1fr 1fr;}
+}
+
+@keyframes fu{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.fi{animation:fu .35s ease both;}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+</style>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo">Hirsch<span>ówka</span> Bistro</a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#daily-section">Danie dnia</a></li>
+    <li><a href="#loyalty-section">Lojalność</a></li>
+    <li><a href="#contact-section">Kontakt</a></li>
+    <li><a href="tel:511707232" class="nav-cta">Zadzwoń</a></li>
+  </ul>
+  <div class="nav-right" style="display:flex;align-items:center;gap:10px;">
+    <button class="nav-cart" onclick="openCart()">🛒 Koszyk <span class="cart-badge" id="cart-cnt">0</span></button>
+    <button class="nav-burger" id="nav-burger" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-pattern"></div>
+  <div class="hero-content">
+    <div class="hero-tag"><span class="live-dot"></span><span id="hero-open-tag">Dziś gotujemy od 7:00</span></div>
+    <h1>Domowa kuchnia,<br>do której <em>chce się wracać</em></h1>
+    <p class="hero-sub">Śniadania, obiady dnia, wypieki i kawy. Zamów online z dowozem lub wpadnij do nas na Mickiewicza 17 w Mielcu.</p>
+    <div class="hero-clock-row">
+      ⏰ <span class="clock-val" id="hero-clock">07:00</span>
+      <span class="open-chip" id="open-chip">● Otwarte</span>
+    </div>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🛒 Zamów teraz</button>
+      <button class="btn-ghost" onclick="document.getElementById('daily-section').scrollIntoView({behavior:'smooth'})">Danie dnia →</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><div class="num">7:00</div><div class="lbl">Otwieramy</div></div>
+      <div class="hstat"><div class="num">4.9★</div><div class="lbl">Ocena Google</div></div>
+      <div class="hstat"><div class="num">20 min</div><div class="lbl">Czas dostawy</div></div>
+    </div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-card-title">Godziny otwarcia</div>
+    <div class="hero-card-open" id="card-open-status">Teraz otwarte</div>
+    <div class="hours-list">
+      <div class="hours-row" id="hr-0"><span class="day">Pon–Pt</span><span class="time">7:00–16:00</span></div>
+      <div class="hours-row" id="hr-1"><span class="day">Sobota</span><span class="time">Nieczynne</span></div>
+      <div class="hours-row" id="hr-2"><span class="day">Niedziela</span><span class="time">Nieczynne</span></div>
+    </div>
+    <div class="hero-card-divider"></div>
+    <div class="hero-card-contact">
+      📞 <a href="tel:511707232">511 707 232</a><br>
+      ✉️ <a href="mailto:kontakt@hirschowkabistro.pl">kontakt@hirschowkabistro.pl</a>
+      <div class="hero-card-addr">📍 ul. Mickiewicza 17, 39-300 Mielec</div>
+    </div>
+    <div class="hero-card-divider"></div>
+    <button class="btn-primary" style="width:100%;justify-content:center;" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">Zamów online →</button>
+  </div>
+</section>
+
+<!-- TICKER — edytuj w panelu admina → Promocje → +Dodaj promocję -->
+<div class="ticker-bar">
+  <div class="ticker-inner" id="ticker-inner">
+    <span class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</span>
+    <span class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</span>
+  </div>
+</div>
+
+<!-- ═══ DANIE DNIA ═══ -->
+<section class="daily-section" id="daily-section">
+  <div class="daily-inner">
+    <div class="daily-text reveal">
+      <div class="daily-label">★ Danie dnia</div>
+      <h2 id="daily-name">Każdego dnia coś pysznego</h2>
+      <p id="daily-desc">Codziennie rano gotujemy jeden specjalny zestaw — danie główne z domową zupą w wyjątkowo dobrej cenie.</p>
+      <div class="daily-features">
+        <div class="daily-feat"><span class="feat-dot"></span>Zupa + danie główne w zestawie</div>
+        <div class="daily-feat"><span class="feat-dot"></span>Świeże składniki, gotowane rano</div>
+        <div class="daily-feat"><span class="feat-dot"></span>Dostępne od 11:00 do wyczerpania</div>
+        <div class="daily-feat"><span class="feat-dot"></span>Dostawa lub odbiór osobisty</div>
+      </div>
+      <button class="btn-primary" id="daily-btn" onclick="addDefaultDaily()">🛒 Zamów zestaw dnia</button>
+    </div>
+    <div class="daily-plate reveal">
+      <div class="daily-plate-badge">Dziś polecamy</div>
+      <span class="daily-plate-emoji" id="daily-emoji">🍲</span>
+      <div class="daily-plate-name" id="daily-plate-name">Żurek + Polędwiczki wieprzowe</div>
+      <div class="daily-plate-desc" id="daily-plate-desc">Domowy żurek na zakwasie z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree</div>
+      <div class="daily-plate-price">
+        <span class="dpp" id="daily-price">22 zł</span>
+        <span class="dpp-tag">Zestaw dnia</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ KUCHNIA DNIA (zupa + drugie danie) ═══ -->
+<section class="kitchen-section" id="kitchen-section"></section>
+
+<!-- STICKY BAR — tylko koszyk, zakładki dostawy przeniesione do koszyka -->
+<div class="del-bar" id="del-bar">
+  <span style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:14px 0;">Menu</span>
+  <button class="addr-pill" onclick="openCart()">🛒 Koszyk <span id="cart-count-bar" style="font-weight:800;color:var(--brown);"></span></button>
+</div>
+
+<!-- PROMOS -->
+<div class="promos-section">
+  <div class="promos-inner" id="promos-inner">
+    <div class="promo-card"><div class="promo-badge">Codziennie</div><h3>Śniadanie z kawą</h3><p>Jajecznica, tost, masło + espresso lub herbata. Idealny start dnia.</p><span class="promo-price">15 zł</span><span class="promo-price-old">19 zł</span></div>
+    <div class="promo-card"><div class="promo-badge">Pon–Pt</div><h3>Obiad dnia + zupa</h3><p>Zmieniające się codziennie danie z domową zupą. Tradycyjne przepisy.</p><span class="promo-price">22 zł</span><span class="promo-price-old">28 zł</span></div>
+    <div class="promo-card"><div class="promo-badge">Online</div><h3>Darmowy dowóz</h3><p>Przy zamówieniu online od 40 zł dowozimy bezpłatnie na terenie Mielca.</p><span class="promo-price">0 zł</span><span class="promo-price-old">dostawa</span></div>
+  </div>
+</div>
+
+<!-- ═══ MENU ═══ -->
+<section class="menu-section" id="menu">
+  <div class="menu-inner">
+    <div class="section-header">
+      <div class="section-tag">Co gotujemy</div>
+      <h2 class="section-title">Nasze Menu</h2>
+    </div>
+    <div class="cat-tabs-wrap" id="cat-tabs"></div>
+    <div id="menu-content"></div>
+    <div style="text-align:center;margin-top:32px;">
+      <button class="btn-primary" onclick="openCart()">🛒 Przejdź do koszyka</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LOJALNOŚĆ ═══ -->
+<section class="loyalty-section" id="loyalty-section">
+  <div class="loyalty-inner">
+    <div class="reveal">
+      <div class="section-tag" style="justify-content:flex-start;display:inline-flex;">Program</div>
+      <h2 style="font-family:var(--serif);font-size:clamp(30px,3.5vw,44px);font-weight:700;color:var(--brown);line-height:1.1;margin-bottom:14px;margin-top:10px;">Zbieraj pieczątki,<br>odbieraj nagrody</h2>
+      <p style="font-size:15px;color:var(--muted);line-height:1.7;font-weight:300;margin-bottom:28px;">Pieczątka za każdą wizytę od 19 zł. Po 9 wizytach — darmowy obiad. Nagrody też na 3. i 5. pieczątce!</p>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:28px;">
+        <div class="daily-feat"><span class="feat-dot"></span>3 pieczątki → 50% zniżki na kawę lub deser</div>
+        <div class="daily-feat"><span class="feat-dot"></span>5 pieczątek → darmowy deser</div>
+        <div class="daily-feat"><span class="feat-dot"></span>9 pieczątek → darmowy obiad</div>
+      </div>
+      <a href="karta-klienta.html" class="btn-primary" style="display:inline-flex;">Sprawdź swoją kartę →</a>
+    </div>
+    <div class="loy-stamps-wrap reveal">
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Twoja karta</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px;" id="loy-status-txt">Wpisz numer telefonu, żeby sprawdzić kartę</div>
+      <div class="loy-stamps-grid" id="loy-stamps"></div>
+      <div class="loy-cta-row">
+        <input class="loy-input" type="tel" id="loy-phone" placeholder="Numer telefonu" oninput="fmtLoyPhone(this)">
+        <button class="loy-btn" onclick="checkLoyalty()">Sprawdź</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ OPINIE ═══ -->
+<section class="reviews-section" id="reviews">
+  <div class="reviews-inner">
+    <div class="section-header">
+      <div class="section-tag">Co mówią klienci</div>
+      <h2 class="section-title">Opinie Google</h2>
+    </div>
+    <div class="reviews-header reveal">
+      <div class="rating-block">
+        <div class="rating-num">4.9</div>
+        <div class="rating-info"><div class="stars">★★★★★</div><div class="count">Ocena w Google Maps</div></div>
+      </div>
+      <a href="https://www.google.com/maps/search/Hirschówka+Bistro+Mielec+Mickiewicza+17" target="_blank" rel="noopener" class="google-btn"><span class="g-icon">G</span> Zobacz w Google Maps →</a>
+    </div>
+    <div class="reviews-grid" id="reviews-grid"></div>
+  </div>
+</section>
+
+<!-- ═══ NEWSLETTER ═══ -->
+<section class="newsletter-section">
+  <div class="newsletter-inner">
+    <div class="section-tag">Bądź na bieżąco</div>
+    <h2>Promocje prosto<br>na Twój telefon</h2>
+    <p>Cotygodniowe oferty, nowe dania i specjalne okazje — zapisz się i nie przegap żadnej promocji.</p>
+    <div class="nl-tabs">
+      <button class="nl-tab on" id="nl-sms" onclick="switchNL('sms')">📱 SMS</button>
+      <button class="nl-tab" id="nl-email" onclick="switchNL('email')">✉️ E-mail</button>
+    </div>
+    <div class="nl-form-row">
+      <input class="nl-input" type="tel" id="nl-phone" placeholder="Numer telefonu (np. 511 707 232)" style="display:block;">
+      <input class="nl-input" type="email" id="nl-emailinp" placeholder="Adres e-mail" style="display:none;">
+      <button class="nl-btn" onclick="subscribeNL()">Zapisz się!</button>
+    </div>
+    <div class="nl-consent">
+      <input type="checkbox" id="nl-consent">
+      <label for="nl-consent">Wyrażam zgodę na otrzymywanie informacji marketingowych. Mogę wycofać zgodę w dowolnym momencie. <a href="#">Polityka prywatności</a></label>
+    </div>
+    <div id="nl-result"></div>
+  </div>
+</section>
+
+<!-- SEO — niewidoczne dla użytkownika, widoczne dla robotów -->
+<div class="seo-section" style="display:none;" aria-hidden="true">
+  <div class="seo-inner">
+    <div class="seo-title">Znajdź nas w Mielcu</div>
+    <div class="seo-tags">
+      <span class="seo-tag">śniadania Mielec</span>
+      <span class="seo-tag">obiady Mielec</span>
+      <span class="seo-tag">kawa Mielec</span>
+      <span class="seo-tag">lunch Mielec</span>
+      <span class="seo-tag">bistro Mielec</span>
+      <span class="seo-tag">zamów jedzenie Mielec</span>
+      <span class="seo-tag">bajgiel Mielec</span>
+      <span class="seo-tag">dowóz jedzenia Mielec</span>
+      <span class="seo-tag">wypieki Mielec</span>
+      <span class="seo-tag">Mickiewicza 17 Mielec</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ KONTAKT ═══ -->
+<section class="contact-section" id="contact-section">
+  <div class="contact-inner">
+    <div class="reveal">
+      <h2 style="font-family:var(--serif);font-size:clamp(28px,3vw,42px);font-weight:700;color:var(--brown);margin-bottom:10px;">Znajdź nas<br>w Mielcu</h2>
+      <p style="font-size:15px;color:var(--muted);line-height:1.6;font-weight:300;margin-bottom:32px;">Jesteśmy w sercu miasta. Wpadnij na śniadanie, obiad lub po ciasto na wynos.</p>
+      <div class="contact-row"><div class="contact-icon">📍</div><div><span class="contact-label">Adres</span><div class="contact-val">ul. Mickiewicza 17<br>39-300 Mielec</div></div></div>
+      <div class="contact-row"><div class="contact-icon">📞</div><div><span class="contact-label">Telefon</span><div class="contact-val"><a href="tel:511707232">511 707 232</a></div></div></div>
+      <div class="contact-row"><div class="contact-icon">✉️</div><div><span class="contact-label">E-mail</span><div class="contact-val"><a href="mailto:kontakt@hirschowkabistro.pl">kontakt@hirschowkabistro.pl</a></div></div></div>
+      <div class="contact-row"><div class="contact-icon">🕐</div><div><span class="contact-label">Godziny otwarcia</span><div class="contact-val" style="font-size:13px;font-weight:400;line-height:1.8;">Pon–Pt: 7:00–16:00<br>Sobota–Niedziela: nieczynne</div></div></div>
+    </div>
+    <div class="map-wrap reveal">
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2547!2d21.4309!3d50.2878!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sMickiewicza+17%2C+39-300+Mielec!5e0!3m2!1spl!2spl!4v1" allowfullscreen loading="lazy" title="Hirschówka Bistro Mielec"></iframe>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">Hirsch<span>ówka</span> Bistro</div>
+  <nav class="footer-links">
+    <a href="#menu">Menu</a>
+    <a href="#daily-section">Danie dnia</a>
+    <a href="karta-klienta.html">Karta lojalnościowa</a>
+    <a href="#contact-section">Kontakt</a>
+    <a href="tel:511707232">511 707 232</a>
+  </nav>
+  <div class="footer-copy">© 2025 Hirschówka Bistro · ul. Mickiewicza 17, 39-300 Mielec · Wszelkie prawa zastrzeżone</div>
+</footer>
+
+<!-- ═══ OVERLAYS ═══ -->
+<div class="ov" id="ov-product"><div class="sheet fi"><div class="sh-hd"><h3 id="sp-title"></h3><button class="sh-cl" onclick="closeOv('ov-product')">✕</button></div><div id="sp-desc" style="padding:10px 22px;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(59,37,18,.08);display:none;"></div><div id="sp-sizes"></div><div id="sp-addons"></div><div class="qty-row"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)">+</button></div><button class="addmain" onclick="doAdd()">Dodaj — <span id="sp-tot"></span></button></div></div></div>
+
+<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div class="cross-sub">Polecamy do tego</div><div class="cross-grid" id="cross-grid"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy</button></div></div>
+
+<div class="ov" id="ov-cart">
+  <div class="sheet">
+    <div class="sh-hd"><h3>Koszyk</h3><button class="sh-cl" onclick="closeOv('ov-cart')">✕</button></div>
+    <div id="cart-items"></div>
+    <div id="often-together"></div>
+    <div class="cs-sum" id="cs-sum"></div>
+    <div class="cpwrap"><div class="cplbl">Masz kupon promocyjny?</div><div class="cprow"><input class="cpin" id="coup-in" placeholder="Wpisz kod kuponu"><button class="cpbtn" onclick="applyCoupon()">Zastosuj</button></div><div id="coup-res" style="font-size:12px;margin-top:5px;"></div></div>
+    <div class="sblk">
+      <h4>Opcje realizacji</h4>
+      <div style="background:var(--cream2);border:1px solid rgba(59,37,18,.1);border-radius:var(--r);padding:11px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+        <div><div style="font-size:14px;font-weight:600;color:var(--brown);">Jak najszybciej</div><div style="font-size:12px;color:var(--muted);">Po złożeniu zobaczysz szacowany czas realizacji</div></div><span style="color:var(--muted);">›</span>
+      </div>
+      <div class="dopts">
+        <div class="dopt on" id="do-dostawa" onclick="selDO('dostawa')"><div class="dor"></div><div><div class="dlbl">Dostawa</div><div class="dsub" id="do-sub">Koszt zależny od adresu</div></div></div>
+        <div class="dopt" id="do-odbior" onclick="selDO('odbior')"><div class="dor"></div><div><div class="dlbl">Odbiór własny</div><div class="dsub">ul. Mickiewicza 17, Mielec</div></div></div>
+        <div class="dopt" id="do-miejsce" onclick="selDO('miejsce')"><div class="dor"></div><div><div class="dlbl">Zjem na miejscu</div><div class="dsub">Wejdź i zajmij stolik</div></div></div>
+      </div>
+    </div>
+    <div id="addr-block" class="sblk">
+      <h4>Adres dostawy</h4>
+      <input class="finp" id="addr-street" placeholder="Ulica i numer domu *" oninput="checkZone()">
+      <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;"><input class="finp" id="addr-city" placeholder="Miasto" value="Mielec"><input class="finp" id="addr-floor" placeholder="Piętro"></div>
+      <input class="finp" id="addr-apt" placeholder="Numer mieszkania (opcjonalnie)">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="no-contact" style="accent-color:var(--brown);width:15px;height:15px;"> Dostawa bez kontaktu (wymaga płatności online)</label>
+      <div class="zinf" id="zone-info">📍 Podaj adres, aby poznać cenę dostawy.</div>
+    </div>
+    <div class="sblk"><h4>Uwagi do zamówienia</h4><textarea class="finp" id="order-notes" rows="2" placeholder="np. proszę bez cebuli, kod do bramy: 1234..." style="resize:none;"></textarea></div>
+    <div class="sblk">
+      <h4>Sposób płatności</h4>
+      <div class="payopts">
+        <div class="payopt on" id="pay-blik" onclick="selPay('blik')"><div class="payopt-l"><div class="dor2 on"></div><span class="pname">BLIK</span></div><span class="pbdg">BLIK</span></div>
+        <div class="payopt" id="pay-gpay" onclick="selPay('gpay')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Google Pay</span></div><span style="font-size:14px;font-weight:900;color:#4285f4;">G</span></div>
+        <div class="payopt" id="pay-card" onclick="selPay('card')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Karta płatnicza</span></div><span class="pbdg">VISA/MC</span></div>
+        <div class="payopt" id="pay-transfer" onclick="selPay('transfer')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Szybki przelew</span></div><span>💳</span></div>
+        <div class="payopt" id="pay-cash" onclick="selPay('cash')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Gotówka przy odbiorze</span></div><span>💵</span></div>
+        <div class="payopt" id="pay-card2" onclick="selPay('card2')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Karta przy odbiorze</span></div><span>💳</span></div>
+      </div>
+    </div>
+    <div class="sblk">
+      <h4>Dane kontaktowe</h4>
+      <input class="finp" id="c-name" placeholder="Imię i nazwisko *" autocomplete="name">
+      <input class="finp" id="c-phone" type="tel" placeholder="Tel. komórkowy *" autocomplete="tel">
+      <input class="finp" id="c-email" type="email" placeholder="Email" autocomplete="email">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="need-invoice" style="accent-color:var(--brown);width:15px;height:15px;"> Potrzebuję faktury</label>
+    </div>
+    <div class="sblk">
+      <div class="crow"><input type="checkbox" id="c-terms"><label for="c-terms">* Potwierdzam zapoznanie się z <a href="#">Regulaminem</a> oraz <a href="#">Polityką prywatności</a>.</label></div>
+      <div class="crow"><input type="checkbox" id="c-mkt"><label for="c-mkt">(opcjonalnie) Zgoda na marketing e-mail / SMS.</label></div>
+      <button class="order-btn" onclick="placeOrder()">Do kasy — <span id="checkout-total">0,00 zł</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════
+const ADDONS_DB=[
+  {name:'Mleko do kawy',required:true,type:'radio',cats:['Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Mleko krowie',p:0,def:true},{n:'Mleko owsiane',p:1.5},{n:'Mleko migdałowe',p:1.5},{n:'Mleko bez laktozy',p:0}]},
+  {name:'Rodzaj herbaty',required:true,type:'radio',cats:['Napoje gorące'],items:['Herbata'],opts:[{n:'Czarna',p:0.5,def:true},{n:'Smakowa',p:0.5},{n:'Zielona',p:0.5},{n:'Rumiankowa',p:0.5}]},
+  {name:'Kubeczek',required:false,type:'checkbox',cats:['Kawy klasyczne','Napoje gorące','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Kubeczek na wynos',p:0.5}]},
+  {name:'Wybierz dodatki',required:false,type:'checkbox',cats:['Dania obiadowe'],opts:[{n:'Kluski śląskie',p:8},{n:'Ziemniaki',p:8},{n:'Kasza',p:6},{n:'Kopytka',p:8},{n:'Surówka',p:7},{n:'Sos tysiąca wysp',p:2},{n:'Sos czosnkowy',p:2},{n:'Ketchup',p:2}]},
+  {name:'Wybór pieczywa',required:false,type:'radio',
+   cats:['Śniadania i lunche'],
+   // Only for bajgiel items — checked by item name
+   itemKeywords:['bajgiel','bagietka'],
+   opts:[{n:'Bajgiel pszenny',p:0,def:true},{n:'Bajgiel ziarnisty',p:0}]},
+];
+
+const MENU_BASE=[
+  {id:1,cat:'Śniadania i lunche',name:'Bajgiel z boczkiem, jajkiem sadzonym, sałatą, pomidorem i sosem',desc:'CHRUPIĄCY NA ZEWNĄTRZ, MIĘKKI W ŚRODKU - NA KAŻDY GUST',price:24,avail:true,badge:'new'},
+  {id:2,cat:'Śniadania i lunche',name:'Bajgiel barona - wolno pieczona wieprzowina, ogórek kiszony, szkarłatna marynowana cebula, sałata, rukola, sos BBQ',desc:'',price:29,avail:true},
+  {id:3,cat:'Śniadania i lunche',name:'Bajgiel z Caprese - mozzarellą, pomidorem, oliwą, bazylią i czosnkiem',desc:'',price:22,avail:true},
+  {id:4,cat:'Śniadania i lunche',name:'Bajgiel z chrupiącym kurczakiem w panierce, sałatą i majonezem',desc:'',price:26,avail:true},
+  {id:5,cat:'Śniadania i lunche',name:'Bajgiel z pastą z tuńczyka, ogórkiem, rukolą i oliwą',desc:'',price:23,avail:true},
+  {id:6,cat:'Śniadania i lunche',name:'Hot Dog klasyczny',desc:'bułka, parówka, ketchup, musztarda',price:9,avail:true},
+  {id:7,cat:'Śniadania i lunche',name:'Hot Dog wzbogacony',desc:'bułka, parówka, sałata, pomidor, ogórek kiszony, ketchup, musztarda',price:12,avail:true},
+  {id:8,cat:'Śniadania i lunche',name:'Quesadilla z grillowanym kurczakiem',desc:'z serem, papryką, cebulą, kukurydzą i z sosem',price:16,avail:true},
+  {id:9,cat:'Śniadania i lunche',name:'Wrap z grillowanym kurczakiem',desc:'z pekińą, ogórkiem, papryką, pomidorem, cebulką i sosem',price:19,avail:true},
+  {id:10,cat:'Śniadania i lunche',name:'Zapiekanka z kurczakiem i serem',desc:'',price:12,avail:true},
+  {id:11,cat:'Śniadania i lunche',name:'Bagietka z kurczakiem, serem żółtym, pomidorem, ogórkiem konserwowym, sałatą i sosem',desc:'',price:16,avail:true},
+  {id:12,cat:'Śniadania i lunche',name:'Zapiekanka z szynką i serem',desc:'',price:12,avail:true},
+  {id:13,cat:'Śniadania i lunche',name:'Bagietka z mozzarellą, pomidorami, sałatą, oliwą i ziołami',desc:'',price:15,avail:true},
+  {id:14,cat:'Śniadania i lunche',name:'Sałatka grecka',desc:'sałata z ogórkiem zielonym, cebulką czerwoną, serem feta, pomidorkami, oliwkami i sosem winegret',price:22,avail:true},
+  {id:15,cat:'Śniadania i lunche',name:'Sałatka grillowany kurczak',desc:'filet z kurczaka, sałata z ogórkiem zielonym, papryką, kukurydzą i sosem czosnkowym',price:24,avail:true},
+  {id:16,cat:'Śniadania i lunche',name:'Sałatka tuńczyk',desc:'tuńczyk, sałata z ogórkiem kiszonym, pomidorem, papryką, pestkami słonecznika, cebulką czerwoną i sosem miodowo-musztardowym',price:26,avail:true},
+  {id:17,cat:'Dania obiadowe',name:'Krem z dyni',desc:'',price:12,avail:true},
+  {id:18,cat:'Dania obiadowe',name:'Krem z cukini',desc:'',price:12,avail:true},
+  {id:19,cat:'Dania obiadowe',name:'Roladki schabowe z boczkiem i ogórkiem, ziemniaki, surówka z kiszonej kapusty',desc:'',price:26,avail:true},
+  {id:20,cat:'Dania obiadowe',name:'Zestaw: Zupa pomidorowa z makaronem + roladki schabowe z boczkiem i ogórkiem, ziemniaki, surówka z kiszonej kapusty',desc:'',price:30,avail:true},
+  {id:21,cat:'Napoje zimne',name:'Sok wyciskany pomarańczowy 250ml',desc:'Świeżo wyciskany',price:12,avail:true},
+  {id:22,cat:'Napoje zimne',name:'Sok wyciskany burak z jabłkiem 250ml',desc:'',price:10,avail:false,badge:'unavail'},
+  {id:23,cat:'Napoje zimne',name:'Sok wyciskany pomarańcza/szpinak 250ml',desc:'',price:14,avail:true},
+  {id:24,cat:'Napoje zimne',name:'Lemoniada szklanka',desc:'',price:6,avail:true},
+  {id:25,cat:'Napoje zimne',name:'Lemoniada dzbanek',desc:'',price:12,avail:true},
+  {id:26,cat:'Napoje zimne',name:'Woda w butelce',desc:'',price:5,avail:true},
+  {id:27,cat:'Desery i słodkie przekąski',name:'Gofr z cukrem pudrem',desc:'',price:8,avail:true},
+  {id:28,cat:'Desery i słodkie przekąski',name:'Gofr z owocami',desc:'',price:10,avail:true},
+  {id:29,cat:'Desery i słodkie przekąski',name:'Gofr z owocami i bitą śmietaną',desc:'',price:14,avail:true},
+  {id:30,cat:'Desery i słodkie przekąski',name:'Deser chia',desc:'',price:10,avail:true},
+  {id:31,cat:'Desery i słodkie przekąski',name:'Deser bananowy',desc:'',price:10,avail:true},
+  {id:32,cat:'Desery i słodkie przekąski',name:'Szorlotka',desc:'',price:12,avail:true},
+  {id:33,cat:'Napoje gorące',name:'Herbata',desc:'',price:5,avail:true,addonGroups:['Rodzaj herbaty','Kubeczek']},
+  {id:34,cat:'Napoje gorące',name:'Gorąca czekolada',desc:'',price:6,avail:true,addonGroups:['Kubeczek']},
+  {id:35,cat:'Napoje gorące',name:'Mleko gorące',desc:'',price:3,avail:true,addonGroups:['Kubeczek']},
+  {id:36,cat:'Kawy klasyczne',name:'Espresso',desc:'40ml intensywnej kawy',price:5,avail:true,sizes:[{n:'',p:0},{n:'duże',p:3}],addonGroups:['Kubeczek']},
+  {id:37,cat:'Kawy klasyczne',name:'Espresso Doppio',desc:'80ml intensywnej kawy',price:8,avail:true,addonGroups:['Kubeczek']},
+  {id:38,cat:'Kawy klasyczne',name:'Americano',desc:'espresso + woda',price:6,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Kubeczek']},
+  {id:39,cat:'Kawy klasyczne',name:'Cappuccino',desc:'espresso + aksamitnie spienione mleko',price:8,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:40,cat:'Kawy klasyczne',name:'Latte',desc:'espresso + dużo mleka i pianki',price:8,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:41,cat:'Kawy klasyczne',name:'Flat White',desc:'podwójne espresso + aksamitnie spienione mleko',price:12,avail:true,addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:42,cat:'Kawy smakowe',name:'Karmelowe Latte',desc:'espresso + mleko + syrop karmelowy + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:43,cat:'Kawy smakowe',name:'Mokka',desc:'espresso + mleko + czekolada + bita śmietana',price:10,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:44,cat:'Kawy sezonowe i autorskie',name:'Gingerbread Spice Latte (jesień)',desc:'espresso + mleko + syrop piernikowy + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:45,cat:'Kawy sezonowe i autorskie',name:'Kokosowe Macchiato (lato)',desc:'espresso + mleko + syrop kokosowy + posypka kokosowa',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:46,cat:'Kawy sezonowe i autorskie',name:'Matcha Latte',desc:'japońska herbata matcha + mleko',price:9,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:47,cat:'Kawy sezonowe i autorskie',name:'Chai Latte',desc:'aromatyczna herbata chai + mleko + przyprawy',price:9,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:48,cat:'Kawy mrożone',name:'Iced Latte',desc:'espresso + zimne mleko + lód',price:8,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:49,cat:'Kawy mrożone',name:'Iced Mocha',desc:'espresso + mleko + syrop czekoladowy + lód + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:50,cat:'Kawy mrożone',name:'Frappe',desc:'kawa rozpuszczalna + lód + cukier trzcinowy + mleko',price:10,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {id:51,cat:'Kawy mrożone',name:'Frappe Deluxe',desc:'kawa rozpuszczalna + lód + lody waniliowe + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+];
+
+const CROSS=[
+  {match:['Śniadania i lunche','Dania obiadowe'],suggest:['Desery i słodkie przekąski','Napoje gorące']},
+  {match:['Napoje gorące','Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],suggest:['Desery i słodkie przekąski','Śniadania i lunche']},
+  {match:['Desery i słodkie przekąski'],suggest:['Napoje gorące','Kawy klasyczne']},
+  {match:['Napoje zimne'],suggest:['Śniadania i lunche','Desery i słodkie przekąski']},
+];
+
+const ZONES=[
+  {name:'Centrum Mielca',keys:['mickiewicza','sękowskiego','kościuszki','kilińskiego','moniuszki','wolności','piłsudskiego'],cost:5,free:40,time:20},
+  {name:'Mielec — osiedla',keys:['drzewieckiego','smoczka','partyzantów','kopernika'],cost:7,free:50,time:30},
+  {name:'Mielec — obrzeża',keys:['rzeszowska','kolbuszowska','wojska'],cost:9,free:60,time:40},
+];
+
+const REVIEWS=[
+  {name:'Paweł S.',ini:'P',r:5,date:'tydzień temu',text:'Śniadanie rewelacyjne — bajgiel z boczkiem i jajkiem sadzonym to najlepsza sprawa na poniedziałkowy poranek. Obsługa super, atmosfera przytulna. Wracam regularnie!'},
+  {name:'Milena B.',ini:'M',r:5,date:'2 tygodnie temu',text:'Kawa wyśmienita, a Matcha Latte to absolutny hit. Zawsze świeżo parzona, mleko idealne. Polecam też deser chia — zdrowo i pysznie!'},
+  {name:'Rafał G.',ini:'R',r:5,date:'3 tygodnie temu',text:'Zamawiałem z dostawą — sprawnie, jedzenie gorące, wszystko się zgadzało. Roladki schabowe jak u mamy. Na pewno zamówię znowu.'},
+  {name:'Katarzyna N.',ini:'K',r:4,date:'miesiąc temu',text:'Bardzo miłe bistro w centrum Mielca. Śniadania naprawdę smaczne. Jedyne czego mi brakuje to więcej opcji wegańskich, ale kawy są fantastyczne!'},
+];
+
+// ════ STATE ════
+function LS(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
+let menuOv=[];
+let cart=[],delType='dostawa',payType='blik';
+let curItem=null,curQty=1,curSizes=[],selSize=0,curAddons=[];
+let appliedCoupon=null;
+
+// ════ getMenu — GŁÓWNA FUNKCJA ════
+// Priorytet: dane z panelu admina (localStorage 'menu') > MENU_BASE (domyślne)
+// Jeśli restaurator dodał/edytował dania w panelu — używamy JEGO danych w całości.
+// MENU_BASE to tylko dane startowe pokazywane przed pierwszym użyciem panelu.
+function getMenu(){
+  const adminData = LS('menu');
+  if(adminData && adminData.length > 0){
+    // Panel ma dane — użyj ich, uzupełnij tylko addonGroups/sizes z MENU_BASE jeśli brakuje
+    return adminData.map(item=>{
+      const base = MENU_BASE.find(b=>b.id===item.id);
+      return {
+        ...item,
+        addonGroups: item.addonGroups || base?.addonGroups,
+        sizes: item.sizes || base?.sizes,
+      };
+    });
+  }
+  // Brak danych w panelu — użyj domyślnych
+  return MENU_BASE;
+}
+
+// ════ HERO CLOCK ════
+function updateClock(){
+  const now=new Date();const h=now.getHours(),m=now.getMinutes(),dow=now.getDay();
+  const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('hero-clock').textContent=`${pad(h)}:${pad(m)}`;
+  const open=dow>=1&&dow<=5&&h>=7&&h<16;
+  const chip=document.getElementById('open-chip');
+  chip.textContent=open?'● Otwarte':'● Zamknięte';chip.style.background=open?'rgba(45,74,47,.1)':'rgba(184,76,43,.1)';chip.style.color=open?'var(--green2)':'var(--rust)';chip.style.borderColor=open?'rgba(45,74,47,.2)':'rgba(184,76,43,.2)';
+  const tag=document.getElementById('hero-open-tag');
+  if(dow===0||dow===6)tag.textContent='Weekend — nieczynne';
+  else if(h>=16)tag.textContent='Dziś zamknięte — jutro od 7:00';
+  else tag.textContent='Dziś gotujemy od 7:00 do 16:00';
+  const cardStatus=document.getElementById('card-open-status');
+  if(cardStatus){cardStatus.textContent=open?'Teraz otwarte':'Teraz zamknięte';cardStatus.style.color=open?'var(--green2)':'var(--rust)';}
+  // Highlight today's hours row
+  const rows=[document.getElementById('hr-0'),document.getElementById('hr-1'),document.getElementById('hr-2')];
+  rows.forEach(r=>{if(r)r.classList.remove('today');});
+  if(dow>=1&&dow<=5&&rows[0])rows[0].classList.add('today');
+}
+setInterval(updateClock,1000);updateClock();
+
+// ════ INIT ════
+function init(){
+  renderAdminPromos();
+  renderAdminTicker();
+  renderDaily();
+  renderKitchen();
+  buildCatTabs();
+  buildMenu();
+  renderReviews();
+  renderLoyaltyStamps();
+}
+
+// ════ TICKER — ładuje promocje z panelu, fallback na domyślne ════
+function renderAdminTicker(){
+  const ap=(LS('promos')||[]).filter(p=>p.active);
+  if(!ap.length) return; // zostaw domyślne
+  const items = ap.map(p=>`<span class="ticker-item"><span class="ticker-dot">★</span> ${p.name}${p.val?' — '+p.val+(p.type?.includes('%')?'% rabatu':' zł'):''}</span>`);
+  // Duplikuj żeby pętla się nie urywała
+  const doubled = [...items,...items].join('');
+  document.getElementById('ticker-inner').innerHTML = doubled;
+}
+
+function renderAdminPromos(){
+  const ap=(LS('promos')||[]).filter(p=>p.active);
+  if(!ap.length)return;
+  document.getElementById('promos-inner').innerHTML=ap.map(p=>`<div class="promo-card"><div class="promo-badge">${p.type||'Promocja'}</div><h3>${p.name}</h3><p>${p.cond||''}</p><span class="promo-price">${p.val}${p.type?.includes('%')?'%':' zł'}</span></div>`).join('');
+}
+
+// ════ DAILY DISH ════
+function renderDaily(){
+  const d=LS('daily-dish');
+  if(d&&d.name){
+    document.getElementById('daily-name').textContent='Codziennie coś pysznego z naszej kuchni';
+    document.getElementById('daily-desc').textContent='Dziś polecamy: '+d.name+'. Dostępne do wyczerpania.';
+    document.getElementById('daily-plate-name').textContent=d.name;
+    document.getElementById('daily-plate-desc').textContent=d.desc||'';
+    document.getElementById('daily-price').textContent=d.price+' zł';
+    if(d.photo)document.getElementById('daily-emoji').innerHTML=`<img src="${d.photo}" style="width:100%;height:120px;object-fit:cover;border-radius:var(--r2);margin-bottom:14px;">`;
+    document.getElementById('daily-btn').onclick=()=>{cart.push({uid:Date.now(),itemId:0,name:d.name+' (Zestaw dnia)',cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});updateCartBadge();toast('Zestaw dnia dodany do koszyka ✓');};
+  }
+}
+function addDefaultDaily(){
+  cart.push({uid:Date.now(),itemId:0,name:'Żurek + Polędwiczki (Zestaw dnia)',cat:'Dania obiadowe',mods:[],unitPrice:22,qty:1});
+  updateCartBadge();toast('Zestaw dnia dodany do koszyka ✓');
+}
+
+// ════ KUCHNIA DNIA ════
+function renderKitchen(){
+  const k = LS('kitchen-day');
+  const el = document.getElementById('kitchen-section');
+  if(!el) return;
+  // Ukryj sekcję jeśli brak danych
+  if(!k || (!k.soup?.name && !k.main?.name)){ el.style.display='none'; return; }
+  el.style.display='block';
+  const soupCard = k.soup?.name ? `
+    <div class="kitchen-card reveal">
+      ${k.soup.photo
+        ? `<img class="kitchen-card-img" src="${k.soup.photo}" alt="${k.soup.name}">`
+        : `<div class="kitchen-card-img-ph">🍲</div>`}
+      <div class="kitchen-card-body">
+        <div class="kitchen-card-type">🍲 Zupa dnia</div>
+        <div class="kitchen-card-name">${k.soup.name}</div>
+        <div class="kitchen-card-desc">${k.soup.desc||''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span class="kitchen-card-price">${k.soup.price} zł</span>
+          <button class="kitchen-card-add" onclick="addKitchenItem('soup')">🛒 Dodaj</button>
+        </div>
+      </div>
+    </div>` : '';
+  const mainCard = k.main?.name ? `
+    <div class="kitchen-card reveal">
+      ${k.main.photo
+        ? `<img class="kitchen-card-img" src="${k.main.photo}" alt="${k.main.name}">`
+        : `<div class="kitchen-card-img-ph">🍽</div>`}
+      <div class="kitchen-card-body">
+        <div class="kitchen-card-type">🍽 Drugie danie</div>
+        <div class="kitchen-card-name">${k.main.name}</div>
+        <div class="kitchen-card-desc">${k.main.desc||''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span class="kitchen-card-price">${k.main.price} zł</span>
+          <button class="kitchen-card-add" onclick="addKitchenItem('main')">🛒 Dodaj</button>
+        </div>
+      </div>
+    </div>` : '';
+  const setPrice = k.setPrice;
+  const soupP = parseFloat(k.soup?.price)||0;
+  const mainP = parseFloat(k.main?.price)||0;
+  const normalPrice = soupP + mainP;
+  const setBar = (k.soup?.name && k.main?.name && setPrice) ? `
+    <div class="kitchen-set-bar">
+      <div class="kitchen-set-info">
+        <h3>🍱 Zestaw: zupa + drugie danie</h3>
+        <p>${k.soup?.name||''} + ${k.main?.name||''}</p>
+      </div>
+      <div class="kitchen-set-price">
+        ${normalPrice>parseFloat(setPrice)?`<span class="price-old">${normalPrice.toFixed(2)} zł</span>`:''}
+        <span class="price-big">${setPrice} zł</span>
+      </div>
+      <button class="kitchen-set-btn" onclick="addKitchenSet()">🛒 Zamów zestaw</button>
+    </div>` : '';
+  el.innerHTML = `<div class="kitchen-inner">
+    <div class="kitchen-header">
+      <div class="section-tag">Codziennie świeże</div>
+      <h2>Dzisiejsza kuchnia</h2>
+    </div>
+    <div class="kitchen-grid">${soupCard}${mainCard}</div>
+    ${setBar}
+  </div>`;
+}
+function addKitchenItem(type){
+  const k = LS('kitchen-day');
+  if(!k) return;
+  const d = k[type];
+  if(!d?.name) return;
+  cart.push({uid:Date.now(),itemId:0,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
+  updateCartBadge();
+  toast(d.name+' dodano do koszyka ✓');
+}
+function addKitchenSet(){
+  const k = LS('kitchen-day');
+  if(!k||!k.setPrice) return;
+  const name = `Zestaw: ${k.soup?.name||'zupa'} + ${k.main?.name||'drugie danie'}`;
+  cart.push({uid:Date.now(),itemId:0,name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(k.setPrice)||0,qty:1});
+  updateCartBadge();
+  toast('Zestaw dnia dodany ✓');
+}
+
+
+// ════ MENU ════
+function getCats(){return[...new Set(getMenu().map(d=>d.cat))];}
+function slug(s){return s.replace(/\s+/g,'-').replace(/[^\w-]/g,'').toLowerCase();}
+
+function buildCatTabs(){
+  const cats=getCats();
+  document.getElementById('cat-tabs').innerHTML=cats.map((c,i)=>`<button class="ctab ${i===0?'on':''}" id="ctab-${slug(c)}" onclick="scrollToCat('${c}',this)">${c}</button>`).join('');
+}
+function scrollToCat(cat,el){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  const sec=document.getElementById('sec-'+slug(cat));
+  if(sec)sec.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function buildMenu(){
+  const cats=getCats();let html='';
+  cats.forEach(cat=>{
+    const items=getMenu().filter(d=>d.cat===cat);if(!items.length)return;
+    html+=`<div class="cat-sec" id="sec-${slug(cat)}"><div class="cat-head">${cat}</div><div class="menu-grid">${items.map(renderItem).join('')}</div></div>`;
+  });
+  document.getElementById('menu-content').innerHTML=html;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const id=e.target.id.replace('sec-','');
+        document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+        const tab=document.getElementById('ctab-'+id);
+        if(tab){
+          tab.classList.add('on');
+          // Scroll tab into view within its container only — NOT the whole page
+          const wrap=document.getElementById('cat-tabs');
+          if(wrap){wrap.scrollLeft=tab.offsetLeft-wrap.offsetWidth/2+tab.offsetWidth/2;}
+        }
+      }
+    });
+  },{rootMargin:'-130px 0px -40% 0px',threshold:0.01});
+  document.querySelectorAll('.cat-sec').forEach(s=>io.observe(s));
+}
+
+function renderItem(item){
+  const hasAddons=getItemAddons(item).length>0;
+  const hasSizes=item.sizes&&item.sizes.length>1;
+  const priceFrom=item.price+(hasSizes?Math.min(...item.sizes.map(s=>s.p)):0);
+  let badge=item.badge==='new'?'<div class="ibadges"><span class="ib ib-new">Nowość</span></div>':!item.avail?'<div class="ibadges"><span class="ib ib-out">Chwilowo niedostępny</span></div>':'';
+  return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
+    ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
+    <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
+    <span class="iprice"><span class="ipfrom">${hasSizes?'od ':''}</span>${priceFrom} zł</span>
+    <button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom} zł${hasAddons||hasSizes?' ⓘ':''}</button>
+  </div>`;
+}
+
+// ════ ADDONS ════
+function getItemAddons(item){
+  const groups=[];
+  // 1. Explicit addonGroups on item
+  if(item.addonGroups)item.addonGroups.forEach(n=>{const g=ADDONS_DB.find(a=>a.name===n);if(g&&!groups.find(x=>x.name===n))groups.push(g);});
+  // 2. Built-in ADDONS_DB — category + optional keyword filter
+  ADDONS_DB.forEach(g=>{
+    if(groups.find(x=>x.name===g.name))return;
+    if(!g.cats.includes(item.cat))return;
+    if(g.itemKeywords){const n=item.name.toLowerCase();if(!g.itemKeywords.some(k=>n.includes(k)))return;}
+    groups.push(g);
+  });
+  // 3. Admin addons from localStorage — exact category match
+  (LS('addons')||[]).forEach(a=>{
+    if(groups.find(g=>g.name===a.name))return;
+    const cats=a.cats.split(',').map(c=>c.trim()).filter(Boolean);
+    if(!cats.includes(item.cat))return;
+    const opts=(a.opts||'').split('\n').filter(Boolean).map(l=>{const p=l.split('|');return{n:p[0].trim(),p:parseFloat(p[1])||0,def:p[2]==='def'};});
+    groups.push({name:a.name,required:!!a.required,type:a.type==='Jednokrotny'?'radio':'checkbox',cats:[item.cat],opts});
+  });
+  return groups;
+}
+
+// ════ PRODUCT SHEET ════
+function openProduct(id){
+  const item=getMenu().find(x=>x.id===id);if(!item||!item.avail)return;
+  curItem=item;curQty=1;curSizes=item.sizes||[];selSize=0;
+  document.getElementById('sp-title').textContent=item.name;
+  const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
+  const sz=document.getElementById('sp-sizes');
+  if(curSizes.length>1){sz.innerHTML=`<div style="padding:12px 22px;border-bottom:1px solid rgba(59,37,18,.08);"><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Rozmiar</div><div style="display:flex;gap:8px;">${curSizes.map((s,i)=>`<button onclick="selSz(${i})" id="sz-${i}" style="flex:1;padding:10px;border-radius:var(--r);border:2px solid ${i===0?'var(--brown)':'rgba(59,37,18,.15)'};background:${i===0?'rgba(59,37,18,.05)':'transparent'};color:${i===0?'var(--brown)':'var(--muted)'};font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);">${s.n||'Standard'}<br><span style="font-size:11px;">${item.price+s.p} zł</span></button>`).join('')}</div></div>`;}else sz.innerHTML='';
+  const groups=getItemAddons(item);
+  curAddons=groups.map(g=>{const def=g.opts.find(o=>o.def)||g.opts[0];return{group:g,selected:g.type==='radio'?(def?.n||''):[],isCheckbox:g.type==='checkbox'};});
+  renderAddonUI();updateSpTotal();
+  document.getElementById('ov-product').classList.add('open');
+}
+function renderAddonUI(){
+  document.getElementById('sp-addons').innerHTML=curAddons.map((ag,gi)=>`
+    <div class="ag"><div class="ag-ttl">${ag.group.name}${ag.group.required?' <span class="ag-req">Wymagane</span>':''}</div>
+    <div class="ag-hint">${ag.isCheckbox?'Możesz wybrać kilka':'Wybierz 1'}</div>
+    ${ag.group.opts.map((opt,oi)=>`<div class="ao" onclick="selAddon(${gi},${oi})"><div class="ao-l"><div class="${ag.isCheckbox?'chk':'rdo'} ${ag.isCheckbox?ag.selected.includes(opt.n)?'on':'':ag.selected===opt.n?'on':''}"></div><span class="ao-n">${opt.n}</span></div><span class="ao-p">${opt.p>0?'+'+opt.p.toFixed(2)+' zł':'bezpłatnie'}</span></div>`).join('')}</div>`).join('');
+}
+function selAddon(gi,oi){const ag=curAddons[gi];const opt=ag.group.opts[oi];if(ag.isCheckbox){const i=ag.selected.indexOf(opt.n);i>-1?ag.selected.splice(i,1):ag.selected.push(opt.n);}else ag.selected=opt.n;renderAddonUI();updateSpTotal();}
+function selSz(i){selSize=i;curSizes.forEach((_,j)=>{const b=document.getElementById('sz-'+j);if(!b)return;b.style.borderColor=j===i?'var(--brown)':'rgba(59,37,18,.15)';b.style.background=j===i?'rgba(59,37,18,.05)':'transparent';b.style.color=j===i?'var(--brown)':'var(--muted)';});updateSpTotal();}
+function calcSpPrice(){if(!curItem)return 0;let base=curItem.price+(curSizes[selSize]?.p||0);curAddons.forEach(ag=>{if(ag.isCheckbox)ag.selected.forEach(s=>{const o=ag.group.opts.find(x=>x.n===s);if(o)base+=o.p;});else{const o=ag.group.opts.find(x=>x.n===ag.selected);if(o)base+=o.p;}});return base*curQty;}
+function updateSpTotal(){document.getElementById('sp-qty').textContent=curQty;document.getElementById('sp-tot').textContent=calcSpPrice().toFixed(2)+' zł';}
+function qCh(d){curQty=Math.max(1,curQty+d);updateSpTotal();}
+function doAdd(){
+  if(!curItem)return;
+  for(const ag of curAddons){if(ag.group.required&&!ag.isCheckbox&&!ag.selected){toast('Wybierz '+ag.group.name);return;}}
+  const mods=[];
+  if(curSizes.length>1&&curSizes[selSize]?.n)mods.push({n:curSizes[selSize].n,p:curSizes[selSize].p});
+  curAddons.forEach(ag=>{if(ag.isCheckbox)ag.selected.forEach(s=>{const o=ag.group.opts.find(x=>x.n===s);if(o)mods.push({n:s,p:o.p});});else if(ag.selected){const o=ag.group.opts.find(x=>x.n===ag.selected);mods.push({n:ag.selected,p:o?.p||0});}});
+  const unitPrice=curItem.price+(curSizes[selSize]?.p||0)+mods.reduce((s,m)=>s+(m.p||0),0);
+  cart.push({uid:Date.now(),itemId:curItem.id,name:curItem.name,cat:curItem.cat,mods,unitPrice:parseFloat(unitPrice.toFixed(2)),qty:curQty});
+  updateCartBadge();closeOv('ov-product');showCross(curItem);
+}
+
+// ════ CROSS SELL ════
+function showCross(item){
+  const rule=CROSS.find(r=>r.match.includes(item.cat));
+  const sugCats=rule?rule.suggest:['Desery i słodkie przekąski'];
+  const inCart=cart.map(c=>c.itemId);
+  let sug=getMenu().filter(d=>sugCats.includes(d.cat)&&d.avail&&!inCart.includes(d.id));
+  if(!sug.length)sug=getMenu().filter(d=>d.cat!==item.cat&&d.avail&&!inCart.includes(d.id));
+  const seen=new Set();sug=sug.filter(d=>{if(seen.has(d.id))return false;seen.add(d.id);return true;}).slice(0,4);
+  if(!sug.length){toast('Dodano do koszyka ✓');return;}
+  document.getElementById('cross-grid').innerHTML=sug.map(s=>`<div class="ccrd" onclick="addCrossItem(${s.id})">${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="cimg">🍽</div>`}<div class="cb"><div class="cn">${s.name.length>44?s.name.slice(0,44)+'…':s.name}</div><div class="cp">${s.price} zł</div><button class="ca" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join('');
+  document.getElementById('ov-cross').classList.add('open');
+}
+function addCrossItem(id){const item=getMenu().find(x=>x.id===id);if(!item)return;const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');if(req.length){closeOv('ov-cross');openProduct(id);return;}cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});updateCartBadge();toast(item.name.slice(0,28)+'… dodane ✓');}
+function closeCross(){closeOv('ov-cross');toast('Dodano do koszyka ✓');}
+
+// ════ CART ════
+function updateCartBadge(){
+  const cnt = cart.reduce((s,c)=>s+c.qty,0);
+  document.getElementById('cart-cnt').textContent = cnt;
+  const bar = document.getElementById('cart-count-bar');
+  if(bar) bar.textContent = cnt>0 ? `(${cnt})` : '';
+}
+function openCart(){renderCart();document.getElementById('ov-cart').classList.add('open');}
+function renderCart(){
+  const wrap=document.getElementById('cart-items');
+  if(!cart.length){wrap.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:48px;margin-bottom:10px;">🛒</div><div style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--brown);">Koszyk jest pusty</div><div style="font-size:13px;margin-top:6px;">Wybierz coś pysznego z menu ↑</div></div>`;document.getElementById('cs-sum').innerHTML='';document.getElementById('often-together').innerHTML='';document.getElementById('checkout-total').textContent='0,00 zł';return;}
+  wrap.innerHTML=cart.map(ci=>`<div class="ci"><div class="ci-info"><div class="ci-name">${ci.name}</div>${ci.mods.length?`<div class="ci-mods">${ci.mods.map(m=>m.n+(m.p>0?' +'+m.p.toFixed(2)+' zł':'')).join(', ')}</div>`:''}<div class="ci-qty"><button class="ciqb" onclick="ciqCh(${ci.uid},-1)">−</button><span class="cin">${ci.qty}</span><button class="ciqb" onclick="ciqCh(${ci.uid},1)">+</button><button class="cidel" onclick="ciRm(${ci.uid})">🗑</button></div></div><div class="ci-price">${(ci.unitPrice*ci.qty).toFixed(2)} zł</div></div>`).join('');
+  const inCart=cart.map(c=>c.itemId);const cCats=[...new Set(cart.map(c=>c.cat))];
+  const sug=getMenu().filter(d=>d.avail&&!inCart.includes(d.id)&&!cCats.includes(d.cat)).slice(0,3);
+  document.getElementById('often-together').innerHTML=sug.length?`<div class="ot-title">Często kupowane razem</div>`+sug.map(s=>`<div class="ot-row"><span class="ot-name">${s.name.length>38?s.name.slice(0,38)+'…':s.name}</span><div class="ot-r"><span class="ot-price">${s.price} zł</span><button class="ot-add" onclick="addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join(''):'';
+  renderCartSum();
+}
+function renderCartSum(){
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  const dc=delType==='dostawa'?calcDel():0;
+  const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
+  const total=Math.max(0,sub+dc-disc);
+  document.getElementById('cs-sum').innerHTML=`<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div>${delType==='dostawa'?`<div class="csr"><span>Dostawa</span><span>${dc===0?'<span style="color:var(--green2)">Bezpłatna</span>':dc.toFixed(2)+' zł'}</span></div>`:''  }${disc>0?`<div class="csr" style="color:var(--green2)"><span>Rabat (${appliedCoupon.code})</span><span>-${disc.toFixed(2)} zł</span></div>`:''}<div class="csr cs-total"><span>Łącznie</span><span>${total.toFixed(2)} zł</span></div>`;
+  document.getElementById('checkout-total').textContent=total.toFixed(2)+' zł';
+}
+function calcDel(){const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);const z=(LS('zones')||ZONES)[0];return sub>=(z.free||40)?0:(z.cost||5);}
+function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c.qty+d);updateCartBadge();renderCart();}}
+function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart();}
+
+// ════ DELIVERY / PAYMENT ════
+function setDel(type,el){delType=type;document.querySelectorAll('.del-chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+function selDO(type){delType=type;['dostawa','odbior','miejsce'].forEach(t=>document.getElementById('do-'+t)?.classList.toggle('on',t===type));document.getElementById('addr-block').style.display=type==='dostawa'?'block':'none';setDel(type,document.getElementById('dc-'+type));renderCartSum();}
+function selPay(type){payType=type;document.querySelectorAll('.payopt').forEach(p=>{p.classList.remove('on');p.querySelector('.dor2')?.classList.remove('on');});const el=document.getElementById('pay-'+type);if(el){el.classList.add('on');el.querySelector('.dor2')?.classList.add('on');}}
+function checkZone(){
+  const street=(document.getElementById('addr-street')?.value||'').toLowerCase();
+  const info=document.getElementById('zone-info');
+  if(!street){info.textContent='📍 Podaj adres, aby poznać cenę dostawy.';return;}
+  const zone=ZONES.find(z=>z.keys.some(k=>street.includes(k)));
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  if(zone){const free=sub>=zone.free;info.innerHTML=free?`<span style="color:var(--green2)">✅ Darmowa dostawa (zamówienie ≥${zone.free} zł)</span>`:`🚗 ${zone.name} · ${zone.cost} zł · darmowa od ${zone.free} zł · ~${zone.time} min`;}
+  else info.innerHTML=`🚗 Dostawa: ${calcDel()} zł · Sprawdź dostępność`;
+  renderCartSum();
+}
+
+// ════ COUPON ════
+function applyCoupon(){const code=(document.getElementById('coup-in').value||'').trim().toUpperCase();const found=(LS('coupons')||[]).find(c=>c.code.toUpperCase()===code);const res=document.getElementById('coup-res');if(!found){res.style.color='var(--rust)';res.textContent='❌ Nieprawidłowy kupon.';return;}const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);if(sub<(found.min||0)){res.style.color='var(--rust)';res.textContent=`❌ Minimalna wartość: ${found.min} zł`;return;}appliedCoupon=found;res.style.color='var(--green2)';res.textContent=`✅ Zastosowano: -${found.disc}%`;renderCartSum();}
+
+// ════ ORDER ════
+function placeOrder(){
+  if(!cart.length){toast('Koszyk jest pusty');return;}
+  if(!document.getElementById('c-terms').checked){toast('Zaakceptuj regulamin');return;}
+  const name=(document.getElementById('c-name')?.value||'').trim();
+  const phone=(document.getElementById('c-phone')?.value||'').trim();
+  if(!name){toast('Podaj imię i nazwisko');return;}
+  if(!phone){toast('Podaj numer telefonu');return;}
+  if(delType==='dostawa'&&!document.getElementById('addr-street').value.trim()){toast('Podaj adres dostawy');return;}
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  const dc=delType==='dostawa'?calcDel():0;
+  const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
+  const total=parseFloat(Math.max(0,sub+dc-disc).toFixed(2));
+  const orders=LS('orders')||[];
+  const oid='#'+(10000+Math.floor(Math.random()*89999));
+  const typeMap = {'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
+  orders.unshift({
+    id: oid,
+    type: typeMap[delType]||'delivery',
+    items: cart.map(c=>`${c.name} ×${c.qty}`).join(', '),
+    itemsArr: cart.map(c=>({name:c.name,qty:c.qty,unitPrice:c.unitPrice,mods:c.mods||[]})),
+    total,
+    time: new Date().toTimeString().slice(0,5),
+    date: new Date().toLocaleDateString('pl'),
+    status: 'pending',
+    customer: name,
+    phone,
+    addr: delType==='dostawa'?(document.getElementById('addr-street')?.value||''):'',
+    payment: payType,
+    comment: (document.getElementById('order-notes')?.value||'').trim(),
+    deliveryCost: dc,
+  });
+  localStorage.setItem('orders',JSON.stringify(orders));
+  const custs=LS('customers')||[];
+  const raw=phone.replace(/\s/g,'');
+  if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){custs.push({name,phone,email:document.getElementById('c-email')?.value||'',sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});localStorage.setItem('customers',JSON.stringify(custs));}
+  cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
+  document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
+  document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
+}
+
+// ════ LOYALTY ════
+function renderLoyaltyStamps(){
+  document.getElementById('loy-stamps').innerHTML=Array.from({length:9},(_,i)=>`<div class="stamp ${i===0?'done':i===2||i===4||i===8?'reward':''}">${i===0?'✓':i===2||i===4||i===8?'🎁':i+1}</div>`).join('');
+}
+function fmtLoyPhone(el){let v=el.value.replace(/\D/g,'').slice(0,9);if(v.length>6)v=v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);else if(v.length>3)v=v.slice(0,3)+' '+v.slice(3);el.value=v;}
+function checkLoyalty(){
+  const phone=document.getElementById('loy-phone').value.trim().replace(/\s/g,'');
+  if(phone.length<9){toast('Wpisz pełny numer telefonu');return;}
+  const c=(LS('customers')||[]).find(x=>x.phone.replace(/\s/g,'')===phone);
+  const st=document.getElementById('loy-status-txt');
+  if(c){st.style.color='var(--green2)';st.textContent=`Cześć ${c.name.split(' ')[0]}! Masz ${c.stamps||0}/9 pieczątek. ${(c.stamps||0)>=9?'Twoja nagroda czeka!':'Jeszcze '+(9-(c.stamps||0))+' do nagrody.'}`;}
+  else{st.style.color='var(--gold)';st.textContent='Nie znaleziono konta. Zarejestruj się przez kasę lub na hirschowkabistro.pl/karta';}
+}
+
+// ════ REVIEWS ════
+function renderReviews(){
+  document.getElementById('reviews-grid').innerHTML=REVIEWS.map(r=>`<div class="review-card"><div class="rev-head"><div class="rev-av">${r.ini}</div><div><div class="rev-name">${r.name}</div><div class="rev-meta"><span class="rev-stars">${'★'.repeat(r.r)}</span><span>${r.date}</span></div></div></div><div class="rev-text">${r.text}</div></div>`).join('');
+}
+
+// ════ NEWSLETTER ════
+function switchNL(type){document.querySelectorAll('.nl-tab').forEach(t=>t.classList.remove('on'));document.getElementById('nl-'+type).classList.add('on');document.getElementById('nl-phone').style.display=type==='sms'?'block':'none';document.getElementById('nl-emailinp').style.display=type==='email'?'block':'none';}
+function subscribeNL(){
+  if(!document.getElementById('nl-consent').checked){toast('Zaznacz zgodę marketingową');return;}
+  const val=document.getElementById('nl-phone').value.trim()||document.getElementById('nl-emailinp').value.trim();
+  if(!val){toast('Podaj numer telefonu lub e-mail');return;}
+  const subs=LS('newsletter_subs')||[];subs.push({val,date:new Date().toISOString()});localStorage.setItem('newsletter_subs',JSON.stringify(subs));
+  const r=document.getElementById('nl-result');r.style.color='var(--gold2)';r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
+  document.getElementById('nl-phone').value='';document.getElementById('nl-emailinp').value='';
+}
+
+// ════ NAV ════
+window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',window.scrollY>40);});
+function toggleNav(){document.getElementById('nav-links').classList.toggle('open');}
+document.querySelectorAll('#nav-links a').forEach(a=>a.addEventListener('click',()=>document.getElementById('nav-links').classList.remove('open')));
+
+// ════ OVERLAYS ════
+function closeOv(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ════ TOAST ════
+let tt;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600);}
+
+// ════ REVEAL ════
+const revObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+// ════ BOOT ════
+init();
+
+// Odśwież menu gdy użytkownik wróci z panelu admina (zakładka zyskuje focus)
+// Porównujemy snapshot — przebudowujemy tylko gdy dane się rzeczywiście zmieniły
+let _lastMenuSnapshot = JSON.stringify(LS('menu'));
+window.addEventListener('focus',()=>{
+  const currentSnapshot = JSON.stringify(LS('menu'));
+  if(currentSnapshot !== _lastMenuSnapshot){
+    _lastMenuSnapshot = currentSnapshot;
+    buildCatTabs();
+    buildMenu();
+  }
+  renderDaily();
+  renderKitchen();
+  renderAdminPromos();
+  renderAdminTicker();
+});
+</script>
+</body>
+</html>
