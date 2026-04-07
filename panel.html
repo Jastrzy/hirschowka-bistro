@@ -1408,7 +1408,7 @@ let menuData = S('menu') || [
   {id:9,cat:'Wypieki',name:'Szarlotka z lodami',desc:'Ciepła, wanilia, cynamon',price:11,avail:true,photo:''},
 ];
 let customers = S('customers') || [];
-let orders = S('orders') || [];
+var orders = S('orders') || [];
 let archive = S('archive') || [];
 let zones   = S('zones')   || [{name:'Centrum Mielca',cost:5,free:40,time:30,color:'#C8922A',desc:'ul. Mickiewicza i okolice'},{name:'Mielec Obrzeża',cost:8,free:60,time:45,color:'#B84C2B',desc:'Pozostałe dzielnice'}];
 let promos  = S('promos')  || [{name:'Śniadanie z kawą -20%',type:'Procentowy (%)',val:20,from:'2026-01-01',to:'2026-12-31',active:true}];
@@ -3611,8 +3611,18 @@ renderDashboard();
 renderOrders();
 renderQR();
 updateAlarm();
-// Poll dla nowych zamówień z localStorage (gdy strona klienta składa zamówienie)
+// Poll dla nowych zamówień — sprawdza localStorage i dane z Firebase
 setInterval(()=>{
+  // Sprawdź czy Firebase dostarczył nowe dane (_fbOrders)
+  if(window._fbOrders && JSON.stringify(window._fbOrders) !== JSON.stringify(orders)){
+    orders = window._fbOrders;
+    window._fbOrders = null;
+    renderOrders();
+    updateAlarm();
+    renderDashboard();
+    return;
+  }
+  // Fallback: sprawdź localStorage bezpośrednio
   const fresh = S('orders')||[];
   if(JSON.stringify(fresh)!==JSON.stringify(orders)){
     orders = fresh;
@@ -3620,7 +3630,7 @@ setInterval(()=>{
     updateAlarm();
     renderDashboard();
   }
-}, 4000);
+}, 3000);
 </script>
 </body>
 </html>

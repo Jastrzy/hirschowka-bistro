@@ -1,19 +1,5 @@
 // ════════════════════════════════════════════════════════
-// HIRSCHÓWKA BISTRO — Firebase Realtime Sync
-// ════════════════════════════════════════════════════════
-//
-// INSTRUKCJA KONFIGURACJI:
-// 1. Wejdź na https://console.firebase.google.com
-// 2. Kliknij "Add project" → wpisz "hirschowka-bistro"
-// 3. Wyłącz Google Analytics (niepotrzebne) → Create project
-// 4. Kliknij "</>" (Web app) → wpisz nazwę "hirschowka-web" → Register
-// 5. Skopiuj obiekt firebaseConfig który pojawi się na ekranie
-// 6. Wklej go poniżej zamiast placeholder values
-// 7. W Firebase Console → Build → Realtime Database → Create database
-//    → Start in TEST MODE → Done
-// 8. W Firebase Console → Build → Authentication → Get started
-//    → Anonymous → Enable → Save
-//
+// HIRSCHÓWKA BISTRO — Firebase Realtime Sync v2
 // ════════════════════════════════════════════════════════
 
 const FIREBASE_CONFIG = {
@@ -26,216 +12,175 @@ const FIREBASE_CONFIG = {
   appId:             "1:885932311557:web:235c065b0eba7e0cafc86c"
 };
 
-// ════════════════════════════════════════════════════════
-// CO JEST SYNCHRONIZOWANE:
-//
-//  orders     → zamówienia (klient → panel, real-time)
-//  menu       → menu bistro (panel → klient + app)
-//  daily-dish → danie dnia (panel → klient + app)
-//  kitchen-day→ kuchnia dnia (panel → klient)
-//  promos     → promocje (panel → klient + app)
-//  customers  → baza klientów (panel → app)
-//  coupons    → kupony (panel → klient)
-//  addons     → grupy dodatków (panel → klient)
-//  zones      → strefy dostaw (panel → klient)
-//
-// PRIORYTETY:
-//  - Klient składa zamówienie → od razu widoczne w panelu
-//  - Panel zmienia menu → od razu widoczne na stronie klienta
-//  - Działa OFFLINE — dane cached lokalnie, sync gdy internet wróci
-//
-// ════════════════════════════════════════════════════════
-
 (function() {
   'use strict';
 
-  // Config jest już uzupełniony prawdziwymi danymi
-  const isConfigured = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('WKLEJ');
-
-  if (!isConfigured) {
-    console.warn('[Firebase] Konfiguracja nie jest uzupełniona. Działa tryb localStorage.');
-    return;
+  function loadScripts(urls) {
+    return urls.reduce((p, url) => p.then(() => new Promise((res, rej) => {
+      if (document.querySelector('script[src="' + url + '"]')) { res(); return; }
+      const s = document.createElement('script');
+      s.src = url; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    })), Promise.resolve());
   }
 
-  // Załaduj Firebase SDK dynamicznie
-  const loadFirebase = () => {
-    return new Promise((resolve) => {
-      if (window.firebase) { resolve(window.firebase); return; }
+  const SCRIPTS = [
+    'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js',
+    'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
+  ];
 
-      const scripts = [
-        'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js',
-        'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-      ];
-
-      let loaded = 0;
-      scripts.forEach(src => {
-        const s = document.createElement('script');
-        s.src = src;
-        s.onload = () => { loaded++; if (loaded === scripts.length) resolve(window.firebase); };
-        document.head.appendChild(s);
-      });
-    });
-  };
-
-  loadFirebase().then(firebase => {
-    // Inicjalizuj Firebase
-    if (!firebase.apps.length) {
-      firebase.initializeApp(FIREBASE_CONFIG);
-    }
+  loadScripts(SCRIPTS).then(function() {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
 
     const db   = firebase.database();
     const auth = firebase.auth();
 
-    // Zaloguj anonimowo (wymagane dla dostępu do bazy)
-    auth.signInAnonymously().catch(e => console.warn('[Firebase] Auth error:', e));
-
-    // ── Wykryj typ strony ──
-    const path     = window.location.pathname;
-    const isPanel  = path.includes('panel');
-    const isApp    = path.includes('app');
-    const isClient = !isPanel && !isApp;
-
-    console.log('[Firebase] Połączono. Tryb:', isPanel ? 'PANEL' : isApp ? 'APP' : 'KLIENT');
-
-    // ══════════════════════════════════════════
-    // HELPERS
-    // ══════════════════════════════════════════
-
-    // Odczyt z Firebase → lokalny localStorage
-    function syncFromFirebase(key, callback) {
-      db.ref(key).on('value', snap => {
-        const val = snap.val();
-        if (val !== null) {
-          localStorage.setItem(key, JSON.stringify(val));
-          if (callback) callback(val);
-        }
-      });
-    }
-
-    // Zapis do Firebase + localStorage jednocześnie
-    function syncToFirebase(key, val) {
-      localStorage.setItem(key, JSON.stringify(val));
-      db.ref(key).set(val).catch(e => console.warn('[Firebase] Write error:', e));
-    }
-
-    // Nasłuchuj zmian w localStorage i pushuj do Firebase
-    // (dla kodu który używa window.localStorage bezpośrednio)
-    function watchLocalStorage(key) {
-      const original = localStorage.getItem(key);
-      let lastVal = original;
-
-      setInterval(() => {
-        const current = localStorage.getItem(key);
-        if (current !== lastVal) {
-          lastVal = current;
-          try {
-            const parsed = JSON.parse(current);
-            db.ref(key).set(parsed).catch(() => {});
-          } catch(e) {}
-        }
-      }, 1000);
-    }
-
-    // ══════════════════════════════════════════
-    // STRONA KLIENTA
-    // ══════════════════════════════════════════
-    if (isClient) {
-      // Czyta z Firebase (panel je zapisuje)
-      const readKeys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones'];
-      readKeys.forEach(key => {
-        syncFromFirebase(key, () => {
-          // Odśwież UI po otrzymaniu danych
-          if (key === 'menu' && window.buildMenu) { window.buildMenu(); window.buildCatTabs(); }
-          if (key === 'daily-dish' && window.renderDaily) window.renderDaily();
-          if (key === 'kitchen-day' && window.renderKitchen) window.renderKitchen();
-          if (key === 'promos' && window.renderAdminPromos) window.renderAdminPromos();
-        });
-      });
-
-      // Nasłuchuje nowych zamówień które składa klient (push do Firebase)
-      watchLocalStorage('orders');
-
-      console.log('[Firebase] Klient: nasłuchuję menu/promocji, wysyłam zamówienia');
-    }
-
-    // ══════════════════════════════════════════
-    // PANEL ADMINA
-    // ══════════════════════════════════════════
-    if (isPanel) {
-      // ZAMÓWIENIA — real-time nasłuchiwanie (klient złożył → alarm w panelu)
-      db.ref('orders').on('value', snap => {
-        const fresh = snap.val();
-        if (fresh === null) return;
-        const freshArr = Array.isArray(fresh) ? fresh : Object.values(fresh);
-        const local = JSON.stringify(localStorage.getItem('orders'));
-        if (JSON.stringify(freshArr) !== local) {
-          localStorage.setItem('orders', JSON.stringify(freshArr));
-          // Odśwież panel zamówień
-          if (window.orders !== undefined) {
-            window.orders = freshArr;
-            if (window.renderOrders) window.renderOrders();
-            if (window.updateAlarm) window.updateAlarm();
-          }
-        }
-      });
-
-      // Menu, promocje, strefy — panel zapisuje → Firebase → klient
-      const writeKeys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers'];
-      writeKeys.forEach(key => watchLocalStorage(key));
-
-      // Nadpisz funkcję W() aby automatycznie syncowała do Firebase
-      const originalW = window.W;
-      if (originalW) {
-        window.W = function(key, val) {
-          originalW(key, val); // zachowaj localStorage
-          db.ref(key).set(val).catch(() => {});
-        };
-      }
-
-      console.log('[Firebase] Panel: nasłuchuję zamówień, syncuję dane do klientów');
-    }
-
-    // ══════════════════════════════════════════
-    // APLIKACJA PWA
-    // ══════════════════════════════════════════
-    if (isApp) {
-      const readKeys = ['menu','daily-dish','promos','customers'];
-      readKeys.forEach(key => {
-        syncFromFirebase(key, () => {
-          if (key === 'menu' && window.buildMenuContent) window.buildMenuContent();
-          if (key === 'daily-dish' && window.renderDailyDish) window.renderDailyDish();
-          if (key === 'promos' && window.renderPromos) window.renderPromos();
-        });
-      });
-
-      // Zamówienia z aplikacji → Firebase
-      watchLocalStorage('orders');
-
-      console.log('[Firebase] App: nasłuchuję menu/promocji, wysyłam zamówienia');
-    }
-
-    // ── Wskaźnik połączenia ──
-    db.ref('.info/connected').on('value', snap => {
-      const connected = snap.val();
-      const indicator = document.getElementById('firebase-status');
-      if (indicator) {
-        indicator.textContent = connected ? '🟢 Online' : '🔴 Offline';
-        indicator.title = connected
-          ? 'Połączono z Firebase — dane synchronizowane'
-          : 'Brak połączenia — zmiany zapisane lokalnie, zsynchronizują się gdy wróci internet';
-      }
-      if (!connected) {
-        console.warn('[Firebase] Offline — dane zapisywane lokalnie');
-      }
+    auth.signInAnonymously().catch(function(e) {
+      console.warn('[Firebase] Auth:', e.message);
     });
 
-    // Eksportuj do window dla debugowania
-    window._firebase = { db, auth, syncToFirebase, syncFromFirebase };
+    const path    = window.location.pathname;
+    const isPanel = path.includes('panel');
+    const isApp   = path.includes('app');
+    const isClient = !isPanel && !isApp;
+
+    function lsGet(key) {
+      try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
+    }
+
+    function fbListen(key, onUpdate) {
+      db.ref(key).on('value', function(snap) {
+        const val = snap.val();
+        if (val === null) return;
+        const current = localStorage.getItem(key);
+        const incoming = JSON.stringify(val);
+        if (incoming !== current) {
+          localStorage.setItem(key, incoming);
+          if (onUpdate) onUpdate(val);
+        }
+      });
+    }
+
+    function lsWatch(key) {
+      let last = localStorage.getItem(key);
+      setInterval(function() {
+        const now = localStorage.getItem(key);
+        if (now !== last && now !== null) {
+          last = now;
+          try { db.ref(key).set(JSON.parse(now)).catch(function(){}); } catch(e) {}
+        }
+      }, 800);
+    }
+
+    // ── STRONA KLIENTA ──
+    if (isClient) {
+      console.log('[Firebase] Klient: połączono');
+      fbListen('menu',        function() { if (window.buildMenu) { window.buildMenu(); window.buildCatTabs(); } });
+      fbListen('daily-dish',  function() { if (window.renderDaily) window.renderDaily(); });
+      fbListen('kitchen-day', function() { if (window.renderKitchen) window.renderKitchen(); });
+      fbListen('promos',      function() { if (window.renderAdminPromos) window.renderAdminPromos(); });
+      fbListen('coupons', null);
+      fbListen('addons', null);
+      fbListen('zones', null);
+
+      // Przechwytuj localStorage.setItem — gdy klient zapisze zamówienie, wyślij do Firebase
+      var _orig = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = function(key, value) {
+        _orig(key, value);
+        if (key === 'orders') {
+          try {
+            db.ref('orders').set(JSON.parse(value)).catch(function(e) {
+              console.warn('[Firebase] Orders write error:', e.message);
+            });
+            console.log('[Firebase] Zamowienie wyslane do Firebase');
+          } catch(e) {}
+        }
+      };
+    }
+
+    // ── PANEL ADMINA ──
+    if (isPanel) {
+      console.log('[Firebase] Panel: polaczono, nasluchuje zamowien...');
+
+      db.ref('orders').on('value', function(snap) {
+        const val = snap.val();
+        var freshArr = [];
+        if (val !== null && val !== undefined) {
+          freshArr = Array.isArray(val) ? val : Object.values(val);
+          freshArr = freshArr.filter(function(o) { return o && o.id; });
+        }
+
+        // Zapisz do localStorage
+        localStorage.setItem('orders', JSON.stringify(freshArr));
+
+        // Zaktualizuj zmienną orders w pamięci panelu i odśwież UI
+        // Używamy window aby dostać się do zmiennej globalnej panelu
+        window._fbOrders = freshArr;
+
+        // Odśwież panel — wywołaj funkcje panelu jeśli są dostępne
+        setTimeout(function() {
+          if (window.renderOrders) {
+            // Nadpisz globalną zmienną orders jeśli istnieje
+            if (typeof window.orders !== 'undefined') window.orders = freshArr;
+            window.renderOrders();
+          }
+          if (window.updateAlarm) window.updateAlarm();
+          if (window.renderDashboard) window.renderDashboard();
+        }, 50);
+
+        console.log('[Firebase] Zamowienia:', freshArr.length, 'szt.');
+      });
+
+      // Hook funkcji W() — każdy zapis panelu idzie też do Firebase
+      function hookW() {
+        if (window.W) {
+          var _origW = window.W;
+          window.W = function(key, val) {
+            _origW(key, val);
+            db.ref(key).set(val).catch(function(){});
+          };
+          console.log('[Firebase] Hook W() aktywny');
+        } else {
+          setTimeout(hookW, 200);
+        }
+      }
+      hookW();
+
+      var writeKeys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers'];
+      writeKeys.forEach(lsWatch);
+    }
+
+    // ── APLIKACJA PWA ──
+    if (isApp) {
+      console.log('[Firebase] App: polaczono');
+      fbListen('menu',       function() { if (window.buildMenuContent) window.buildMenuContent(); });
+      fbListen('daily-dish', function() { if (window.renderDailyDish) window.renderDailyDish(); });
+      fbListen('promos',     function() { if (window.renderPromos) window.renderPromos(); });
+      fbListen('customers',  null);
+
+      var _orig = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = function(key, value) {
+        _orig(key, value);
+        if (key === 'orders') {
+          try { db.ref('orders').set(JSON.parse(value)).catch(function(){}); } catch(e) {}
+        }
+      };
+    }
+
+    db.ref('.info/connected').on('value', function(snap) {
+      var online = snap.val() === true;
+      var el = document.getElementById('firebase-status');
+      if (el) el.textContent = online ? '🟢 Online' : '🔴 Offline';
+      if (!online) console.warn('[Firebase] Offline');
+      else console.log('[Firebase] Online. Tryb:', isPanel ? 'PANEL' : isApp ? 'APP' : 'KLIENT');
+    });
+
+    window._firebase = { db: db, auth: auth };
     window._firebaseReady = true;
 
-  }).catch(err => {
-    console.warn('[Firebase] Nie udało się załadować:', err);
+  }).catch(function(err) {
+    console.error('[Firebase] Blad ladowania SDK:', err);
   });
 
 })();
