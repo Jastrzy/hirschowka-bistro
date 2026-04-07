@@ -1486,8 +1486,19 @@ function stopAlarm(){
   if(alarmInterval){ clearInterval(alarmInterval); alarmInterval=null; }
   document.getElementById('alarm-bar').classList.remove('show');
 }
+// Globalna normalizacja statusu zamówienia
+function normStatus(s){
+  const v=(s||'').toLowerCase().trim();
+  if(!v||v==='pending'||v==='new'||v==='nowe'||v==='do akceptacji') return 'pending';
+  if(v==='accepted'||v==='przyjete'||v==='przyjęte'||v==='w realizacji') return 'accepted';
+  if(v==='delivering'||v==='w drodze') return 'delivering';
+  if(v==='ready'||v==='gotowe') return 'ready';
+  if(v==='done'||v==='zrealizowane'||v==='completed') return 'done';
+  return 'pending';
+}
+
 function updateAlarm(){
-  const pending = orders.filter(o=>o.status==='pending');
+  const pending = orders.filter(o=>normStatus(o.status)==='pending');
   const cnt = pending.length;
   document.getElementById('alarm-count').textContent = cnt>0?`(${cnt} oczekujące)`:'';
   document.getElementById('badge-ord').textContent = cnt||'';
@@ -1521,10 +1532,10 @@ function setOrdTypeFilter(f, el){
 function renderOrders(){
   const list = document.getElementById('orders-list');
   let source;
-  if(ordTab==='pending')   source = orders.filter(o=>o.status==='pending');
-  else if(ordTab==='current')  source = orders.filter(o=>o.status!=='pending'&&o.status!=='done'&&!o.planned);
-  else if(ordTab==='planned')  source = orders.filter(o=>o.planned&&o.status!=='done');
-  else                          source = [...archive].concat(orders.filter(o=>o.status==='done'));
+  if(ordTab==='pending')   source = orders.filter(o=>normStatus(o.status)==='pending');
+  else if(ordTab==='current')  source = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned; });
+  else if(ordTab==='planned')  source = orders.filter(o=>o.planned&&normStatus(o.status)!=='done');
+  else                          source = [...archive].concat(orders.filter(o=>normStatus(o.status)==='done'));
 
   // Filtr typu
   if(ordTab!=='archive' && ordTypeFilter!=='all'){
@@ -1534,8 +1545,8 @@ function renderOrders(){
   // Odznaki zakładek
   const cBadge = document.getElementById('tab-badge-current');
   const pBadge = document.getElementById('tab-badge-planned');
-  const cur = orders.filter(o=>o.status!=='pending'&&o.status!=='done'&&!o.planned).length;
-  const pla = orders.filter(o=>o.planned&&o.status!=='done').length;
+  const cur = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned; }).length;
+  const pla = orders.filter(o=>o.planned&&normStatus(o.status)!=='done').length;
   if(cBadge){ cBadge.textContent=cur||''; cBadge.className='ord-tab-badge'+(cur?' show':''); }
   if(pBadge){ pBadge.textContent=pla||''; pBadge.className='ord-tab-badge'+(pla?' show':''); }
   updateAlarm();
