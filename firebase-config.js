@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════
-// HIRSCHÓWKA BISTRO — Firebase Realtime Sync v2
+// HIRSCHÓWKA BISTRO — Firebase Sync v3
 // ════════════════════════════════════════════════════════
 
 const FIREBASE_CONFIG = {
@@ -16,159 +16,174 @@ const FIREBASE_CONFIG = {
   'use strict';
 
   function loadScripts(urls) {
-    return urls.reduce((p, url) => p.then(() => new Promise((res, rej) => {
-      if (document.querySelector('script[src="' + url + '"]')) { res(); return; }
-      const s = document.createElement('script');
-      s.src = url; s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    })), Promise.resolve());
+    return urls.reduce(function(p, url) {
+      return p.then(function() {
+        return new Promise(function(res, rej) {
+          if (document.querySelector('script[src="' + url + '"]')) { res(); return; }
+          var s = document.createElement('script');
+          s.src = url; s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      });
+    }, Promise.resolve());
   }
 
-  const SCRIPTS = [
+  loadScripts([
     'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
     'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js',
     'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-  ];
-
-  loadScripts(SCRIPTS).then(function() {
+  ]).then(function() {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-
-    const db   = firebase.database();
-    const auth = firebase.auth();
+    var db   = firebase.database();
+    var auth = firebase.auth();
 
     auth.signInAnonymously().catch(function(e) {
       console.warn('[Firebase] Auth:', e.message);
     });
 
-    const path    = window.location.pathname;
-    const isPanel = path.includes('panel');
-    const isApp   = path.includes('app');
-    const isClient = !isPanel && !isApp;
-
-    function lsGet(key) {
-      try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
-    }
-
-    function fbListen(key, onUpdate) {
-      db.ref(key).on('value', function(snap) {
-        const val = snap.val();
-        if (val === null) return;
-        const current = localStorage.getItem(key);
-        const incoming = JSON.stringify(val);
-        if (incoming !== current) {
-          localStorage.setItem(key, incoming);
-          if (onUpdate) onUpdate(val);
-        }
-      });
-    }
-
-    function lsWatch(key) {
-      let last = localStorage.getItem(key);
-      setInterval(function() {
-        const now = localStorage.getItem(key);
-        if (now !== last && now !== null) {
-          last = now;
-          try { db.ref(key).set(JSON.parse(now)).catch(function(){}); } catch(e) {}
-        }
-      }, 800);
-    }
+    var path     = window.location.pathname;
+    var isPanel  = path.includes('panel');
+    var isApp    = path.includes('app');
+    var isClient = !isPanel && !isApp;
 
     // ── STRONA KLIENTA ──
     if (isClient) {
-      console.log('[Firebase] Klient: połączono');
-      fbListen('menu',        function() { if (window.buildMenu) { window.buildMenu(); window.buildCatTabs(); } });
-      fbListen('daily-dish',  function() { if (window.renderDaily) window.renderDaily(); });
-      fbListen('kitchen-day', function() { if (window.renderKitchen) window.renderKitchen(); });
-      fbListen('promos',      function() { if (window.renderAdminPromos) window.renderAdminPromos(); });
-      fbListen('coupons', null);
-      fbListen('addons', null);
-      fbListen('zones', null);
+      // Czytaj dane konfiguracyjne z Firebase
+      ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones'].forEach(function(key) {
+        db.ref(key).on('value', function(snap) {
+          var val = snap.val();
+          if (val === null) return;
+          localStorage.setItem(key, JSON.stringify(val));
+          if (key==='menu' && window.buildMenu) { window.buildMenu(); window.buildCatTabs(); }
+          if (key==='daily-dish' && window.renderDaily) window.renderDaily();
+          if (key==='kitchen-day' && window.renderKitchen) window.renderKitchen();
+          if (key==='promos' && window.renderAdminPromos) window.renderAdminPromos();
+        });
+      });
 
-      // Przechwytuj localStorage.setItem — gdy klient zapisze zamówienie, wyślij do Firebase
-      var _orig = localStorage.setItem.bind(localStorage);
+      // Przechwytuj zapis zamówień — wyślij do Firebase natychmiast
+      var _origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
-        _orig(key, value);
+        _origSet(key, value);
         if (key === 'orders') {
           try {
-            db.ref('orders').set(JSON.parse(value)).catch(function(e) {
-              console.warn('[Firebase] Orders write error:', e.message);
+            var parsed = JSON.parse(value);
+            db.ref('orders').set(parsed).then(function() {
+              console.log('[Firebase] Zamowienie wyslane ✓');
+            }).catch(function(e) {
+              console.warn('[Firebase] Blad zapisu:', e.message);
             });
-            console.log('[Firebase] Zamowienie wyslane do Firebase');
           } catch(e) {}
         }
       };
+      console.log('[Firebase] Klient aktywny');
     }
 
     // ── PANEL ADMINA ──
     if (isPanel) {
-      console.log('[Firebase] Panel: polaczono, nasluchuje zamowien...');
-
+      // ZAMÓWIENIA: nasłuchuj Firebase i aktualizuj panel bezpośrednio
       db.ref('orders').on('value', function(snap) {
-        const val = snap.val();
+        var val = snap.val();
         var freshArr = [];
         if (val !== null && val !== undefined) {
           freshArr = Array.isArray(val) ? val : Object.values(val);
           freshArr = freshArr.filter(function(o) { return o && o.id; });
         }
 
-        // Zapisz do localStorage — panel polling to wykryje
-        localStorage.setItem('orders', JSON.stringify(freshArr));
+        console.log('[Firebase] Odebrano zamowienia:', freshArr.length);
 
-        // Wyślij event do panelu żeby od razu odświeżył bez czekania na poll
-        window.dispatchEvent(new CustomEvent('firebase-orders-updated'));
+        // Zapisz do localStorage
+        try {
+          localStorage.setItem('orders', JSON.stringify(freshArr));
+        } catch(e) {}
 
-        console.log('[Firebase] Zamowienia:', freshArr.length, 'szt.');
+        // Aktualizuj panel — czekaj aż panel się załaduje
+        function updatePanel() {
+          if (typeof renderOrders === 'function') {
+            // Globalny zakres — var orders jest dostępne
+            try { eval('orders = freshArr'); } catch(e) {}
+            renderOrders();
+            if (typeof updateAlarm === 'function') updateAlarm();
+            if (typeof renderDashboard === 'function') renderDashboard();
+          } else {
+            setTimeout(updatePanel, 100);
+          }
+        }
+        setTimeout(updatePanel, 50);
       });
 
-      // Hook funkcji W() — każdy zapis panelu idzie też do Firebase
+      // Synchronizuj dane panelu do Firebase gdy się zmieniają
       function hookW() {
-        if (window.W) {
-          var _origW = window.W;
+        if (typeof W === 'function' || window.W) {
+          var target = window.W || W;
+          var orig = target;
           window.W = function(key, val) {
-            _origW(key, val);
-            db.ref(key).set(val).catch(function(){});
+            // Zapisz do localStorage
+            localStorage.setItem(key, JSON.stringify(val));
+            // Wyślij do Firebase (nie orders — orders zarządzane przez panel)
+            if (key !== 'orders') {
+              db.ref(key).set(val).catch(function(){});
+            } else {
+              // Dla orders — wyślij tylko jeśli to zmiana statusu (nie czyścimy)
+              if (val && val.length > 0) {
+                db.ref(key).set(val).catch(function(){});
+              }
+            }
           };
-          console.log('[Firebase] Hook W() aktywny');
+          console.log('[Firebase] Panel hook aktywny');
         } else {
           setTimeout(hookW, 200);
         }
       }
       hookW();
 
-      var writeKeys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers'];
-      writeKeys.forEach(lsWatch);
+      // Obserwuj zmiany konfiguracji panelu i pushuj do Firebase
+      var configKeys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers'];
+      configKeys.forEach(function(key) {
+        var last = localStorage.getItem(key);
+        setInterval(function() {
+          var now = localStorage.getItem(key);
+          if (now !== last && now !== null) {
+            last = now;
+            try { db.ref(key).set(JSON.parse(now)).catch(function(){}); } catch(e) {}
+          }
+        }, 1000);
+      });
+
+      console.log('[Firebase] Panel aktywny');
     }
 
     // ── APLIKACJA PWA ──
     if (isApp) {
-      console.log('[Firebase] App: polaczono');
-      fbListen('menu',       function() { if (window.buildMenuContent) window.buildMenuContent(); });
-      fbListen('daily-dish', function() { if (window.renderDailyDish) window.renderDailyDish(); });
-      fbListen('promos',     function() { if (window.renderPromos) window.renderPromos(); });
-      fbListen('customers',  null);
-
-      var _orig = localStorage.setItem.bind(localStorage);
+      ['menu','daily-dish','promos','customers'].forEach(function(key) {
+        db.ref(key).on('value', function(snap) {
+          var val = snap.val();
+          if (val === null) return;
+          localStorage.setItem(key, JSON.stringify(val));
+        });
+      });
+      var _origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
-        _orig(key, value);
+        _origSet(key, value);
         if (key === 'orders') {
           try { db.ref('orders').set(JSON.parse(value)).catch(function(){}); } catch(e) {}
         }
       };
+      console.log('[Firebase] App aktywna');
     }
 
+    // Status połączenia
     db.ref('.info/connected').on('value', function(snap) {
       var online = snap.val() === true;
       var el = document.getElementById('firebase-status');
-      if (el) el.textContent = online ? '🟢 Online' : '🔴 Offline';
-      if (!online) console.warn('[Firebase] Offline');
-      else console.log('[Firebase] Online. Tryb:', isPanel ? 'PANEL' : isApp ? 'APP' : 'KLIENT');
+      if (el) el.textContent = online ? '🟢' : '🔴';
+      console.log('[Firebase]', online ? 'Online' : 'Offline', '|', isPanel ? 'PANEL' : isApp ? 'APP' : 'KLIENT');
     });
 
-    window._firebase = { db: db, auth: auth };
     window._firebaseReady = true;
+    window._firebase = { db: db };
 
   }).catch(function(err) {
-    console.error('[Firebase] Blad ladowania SDK:', err);
+    console.error('[Firebase] Blad:', err);
   });
-
 })();
