@@ -111,23 +111,11 @@ const FIREBASE_CONFIG = {
           freshArr = freshArr.filter(function(o) { return o && o.id; });
         }
 
-        // Zapisz do localStorage
+        // Zapisz do localStorage — panel polling to wykryje
         localStorage.setItem('orders', JSON.stringify(freshArr));
 
-        // Zaktualizuj zmienną orders w pamięci panelu i odśwież UI
-        // Używamy window aby dostać się do zmiennej globalnej panelu
-        window._fbOrders = freshArr;
-
-        // Odśwież panel — wywołaj funkcje panelu jeśli są dostępne
-        setTimeout(function() {
-          if (window.renderOrders) {
-            // Nadpisz globalną zmienną orders jeśli istnieje
-            if (typeof window.orders !== 'undefined') window.orders = freshArr;
-            window.renderOrders();
-          }
-          if (window.updateAlarm) window.updateAlarm();
-          if (window.renderDashboard) window.renderDashboard();
-        }, 50);
+        // Wyślij event do panelu żeby od razu odświeżył bez czekania na poll
+        window.dispatchEvent(new CustomEvent('firebase-orders-updated'));
 
         console.log('[Firebase] Zamowienia:', freshArr.length, 'szt.');
       });

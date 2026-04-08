@@ -3622,26 +3622,24 @@ renderDashboard();
 renderOrders();
 renderQR();
 updateAlarm();
-// Poll dla nowych zamówień — sprawdza localStorage i dane z Firebase
-setInterval(()=>{
-  // Sprawdź czy Firebase dostarczył nowe dane (_fbOrders)
-  if(window._fbOrders && JSON.stringify(window._fbOrders) !== JSON.stringify(orders)){
-    orders = window._fbOrders;
-    window._fbOrders = null;
-    renderOrders();
-    updateAlarm();
-    renderDashboard();
-    return;
-  }
-  // Fallback: sprawdź localStorage bezpośrednio
-  const fresh = S('orders')||[];
-  if(JSON.stringify(fresh)!==JSON.stringify(orders)){
+// ── ŁADOWANIE ZAMÓWIEŃ — główna funkcja ──
+function loadOrders(){
+  const fresh = S('orders') || [];
+  if(JSON.stringify(fresh) !== JSON.stringify(orders)){
     orders = fresh;
     renderOrders();
     updateAlarm();
     renderDashboard();
   }
-}, 3000);
+}
+
+// Nasłuchuj eventu z Firebase (firebase-config.js wysyła go gdy dostanie nowe dane)
+window.addEventListener('firebase-orders-updated', function(){
+  loadOrders();
+});
+
+// Poll co 2 sekundy — główny mechanizm synchronizacji
+setInterval(loadOrders, 2000);
 </script>
 </body>
 </html>
