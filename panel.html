@@ -3623,44 +3623,26 @@ renderOrders();
 renderQR();
 updateAlarm();
 
-// ── ŁADOWANIE ZAMÓWIEŃ ──
-function loadOrders(){
-  // Priorytet 1: czytaj z Firebase bezpośrednio
-  if (window._firebase && window._firebase.db) {
-    window._firebase.db.ref('orders').once('value').then(function(snap) {
-      var val = snap.val();
-      var freshArr = [];
-      if (val !== null && val !== undefined) {
-        freshArr = Array.isArray(val) ? val : Object.values(val);
-        freshArr = freshArr.filter(function(o) { return o && o.id; });
-      }
-      orders = freshArr;
-      localStorage.setItem('orders', JSON.stringify(freshArr));
-      renderOrders();
-      updateAlarm();
-      renderDashboard();
-    }).catch(function() {
-      // Fallback: localStorage
-      orders = S('orders') || [];
-      renderOrders(); updateAlarm(); renderDashboard();
-    });
-  } else {
-    // Fallback: localStorage
-    var fresh = S('orders') || [];
+// ── CALLBACK DLA FIREBASE ──
+// Firebase-config.js wywoła tę funkcję gdy dostanie zamówienia
+window.onFirebaseOrders = function(freshArr) {
+  orders = freshArr;
+  renderOrders();
+  updateAlarm();
+  renderDashboard();
+};
+
+// Fallback polling z localStorage (gdy Firebase nie działa)
+setInterval(function(){
+  if (window._firebaseReady) return; // Firebase działa — nie potrzeba
+  var fresh = S('orders') || [];
+  if (JSON.stringify(fresh) !== JSON.stringify(orders)) {
     orders = fresh;
     renderOrders();
     updateAlarm();
     renderDashboard();
   }
-}
-
-// Nasłuchuj eventu z Firebase (firebase-config.js wysyła go gdy dostanie nowe dane)
-window.addEventListener('firebase-orders-updated', function(){
-  loadOrders();
-});
-
-// Poll co 2 sekundy — główny mechanizm synchronizacji
-setInterval(loadOrders, 2000);
+}, 3000);
 </script>
 </body>
 </html>
