@@ -1,4 +1,4 @@
-// HIRSCHÓWKA BISTRO — Firebase Sync v4
+// HIRSCHÓWKA BISTRO — Firebase Sync v5
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCUxzOaz6ZkgmGg9FmIoamR77N2mALayh8",
   authDomain:        "hirschowka-bistro.firebaseapp.com",
@@ -49,11 +49,10 @@ const FIREBASE_CONFIG = {
         }
         console.log('[Firebase] Zamowienia z bazy:', arr.length);
 
-        // Wywołaj callback panelu — panel sam aktualizuje swoją zmienną orders
+        // Wywołaj callback panelu
         if (typeof window.onFirebaseOrders === 'function') {
           window.onFirebaseOrders(arr);
         } else {
-          // Panel jeszcze się ładuje — poczekaj i spróbuj ponownie
           setTimeout(function(){
             if (typeof window.onFirebaseOrders === 'function') {
               window.onFirebaseOrders(arr);
@@ -63,31 +62,39 @@ const FIREBASE_CONFIG = {
       });
 
       // Synchronizuj zapisy panelu do Firebase
-      // Czekaj aż panel zdefiniuje funkcję W
-      var hookAttempts = 0;
-      function hookW() {
-        if (typeof W === 'function') {
-          var orig = W;
-          window.W = W = function(key, val) {
-            localStorage.setItem(key, JSON.stringify(val));
-            if (key !== 'orders') {
-              db.ref(key).set(val).catch(function(){});
-            } else if (val && val.length > 0) {
-              db.ref(key).set(val).catch(function(){});
-            }
-          };
-          console.log('[Firebase] W() hooked');
-        } else if (hookAttempts++ < 20) {
-          setTimeout(hookW, 250);
+      // NIE nadpisujemy W() bo jest const — zamiast tego obserwujemy localStorage
+      var watchKeys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers'];
+      watchKeys.forEach(function(key) {
+        var last = localStorage.getItem(key);
+        setInterval(function() {
+          var now = localStorage.getItem(key);
+          if (now !== null && now !== last) {
+            last = now;
+            try { db.ref(key).set(JSON.parse(now)).catch(function(){}); } catch(e) {}
+          }
+        }, 1000);
+      });
+
+      // Gdy panel zapisuje zamówienia przez W() — też synchronizuj
+      // Obserwuj orders w localStorage ale TYLKO gdy zmienia się na niepustą tablicę
+      var lastOrders = localStorage.getItem('orders');
+      setInterval(function() {
+        var now = localStorage.getItem('orders');
+        if (now !== null && now !== lastOrders) {
+          lastOrders = now;
+          try {
+            var parsed = JSON.parse(now);
+            // Synchronizuj tylko jeśli tablica niepusta lub panel celowo czyści
+            db.ref('orders').set(parsed).catch(function(){});
+          } catch(e) {}
         }
-      }
-      hookW();
+      }, 500);
+
       console.log('[Firebase] Panel aktywny');
     }
 
     // ── KLIENT ──
     if (isClient) {
-      // Czytaj konfigurację z Firebase
       ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones'].forEach(function(key) {
         db.ref(key).on('value', function(snap) {
           var val = snap.val();
