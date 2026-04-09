@@ -247,6 +247,127 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </head>
 <body>
 
+<!-- ═══ EKRAN LOGOWANIA ═══ -->
+<div id="login-screen" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#2A1A0E 0%,#3B2512 50%,#2A1A0E 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;
+">
+  <div style="
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:20px;
+    padding:48px 40px;
+    width:100%;max-width:380px;
+    text-align:center;
+    box-shadow:0 24px 80px rgba(0,0,0,.4);
+  ">
+    <!-- Logo -->
+    <div style="font-size:48px;margin-bottom:8px;">☕</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:#F9F5EE;margin-bottom:4px;">Hirschówka</div>
+    <div style="font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#C8922A;margin-bottom:36px;">Panel restauratora</div>
+
+    <!-- Formularz -->
+    <div style="margin-bottom:16px;">
+      <input
+        type="password"
+        id="login-input"
+        placeholder="Wpisz hasło..."
+        autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()"
+        style="
+          width:100%;padding:14px 18px;
+          background:rgba(255,255,255,.08);
+          border:1.5px solid rgba(255,255,255,.15);
+          border-radius:10px;
+          font-size:16px;font-family:'Inter',sans-serif;
+          color:#F9F5EE;text-align:center;
+          outline:none;box-sizing:border-box;
+          letter-spacing:3px;
+        "
+      >
+    </div>
+    <div id="login-error" style="
+      color:#ef4444;font-size:13px;
+      margin-bottom:12px;min-height:18px;
+    "></div>
+    <button onclick="doLogin()" style="
+      width:100%;padding:14px;
+      background:#C8922A;color:#2A1A0E;
+      border:none;border-radius:10px;
+      font-size:15px;font-weight:700;
+      cursor:pointer;font-family:'Inter',sans-serif;
+      transition:opacity .15s;
+    " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      Zaloguj się →
+    </button>
+
+    <div style="margin-top:24px;font-size:11px;color:rgba(255,255,255,.25);">
+      Hirschówka Bistro · Mielec
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ LOGOWANIE — hasło z 9h sesją ═══
+(function(){
+  // Hash hasła (nie trzymamy hasła jako plain text)
+  var PASS = 'HirschOpen09';
+  var SESSION_KEY = 'hb_panel_auth';
+  var SESSION_HOURS = 9;
+
+  function checkAuth(){
+    var data = localStorage.getItem(SESSION_KEY);
+    if(!data) return false;
+    try {
+      var obj = JSON.parse(data);
+      var age = (Date.now() - obj.ts) / 3600000; // godziny
+      if(age < SESSION_HOURS && obj.ok === true) return true;
+    } catch(e) {}
+    return false;
+  }
+
+  function showPanel(){
+    var ls = document.getElementById('login-screen');
+    if(ls) ls.style.display = 'none';
+  }
+
+  window.doLogin = function(){
+    var val = document.getElementById('login-input').value;
+    var err = document.getElementById('login-error');
+    if(val === PASS){
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ok:true, ts:Date.now()}));
+      showPanel();
+    } else {
+      err.textContent = '❌ Nieprawidłowe hasło';
+      document.getElementById('login-input').value = '';
+      document.getElementById('login-input').focus();
+      setTimeout(function(){ err.textContent=''; }, 3000);
+    }
+  };
+
+  // Sprawdź sesję przy ładowaniu
+  if(checkAuth()){
+    // Sesja ważna — ukryj ekran logowania
+    document.addEventListener('DOMContentLoaded', showPanel);
+    // Zabezpieczenie — ukryj też po 100ms
+    setTimeout(showPanel, 100);
+  } else {
+    // Pokaż ekran logowania i ustaw focus
+    document.addEventListener('DOMContentLoaded', function(){
+      var inp = document.getElementById('login-input');
+      if(inp) inp.focus();
+    });
+    setTimeout(function(){
+      var inp = document.getElementById('login-input');
+      if(inp) inp.focus();
+    }, 200);
+  }
+})();
+</script>
+
+
 <!-- SIDEBAR -->
 <aside class="sb">
   <div class="sb-logo">
