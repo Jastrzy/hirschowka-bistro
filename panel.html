@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pl">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0042)file:///D:/Downloads/panel-admin-v2_2.html -->
+<html lang="pl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hirschówka Bistro — Panel Restauratora</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="./panel_files/css2" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -240,9 +240,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .frow,.frow3{grid-template-columns:1fr;}
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="firebase-config.js"></script>
-</head>
+<script src="./panel_files/xlsx.full.min.js.pobierz"></script>
+<script src="./panel_files/firebase-config.js"></script><script src="./panel_files/firebase-app-compat.js.pobierz"></script>
+<script src="./panel_files/firebase-database-compat.js.pobierz"></script><script src="./panel_files/firebase-auth-compat.js.pobierz"></script></head>
 <body>
 
 <!-- SIDEBAR -->
@@ -253,33 +253,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
   <nav class="sb-nav">
     <div class="sb-sect">Główne</div>
-    <div class="ni active" onclick="go('pulpit',this)"><span class="ic">🏠</span><span>Pulpit</span></div>
-    <div class="ni" id="nav-zamowienia" onclick="go('zamowienia',this)"><span class="ic">📋</span><span>Zamówienia</span><span class="nb" id="badge-ord">2</span></div>
-    <div class="ni" id="nav-klienci" onclick="go('klienci',this)"><span class="ic">👥</span><span>Klienci</span></div>
+    <div class="ni active" onclick="go(&#39;pulpit&#39;,this)"><span class="ic">🏠</span><span>Pulpit</span></div>
+    <div class="ni" id="nav-zamowienia" onclick="go(&#39;zamowienia&#39;,this)"><span class="ic">📋</span><span>Zamówienia</span><span class="nb" id="badge-ord">1</span></div>
+    <div class="ni" id="nav-klienci" onclick="go(&#39;klienci&#39;,this)"><span class="ic">👥</span><span>Klienci</span></div>
 
     <div class="sb-sect">Baza produktów</div>
-    <div class="ni" onclick="go('menu',this)"><span class="ic">🥘</span><span>Menu</span></div>
-    <div class="ni" onclick="go('dodatki',this)"><span class="ic">➕</span><span>Grupy dodatków</span></div>
-    <div class="ni" onclick="go('parametry',this)"><span class="ic">⚙</span><span>Parametry</span></div>
+    <div class="ni" onclick="go(&#39;menu&#39;,this)"><span class="ic">🥘</span><span>Menu</span></div>
+    <div class="ni" onclick="go(&#39;dodatki&#39;,this)"><span class="ic">➕</span><span>Grupy dodatków</span></div>
+    <div class="ni" onclick="go(&#39;parametry&#39;,this)"><span class="ic">⚙</span><span>Parametry</span></div>
 
     <div class="sb-sect">Optymalizacja sprzedaży</div>
-    <div class="ni" onclick="go('promocje',this)"><span class="ic">🏷</span><span>Promocje</span></div>
-    <div class="ni" onclick="go('kupony',this)"><span class="ic">🎟</span><span>Kupony</span></div>
-    <div class="ni" onclick="go('crosssell',this)"><span class="ic">🔀</span><span>Cross-selling</span></div>
-    <div class="ni" onclick="go('marketing',this)"><span class="ic">📣</span><span>Marketing auto.</span></div>
-    <div class="ni" onclick="go('qr',this)"><span class="ic">◼</span><span>Kody QR</span></div>
-    <div class="ni" onclick="go('lojalnosc',this)"><span class="ic">⭐</span><span>Lojalność</span></div>
+    <div class="ni" onclick="go(&#39;promocje&#39;,this)"><span class="ic">🏷</span><span>Promocje</span></div>
+    <div class="ni" onclick="go(&#39;kupony&#39;,this)"><span class="ic">🎟</span><span>Kupony</span></div>
+    <div class="ni" onclick="go(&#39;crosssell&#39;,this)"><span class="ic">🔀</span><span>Cross-selling</span></div>
+    <div class="ni" onclick="go(&#39;marketing&#39;,this)"><span class="ic">📣</span><span>Marketing auto.</span></div>
+    <div class="ni" onclick="go(&#39;qr&#39;,this)"><span class="ic">◼</span><span>Kody QR</span></div>
+    <div class="ni" onclick="go(&#39;lojalnosc&#39;,this)"><span class="ic">⭐</span><span>Lojalność</span></div>
 
     <div class="sb-sect">Ustawienia</div>
-    <div class="ni" onclick="go('daniednia',this)" style="border-left:3px solid var(--gold);font-weight:700;"><span class="ic">⭐</span><span style="color:var(--gold);">Danie dnia</span></div>
-    <div class="ni" onclick="go('strefy',this)"><span class="ic">🗺</span><span>Strefy dostaw</span></div>
-    <div class="ni" onclick="go('harmonogramy',this)"><span class="ic">🕐</span><span>Harmonogramy</span></div>
-    <div class="ni" onclick="go('przerwy',this)"><span class="ic">⏸</span><span>Przerwy w pracy</span></div>
-    <div class="ni" onclick="go('galeria',this)"><span class="ic">🖼</span><span>Galeria</span></div>
-    <div class="ni" onclick="go('ustawienia',this)"><span class="ic">🔧</span><span>Ustawienia</span></div>
-    <div class="ni" onclick="go('importexport',this)"><span class="ic">↕</span><span>Import / Eksport</span></div>
-    <div class="ni" onclick="go('www',this)"><span class="ic">🌐</span><span>WWW</span></div>
-    <div class="ni" onclick="go('podglad',this)"><span class="ic">👁</span><span>Podgląd strony</span></div>
+    <div class="ni" onclick="go(&#39;daniednia&#39;,this)" style="border-left:3px solid var(--gold);font-weight:700;"><span class="ic">⭐</span><span style="color:var(--gold);">Danie dnia</span></div>
+    <div class="ni" onclick="go(&#39;strefy&#39;,this)"><span class="ic">🗺</span><span>Strefy dostaw</span></div>
+    <div class="ni" onclick="go(&#39;harmonogramy&#39;,this)"><span class="ic">🕐</span><span>Harmonogramy</span></div>
+    <div class="ni" onclick="go(&#39;przerwy&#39;,this)"><span class="ic">⏸</span><span>Przerwy w pracy</span></div>
+    <div class="ni" onclick="go(&#39;galeria&#39;,this)"><span class="ic">🖼</span><span>Galeria</span></div>
+    <div class="ni" onclick="go(&#39;ustawienia&#39;,this)"><span class="ic">🔧</span><span>Ustawienia</span></div>
+    <div class="ni" onclick="go(&#39;importexport&#39;,this)"><span class="ic">↕</span><span>Import / Eksport</span></div>
+    <div class="ni" onclick="go(&#39;www&#39;,this)"><span class="ic">🌐</span><span>WWW</span></div>
+    <div class="ni" onclick="go(&#39;podglad&#39;,this)"><span class="ic">👁</span><span>Podgląd strony</span></div>
   </nav>
 </aside>
 
@@ -295,12 +295,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </header>
   <!-- ALARM BAR — nowe zamówienia -->
-  <div class="alarm-bar" id="alarm-bar">
+  <div class="alarm-bar show" id="alarm-bar">
     <div style="display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">🔔</span>
-      <span style="font-size:14px;font-weight:700;">Nowe zamówienie! <span id="alarm-count"></span></span>
+      <span style="font-size:14px;font-weight:700;">Nowe zamówienie! <span id="alarm-count">(1 oczekujące)</span></span>
     </div>
-    <button onclick="goToOrders()" style="background:#fff;color:var(--rust);border:none;border-radius:var(--r);padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Zobacz zamówienia →</button>
+    <button onclick="goToOrders()" style="background:#fff;color:var(--rust);border:none;border-radius:var(--r);padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif;">Zobacz zamówienia →</button>
   </div>
 
   <div class="content">
@@ -310,36 +310,44 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="stats-row">
         <div class="stat">
           <div class="stat-lbl">Zamówienia dziś</div>
-          <div class="stat-val" id="dash-orders-today">—</div>
-          <div class="stat-sub" id="dash-orders-sub">oczekuje na dane</div>
+          <div class="stat-val" id="dash-orders-today">1</div>
+          <div class="stat-sub" id="dash-orders-sub"><span style="color:var(--rust);font-weight:700;">⏳ 1 czeka na akceptację</span></div>
         </div>
         <div class="stat">
           <div class="stat-lbl">Przychód dziś</div>
-          <div class="stat-val" id="dash-revenue-today">—</div>
-          <div class="stat-sub" id="dash-revenue-sub">ze wszystkich zamówień</div>
+          <div class="stat-val" id="dash-revenue-today">32.00 zł</div>
+          <div class="stat-sub" id="dash-revenue-sub">z 1 zamówień dziś</div>
         </div>
         <div class="stat">
           <div class="stat-lbl">Śr. wartość zamówienia</div>
-          <div class="stat-val" id="dash-avg-order">—</div>
-          <div class="stat-sub" id="dash-avg-sub">dziś</div>
+          <div class="stat-val" id="dash-avg-order">32.00 zł</div>
+          <div class="stat-sub" id="dash-avg-sub">z 1 zamówień</div>
         </div>
         <div class="stat">
           <div class="stat-lbl">Klienci w bazie</div>
-          <div class="stat-val" id="dash-customers">—</div>
-          <div class="stat-sub" id="dash-customers-sub">zarejestrowanych</div>
+          <div class="stat-val" id="dash-customers">97</div>
+          <div class="stat-sub" id="dash-customers-sub">81 z pieczątkami</div>
         </div>
       </div>
 
       <!-- Aktywne zamówienia na pulpicie -->
-      <div id="dash-active-orders" style="margin-bottom:16px;"></div>
+      <div id="dash-active-orders" style="margin-bottom:16px;"><div style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Aktywne zamówienia</div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="go(&#39;zamowienia&#39;,document.getElementById(&#39;nav-zamowienia&#39;))">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:800;color:var(--brown);">#68662</span>
+              <span style="font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;background:rgba(184,76,43,.12);color:var(--rust);">Do akceptacji</span>
+              <span style="font-size:12px;color:var(--muted);">HyHy · Bajgiel z Caprese - mozzarellą, pomidore</span>
+            </div>
+            <span style="font-weight:700;color:var(--gold);white-space:nowrap;">32 zł</span>
+          </div></div>
 
       <div class="dash-grid">
-        <div class="dash-tile" onclick="go('zamowienia',document.getElementById('nav-zamowienia'))"><div class="dt-icon">📋</div><div class="dt-title">Lista zamówień</div><div class="dt-sub" id="dash-tile-orders">Zobacz wszystkie zamówienia</div></div>
-        <div class="dash-tile" onclick="go('daniednia',document.querySelector('.ni[onclick*=daniednia]'))"><div class="dt-icon">⭐</div><div class="dt-title">Danie dnia</div><div class="dt-sub" id="dash-tile-daily">Ustaw dzisiejsze danie</div></div>
-        <div class="dash-tile" onclick="go('menu',document.querySelector('.ni[onclick*=menu]'))"><div class="dt-icon">🍽</div><div class="dt-title">Modyfikuj menu</div><div class="dt-sub">Dodaj, usuń lub zmień dania</div></div>
-        <div class="dash-tile" onclick="go('strefy',document.querySelector('.ni[onclick*=strefy]'))"><div class="dt-icon">🛵</div><div class="dt-title">Obszary dostaw</div><div class="dt-sub">Strefy i stawki dostawy</div></div>
-        <div class="dash-tile" onclick="go('klienci',document.getElementById('nav-klienci'))"><div class="dt-icon">👥</div><div class="dt-title">Klienci</div><div class="dt-sub" id="dash-tile-custs">Baza klientów</div></div>
-        <div class="dash-tile" onclick="go('importexport',document.querySelector('.ni[onclick*=importexport]'))"><div class="dt-icon">↕</div><div class="dt-title">Import / Eksport</div><div class="dt-sub">Przenieś dane klientów</div></div>
+        <div class="dash-tile" onclick="go(&#39;zamowienia&#39;,document.getElementById(&#39;nav-zamowienia&#39;))"><div class="dt-icon">📋</div><div class="dt-title">Lista zamówień</div><div class="dt-sub" id="dash-tile-orders"><span style="color:var(--rust);font-weight:700;">🔔 1 nowe — kliknij aby obsłużyć</span></div></div>
+        <div class="dash-tile" onclick="go(&#39;daniednia&#39;,document.querySelector(&#39;.ni[onclick*=daniednia]&#39;))"><div class="dt-icon">⭐</div><div class="dt-title">Danie dnia</div><div class="dt-sub" id="dash-tile-daily">Dziś: Zupa krem z dyni + tagiatelle chick…</div></div>
+        <div class="dash-tile" onclick="go(&#39;menu&#39;,document.querySelector(&#39;.ni[onclick*=menu]&#39;))"><div class="dt-icon">🍽</div><div class="dt-title">Modyfikuj menu</div><div class="dt-sub">Dodaj, usuń lub zmień dania</div></div>
+        <div class="dash-tile" onclick="go(&#39;strefy&#39;,document.querySelector(&#39;.ni[onclick*=strefy]&#39;))"><div class="dt-icon">🛵</div><div class="dt-title">Obszary dostaw</div><div class="dt-sub">Strefy i stawki dostawy</div></div>
+        <div class="dash-tile" onclick="go(&#39;klienci&#39;,document.getElementById(&#39;nav-klienci&#39;))"><div class="dt-icon">👥</div><div class="dt-title">Klienci</div><div class="dt-sub" id="dash-tile-custs">Baza klientów</div></div>
+        <div class="dash-tile" onclick="go(&#39;importexport&#39;,document.querySelector(&#39;.ni[onclick*=importexport]&#39;))"><div class="dt-icon">↕</div><div class="dt-title">Import / Eksport</div><div class="dt-sub">Przenieś dane klientów</div></div>
       </div>
     </div>
 
@@ -347,27 +355,65 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="page" id="page-zamowienia">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 12px;flex-wrap:wrap;gap:8px;">
         <div class="ord-tabs" id="ord-tabs">
-          <button class="ord-tab active" onclick="switchOrdTab('pending',this)">
-            Do akceptacji <span class="ord-tab-badge" id="tab-badge-pending"></span>
+          <button class="ord-tab active" onclick="switchOrdTab(&#39;pending&#39;,this)">
+            Do akceptacji <span class="ord-tab-badge show" id="tab-badge-pending">1</span>
           </button>
-          <button class="ord-tab" onclick="switchOrdTab('current',this)">
+          <button class="ord-tab" onclick="switchOrdTab(&#39;current&#39;,this)">
             Bieżące <span class="ord-tab-badge" id="tab-badge-current"></span>
           </button>
-          <button class="ord-tab" onclick="switchOrdTab('planned',this)">
+          <button class="ord-tab" onclick="switchOrdTab(&#39;planned&#39;,this)">
             Zaplanowane <span class="ord-tab-badge" id="tab-badge-planned"></span>
           </button>
-          <button class="ord-tab" onclick="switchOrdTab('archive',this)">
+          <button class="ord-tab" onclick="switchOrdTab(&#39;archive&#39;,this)">
             Archiwum
           </button>
         </div>
         <div id="ord-type-filters" style="display:flex;gap:6px;">
-          <button class="fchip active" onclick="setOrdTypeFilter('all',this)">Wszystkie</button>
-          <button class="fchip" onclick="setOrdTypeFilter('delivery',this)">🚗 Dostawa</button>
-          <button class="fchip" onclick="setOrdTypeFilter('pickup',this)">🧍 Odbiór</button>
-          <button class="fchip" onclick="setOrdTypeFilter('dine',this)">🍽 Na miejscu</button>
+          <button class="fchip active" onclick="setOrdTypeFilter(&#39;all&#39;,this)">Wszystkie</button>
+          <button class="fchip" onclick="setOrdTypeFilter(&#39;delivery&#39;,this)">🚗 Dostawa</button>
+          <button class="fchip" onclick="setOrdTypeFilter(&#39;pickup&#39;,this)">🧍 Odbiór</button>
+          <button class="fchip" onclick="setOrdTypeFilter(&#39;dine&#39;,this)">🍽 Na miejscu</button>
         </div>
       </div>
-      <div id="orders-list"></div>
+      <div id="orders-list"><div class="order-card ord-pending" id="ocard-#68662">
+    <div class="order-hd">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:15px;font-weight:800;color:var(--brown);">#68662</span>
+        <span class="order-type-pill ot-pick">🧍 Odbiór osobisty</span>
+        <span class="ord-status-pill os-pending">⏳ Do akceptacji</span>
+        
+      </div>
+      <span style="font-size:12px;color:var(--muted);white-space:nowrap;">09:45</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:4px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--brown);">HyHy</div>
+        <div style="font-size:12px;color:var(--muted);">📞 512988773</div>
+        
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:20px;font-weight:800;color:var(--brown);">32 zł</div>
+        <div style="font-size:11px;color:var(--muted);">łącznie</div>
+      </div>
+    </div>
+    <div class="ord-items-list">
+      <div class="ord-item-row">
+        <span>1× Bajgiel z Caprese - mozzarellą, pomidorem, oliwą, bazylią i czosnkiem</span>
+        <span style="font-weight:600;">22.00 zł</span>
+      </div>
+      <div class="ord-item-mods">Bajgiel pszenny</div>
+      <div class="ord-item-row">
+        <span>1× Deser chia</span>
+        <span style="font-weight:600;">10.00 zł</span>
+      </div>
+      
+    </div>
+    <div class="ord-meta"><span class="ord-meta-chip">💳 transfer</span></div>
+    
+    <div class="ord-actions">
+      <button class="btn-accept" onclick="openAcceptModal(&#39;#68662&#39;)" style="flex:1;min-width:200px;padding:12px 20px;font-size:14px;">✓ Przyjmij zamówienie</button>
+      <button class="btn-reject" onclick="rejectOrd(&#39;#68662&#39;)">✕ Odrzuć</button></div>
+  </div></div>
     </div>
 
     <!-- KLIENCI -->
@@ -375,7 +421,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="sect-hdr">
         <h2>Klienci <span id="custs-count" style="font-size:13px;font-weight:400;color:var(--muted);"></span></h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input type="search" id="cust-search" placeholder="Szukaj po nazwie, telefonie, e-mailu..." style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;min-width:220px;" oninput="renderCusts(this.value)">
+          <input type="search" id="cust-search" placeholder="Szukaj po nazwie, telefonie, e-mailu..." style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:&#39;Inter&#39;,sans-serif;min-width:220px;" oninput="renderCusts(this.value)">
           <button class="btn bo bsm" onclick="openMergeCustModal()" title="Scal dwóch klientów ręcznie">🔗 Scal</button>
           <button class="btn bo bsm" onclick="exportCSV()">⬇ CSV</button>
           <button class="btn bp bsm" onclick="openAddCustModal()">+ Dodaj klienta</button>
@@ -389,9 +435,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <th>E-mail</th>
             <th style="text-align:center;">SMS</th>
             <th style="text-align:center;">E-mail mkt</th>
-            <th style="text-align:center;cursor:pointer;" onclick="sortCusts('visits')" title="Sortuj wg wizyt">Wizyty <span id="sort-visits"></span></th>
-            <th style="text-align:center;cursor:pointer;" onclick="sortCusts('stamps')" title="Sortuj wg pieczątek">⭐ Pieczątki <span id="sort-stamps"></span></th>
-            <th style="text-align:right;cursor:pointer;" onclick="sortCusts('spent')" title="Sortuj wg kwoty">💰 Wydano <span id="sort-spent"></span></th>
+            <th style="text-align:center;cursor:pointer;" onclick="sortCusts(&#39;visits&#39;)" title="Sortuj wg wizyt">Wizyty <span id="sort-visits"></span></th>
+            <th style="text-align:center;cursor:pointer;" onclick="sortCusts(&#39;stamps&#39;)" title="Sortuj wg pieczątek">⭐ Pieczątki <span id="sort-stamps"></span></th>
+            <th style="text-align:right;cursor:pointer;" onclick="sortCusts(&#39;spent&#39;)" title="Sortuj wg kwoty">💰 Wydano <span id="sort-spent"></span></th>
             <th>Akcje</th>
           </tr></thead>
           <tbody id="custs-body"></tbody>
@@ -432,13 +478,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <!-- PROMOCJE -->
     <div class="page" id="page-promocje">
-      <div class="sect-hdr"><h2>Promocje</h2><button class="btn bp bsm" onclick="openModal('mo-promo')">+ Dodaj promocję</button></div>
+      <div class="sect-hdr"><h2>Promocje</h2><button class="btn bp bsm" onclick="openModal(&#39;mo-promo&#39;)">+ Dodaj promocję</button></div>
       <div id="promo-list"></div>
     </div>
 
     <!-- KUPONY -->
     <div class="page" id="page-kupony">
-      <div class="sect-hdr"><h2>Kupony rabatowe</h2><button class="btn bp bsm" onclick="openModal('mo-coupon')">+ Generuj kupon</button></div>
+      <div class="sect-hdr"><h2>Kupony rabatowe</h2><button class="btn bp bsm" onclick="openModal(&#39;mo-coupon&#39;)">+ Generuj kupon</button></div>
       <table class="tbl">
         <thead><tr><th>Kod</th><th>Rabat</th><th>Ważny do</th><th>Użycia</th><th>Status</th><th>Akcja</th></tr></thead>
         <tbody id="coupons-body"></tbody>
@@ -447,7 +493,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <!-- CROSS-SELLING -->
     <div class="page" id="page-crosssell">
-      <div class="sect-hdr"><h2>Cross-selling</h2><button class="btn bp bsm" onclick="openModal('mo-cross')">+ Dodaj regułę</button></div>
+      <div class="sect-hdr"><h2>Cross-selling</h2><button class="btn bp bsm" onclick="openModal(&#39;mo-cross&#39;)">+ Dodaj regułę</button></div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Pokaż klientowi dodatkowe produkty przy zamówieniu wybranego dania.</p>
       <div id="cross-list"></div>
     </div>
@@ -507,7 +553,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div style="text-align:center;margin:16px 0;">
           <canvas id="qr-canvas" width="160" height="160" style="border-radius:8px;"></canvas>
         </div>
-        <div id="qr-url" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:14px;word-break:break-all;"></div>
+        <div id="qr-url" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:14px;word-break:break-all;">https://hirschowkabistro.pl/#menu</div>
         <button class="btn bp" style="width:100%;" onclick="downloadQR()">⬇ Pobierz PNG</button>
       </div>
     </div>
@@ -533,7 +579,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Nagrody na karcie</h3>
         <div class="stamp-track" id="loy-stamps-preview"></div>
         <div id="loy-rewards-list" style="margin-top:12px;"></div>
-        <button class="btn bo bsm" style="margin-top:10px;" onclick="openModal('mo-reward')">+ Dodaj nagrodę</button>
+        <button class="btn bo bsm" style="margin-top:10px;" onclick="openModal(&#39;mo-reward&#39;)">+ Dodaj nagrodę</button>
       </div>
     </div>
 
@@ -564,13 +610,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">📱 Powiadomienia SMS — SMSAPI.pl</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Podaj token API z konta SMSAPI.pl. Każde przyjęcie zamówienia wyśle automatycznie SMS do klienta ze statusem i szacowanym czasem.</p>
-        <div class="field"><label>Token API SMSAPI</label><input id="smsapi-token" type="password" placeholder="Wklej swój token z smsapi.pl" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" value="${S('smsapi-token')||''}"></div>
-        <div class="field"><label>Nadawca SMS (maks. 11 znaków, bez spacji)</label><input id="smsapi-sender" placeholder="Hirschowka" maxlength="11" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" value="${S('smsapi-sender')||'Hirschowka'}"></div>
+        <div class="field"><label>Token API SMSAPI</label><input id="smsapi-token" type="password" placeholder="Wklej swój token z smsapi.pl" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);" value="${S(&#39;smsapi-token&#39;)||&#39;&#39;}"></div>
+        <div class="field"><label>Nadawca SMS (maks. 11 znaków, bez spacji)</label><input id="smsapi-sender" placeholder="Hirschowka" maxlength="11" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);" value="${S(&#39;smsapi-sender&#39;)||&#39;Hirschowka&#39;}"></div>
         <div style="background:var(--bg);border-radius:var(--r);padding:12px;margin-bottom:12px;border:1px solid var(--border);">
           <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Szablony SMS</div>
-          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">✅ Zamówienie przyjęte</label><textarea id="sms-tpl-accepted" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Cześć {imie}! Zamówienie #{id} z Hirschówki przyjęte. Szacowany czas: {czas} min. Smacznego! :)</textarea></div>
-          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🚗 Zamówienie w drodze</label><textarea id="sms-tpl-delivering" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Twoje zamówienie #{id} wyruszyło! Kierowca jest w drodze. Hirschówka Bistro 🛵</textarea></div>
-          <div class="field"><label style="font-size:12px;">❌ Zamówienie odrzucone</label><textarea id="sms-tpl-rejected" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Przepraszamy, nie możemy teraz zrealizować Twojego zamówienia #{id}. Zadzwoń do nas: 511 707 232. Hirschówka</textarea></div>
+          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">✅ Zamówienie przyjęte</label><textarea id="sms-tpl-accepted" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">Cześć {imie}! Zamówienie #{id} z Hirschówki przyjęte. Szacowany czas: {czas} min. Smacznego! :)</textarea></div>
+          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🚗 Zamówienie w drodze</label><textarea id="sms-tpl-delivering" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">Twoje zamówienie #{id} wyruszyło! Kierowca jest w drodze. Hirschówka Bistro 🛵</textarea></div>
+          <div class="field"><label style="font-size:12px;">❌ Zamówienie odrzucone</label><textarea id="sms-tpl-rejected" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">Przepraszamy, nie możemy teraz zrealizować Twojego zamówienia #{id}. Zadzwoń do nas: 511 707 232. Hirschówka</textarea></div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn bp bsm" onclick="saveSmsSettings()">💾 Zapisz ustawienia SMS</button>
@@ -592,7 +638,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <!-- PRZERWY W PRACY -->
     <div class="page" id="page-przerwy">
-      <div class="sect-hdr"><h2>Przerwy w pracy</h2><button class="btn bp bsm" onclick="openModal('mo-holiday')">+ Dodaj przerwę</button></div>
+      <div class="sect-hdr"><h2>Przerwy w pracy</h2><button class="btn bp bsm" onclick="openModal(&#39;mo-holiday&#39;)">+ Dodaj przerwę</button></div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Ustaw dni wolne, urlopy lub tymczasowe zmiany godzin. Klienci zobaczą informację na stronie.</p>
       <div id="holidays-list"></div>
     </div>
@@ -601,8 +647,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="page" id="page-galeria">
       <div class="sect-hdr"><h2>Galeria zdjęć</h2></div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Zdjęcia wyświetlane na stronie głównej. Maksymalna waga pliku: 10 MB.</p>
-      <div class="photo-drop" onclick="document.getElementById('gal-upload').click()">
-        <input type="file" id="gal-upload" accept="image/*" multiple onchange="uploadGalery(this)">
+      <div class="photo-drop" onclick="document.getElementById(&#39;gal-upload&#39;).click()">
+        <input type="file" id="gal-upload" accept="image/*" multiple="" onchange="uploadGalery(this)">
         <div class="drop-icon">📷</div>
         <p>Kliknij lub przeciągnij zdjęcia tutaj</p>
         <p style="font-size:11px;color:var(--muted2);margin-top:4px;">JPG, PNG — max 10 MB</p>
@@ -623,7 +669,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Ustaw dzisiejsze danie dnia</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
           <div>
-            <div class="photo-drop" onclick="document.getElementById('daily-photo-upload2').click()" style="padding:20px;margin-bottom:14px;min-height:180px;">
+            <div class="photo-drop" onclick="document.getElementById(&#39;daily-photo-upload2&#39;).click()" style="padding:20px;margin-bottom:14px;min-height:180px;">
               <input type="file" id="daily-photo-upload2" accept="image/*" onchange="previewDailyPhoto2(this)">
               <div id="daily-photo-prev2" style="display:none;margin-bottom:8px;position:relative;">
                 <img id="daily-photo-img2" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;">
@@ -634,9 +680,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             </div>
           </div>
           <div>
-            <div class="field"><label>Nazwa dania dnia *</label><input id="daily-name2" placeholder="np. Żurek + Polędwiczki wieprzowe" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Cena zestawu (zł) *</label><input type="number" id="daily-price2" placeholder="np. 22" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Krótki opis</label><textarea id="daily-desc2" rows="3" placeholder="np. Domowy żurek z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+            <div class="field"><label>Nazwa dania dnia *</label><input id="daily-name2" placeholder="np. Żurek + Polędwiczki wieprzowe" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Cena zestawu (zł) *</label><input type="number" id="daily-price2" placeholder="np. 22" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Krótki opis</label><textarea id="daily-desc2" rows="3" placeholder="np. Domowy żurek z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
             <button class="btn bp" onclick="saveDaily2()" style="width:100%;">⭐ Zapisz danie dnia</button>
           </div>
         </div>
@@ -655,19 +701,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid #3b82f6;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍲 Zupa dnia</h3>
         <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('kitchen-soup-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="kitchen-soup-photo" accept="image/*" onchange="previewKitchenPhoto(this,'soup')">
+          <div class="photo-drop" onclick="document.getElementById(&#39;kitchen-soup-photo&#39;).click()" style="padding:14px;text-align:center;min-height:150px;">
+            <input type="file" id="kitchen-soup-photo" accept="image/*" onchange="previewKitchenPhoto(this,&#39;soup&#39;)">
             <div id="kitchen-soup-prev" style="display:none;position:relative;">
               <img id="kitchen-soup-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearKitchenPhoto('soup')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
+              <button onclick="event.stopPropagation();clearKitchenPhoto(&#39;soup&#39;)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
             </div>
             <div id="kitchen-soup-drop" style="font-size:28px;margin-bottom:4px;">🍲</div>
             <p style="font-size:11px;color:var(--muted);">Zdjęcie zupy</p>
           </div>
           <div>
-            <div class="field"><label>Nazwa zupy</label><input id="kitchen-soup-name" placeholder="np. Żurek domowy z jajkiem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="kitchen-soup-desc" rows="2" placeholder="np. Na zakwasie, z białą kiełbasą, jajkiem i chrzanem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena zupy (zł)</label><input type="number" id="kitchen-soup-price" placeholder="np. 12" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Nazwa zupy</label><input id="kitchen-soup-name" placeholder="np. Żurek domowy z jajkiem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Opis</label><textarea id="kitchen-soup-desc" rows="2" placeholder="np. Na zakwasie, z białą kiełbasą, jajkiem i chrzanem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+            <div class="field"><label>Cena zupy (zł)</label><input type="number" id="kitchen-soup-price" placeholder="np. 12" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
           </div>
         </div>
       </div>
@@ -676,19 +722,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--gold);">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍽 Drugie danie</h3>
         <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('kitchen-main-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="kitchen-main-photo" accept="image/*" onchange="previewKitchenPhoto(this,'main')">
+          <div class="photo-drop" onclick="document.getElementById(&#39;kitchen-main-photo&#39;).click()" style="padding:14px;text-align:center;min-height:150px;">
+            <input type="file" id="kitchen-main-photo" accept="image/*" onchange="previewKitchenPhoto(this,&#39;main&#39;)">
             <div id="kitchen-main-prev" style="display:none;position:relative;">
               <img id="kitchen-main-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearKitchenPhoto('main')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
+              <button onclick="event.stopPropagation();clearKitchenPhoto(&#39;main&#39;)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
             </div>
             <div id="kitchen-main-drop" style="font-size:28px;margin-bottom:4px;">🍽</div>
             <p style="font-size:11px;color:var(--muted);">Zdjęcie dania</p>
           </div>
           <div>
-            <div class="field"><label>Nazwa dania</label><input id="kitchen-main-name" placeholder="np. Polędwiczki wieprzowe z ziemniakami" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="kitchen-main-desc" rows="2" placeholder="np. Z sosem chrzanowym, ziemniakami puree i surówką z kapusty" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena dania (zł)</label><input type="number" id="kitchen-main-price" placeholder="np. 26" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Nazwa dania</label><input id="kitchen-main-name" placeholder="np. Polędwiczki wieprzowe z ziemniakami" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Opis</label><textarea id="kitchen-main-desc" rows="2" placeholder="np. Z sosem chrzanowym, ziemniakami puree i surówką z kapusty" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+            <div class="field"><label>Cena dania (zł)</label><input type="number" id="kitchen-main-price" placeholder="np. 26" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
           </div>
         </div>
       </div>
@@ -698,8 +744,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">🍱 Cena zestawu (zupa + drugie)</h3>
         <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Zostaw puste jeśli nie oferujesz zestawu. Przy niższej cenie niż suma automatycznie pojawi się przekreślona cena normalna.</p>
         <div style="display:flex;align-items:center;gap:12px;">
-          <input type="number" id="kitchen-set-price" placeholder="np. 32" step="0.50"
-            style="width:140px;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:16px;font-weight:700;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <input type="number" id="kitchen-set-price" placeholder="np. 32" step="0.50" style="width:140px;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:16px;font-weight:700;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
           <span style="font-size:14px;color:var(--muted);">zł za zestaw</span>
           <div id="kitchen-set-savings" style="font-size:12px;color:var(--green2);font-weight:700;"></div>
         </div>
@@ -734,9 +779,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Sposoby realizacji</h3>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Dostawa</span><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Odbiór własny</span><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Na miejscu</span><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Dostawa</span><label class="toggle"><input type="checkbox" checked=""><span class="tslider"></span></label></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Odbiór własny</span><label class="toggle"><input type="checkbox" checked=""><span class="tslider"></span></label></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Na miejscu</span><label class="toggle"><input type="checkbox" checked=""><span class="tslider"></span></label></div>
           <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Dostawa bez kontaktu</span><label class="toggle"><input type="checkbox"><span class="tslider"></span></label></div>
         </div>
         <div class="field" style="margin-top:14px;"><label>Min. wartość zamówienia z odbiorem (zł)</label><input type="number" value="0"></div>
@@ -749,14 +794,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Płatności</h3>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;"><div><span style="font-size:13px;font-weight:500;">Przelewy24 / BLIK</span><div style="font-size:11px;color:var(--muted);">prowizja ~1,6% od transakcji</div></div><span class="badge bg-ok">Aktywne</span></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Karta przy odbiorze</span><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Gotówka przy odbiorze</span><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Karta przy odbiorze</span><label class="toggle"><input type="checkbox" checked=""><span class="tslider"></span></label></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Gotówka przy odbiorze</span><label class="toggle"><input type="checkbox" checked=""><span class="tslider"></span></label></div>
         </div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Danie dnia — strona główna</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">To danie wyświetla się na stronie głównej z dużym zdjęciem. Zmień je codziennie rano.</p>
-        <div class="photo-drop" onclick="document.getElementById('daily-photo-upload').click()" style="padding:16px;margin-bottom:10px;">
+        <div class="photo-drop" onclick="document.getElementById(&#39;daily-photo-upload&#39;).click()" style="padding:16px;margin-bottom:10px;">
           <input type="file" id="daily-photo-upload" accept="image/*" onchange="previewDailyPhoto(this)">
           <div id="daily-photo-preview" style="display:none;margin-bottom:8px;"><img id="daily-photo-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:6px;"></div>
           <div class="drop-icon" id="daily-drop-icon">📷</div>
@@ -766,7 +811,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="field"><label>Opis</label><textarea rows="2" id="daily-desc">Domowy żurek na zakwasie z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree</textarea></div>
         <button class="btn bp bsm" onclick="saveDaily()">Zapisz danie dnia</button>
       </div>
-      <button class="btn bp" onclick="toast('Ustawienia zapisane ✓')">Zapisz wszystkie zmiany</button>
+      <button class="btn bp" onclick="toast(&#39;Ustawienia zapisane ✓&#39;)">Zapisz wszystkie zmiany</button>
     </div>
 
     <!-- IMPORT / EKSPORT -->
@@ -800,8 +845,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <li>Wgraj go poniżej</li>
           </ol>
         </div>
-        <div class="import-zone" id="zone-restaumatic" onclick="document.getElementById('xlsx-upload').click()"
-          style="border:2px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
+        <div class="import-zone" id="zone-restaumatic" onclick="document.getElementById(&#39;xlsx-upload&#39;).click()" style="border:2px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
           <input type="file" id="xlsx-upload" accept=".xlsx,.csv,.xls" style="display:none;" onchange="handleRestaumaticFile(this)">
           <div style="font-size:36px;margin-bottom:8px;">📊</div>
           <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Kliknij aby wgrać plik</div>
@@ -832,8 +876,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <div style="font-size:11px;color:var(--muted);">System automatycznie rozpozna kolumny z Twoim plikiem. Jeśli coś nie pasuje — pokaże mapowanie do ręcznej korekty.</div>
           </div>
         </div>
-        <div class="import-zone" id="zone-embargo" onclick="document.getElementById('embargo-upload').click()"
-          style="border:2px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
+        <div class="import-zone" id="zone-embargo" onclick="document.getElementById(&#39;embargo-upload&#39;).click()" style="border:2px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
           <input type="file" id="embargo-upload" accept=".csv,.xlsx,.xls" style="display:none;" onchange="handleEmbargoFile(this)">
           <div style="font-size:36px;margin-bottom:8px;">⭐</div>
           <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Kliknij aby wgrać plik z Embargo</div>
@@ -878,8 +921,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="sect-hdr"><h2>Ustawienia strony WWW</h2></div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Domena i favicon</h3>
-        <div class="field"><label>Aktywna domena</label><input value="hirschowkabistro.pl" readonly style="background:var(--bg);color:var(--muted);"></div>
-        <div class="photo-drop" onclick="document.getElementById('fav-upload').click()">
+        <div class="field"><label>Aktywna domena</label><input value="hirschowkabistro.pl" readonly="" style="background:var(--bg);color:var(--muted);"></div>
+        <div class="photo-drop" onclick="document.getElementById(&#39;fav-upload&#39;).click()">
           <input type="file" id="fav-upload" accept="image/*" style="display:none;">
           <div class="drop-icon">🖼</div><p>Wgraj favicon / logo (min. 200×200 px)</p>
         </div>
@@ -890,18 +933,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="field"><label>Opis meta (do 160 znaków)</label><textarea rows="2">Domowa kuchnia w sercu Mielca. Śniadania od 7:00, obiady dnia, zupy, wypieki. Zamów online z dowozem. ul. Mickiewicza 17.</textarea></div>
         <div class="field"><label>Google Place ID (dla opinii)</label><input placeholder="ChIJTUkv_WprPUcRTAEdJu0Y9lk"></div>
       </div>
-      <button class="btn bp" onclick="toast('Ustawienia WWW zapisane ✓')">Zapisz</button>
+      <button class="btn bp" onclick="toast(&#39;Ustawienia WWW zapisane ✓&#39;)">Zapisz</button>
     </div>
 
   <!-- PODGLĄD -->
     <div class="page" id="page-podglad">
-      <div class="sect-hdr"><h2>Podgląd strony klienta</h2><div style="display:flex;gap:8px;align-items:center;"><button class="btn bp bsm" onclick="document.getElementById('pf').src+=''">🔄 Odśwież</button><button class="btn bo bsm" onclick="window.open('strona-klienta.html','_blank')">↗ Pełny ekran</button></div></div>
+      <div class="sect-hdr"><h2>Podgląd strony klienta</h2><div style="display:flex;gap:8px;align-items:center;"><button class="btn bp bsm" onclick="document.getElementById(&#39;pf&#39;).src+=&#39;&#39;">🔄 Odśwież</button><button class="btn bo bsm" onclick="window.open(&#39;strona-klienta.html&#39;,&#39;_blank&#39;)">↗ Pełny ekran</button></div></div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
         <div style="background:var(--bg);padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);">
           <div style="display:flex;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div><div style="width:10px;height:10px;border-radius:50%;background:#f5a623;"></div><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;"></div></div>
           <div style="flex:1;background:var(--card);border:1px solid var(--border2);border-radius:4px;padding:4px 10px;font-size:11px;color:var(--muted);">hirschowkabistro.pl/zamow</div>
         </div>
-        <div style="display:flex;justify-content:center;background:#111;padding:20px;"><iframe id="pf" src="strona-klienta.html" style="border:none;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);" width="390" height="700" title="Podgląd"></iframe></div>
+        <div style="display:flex;justify-content:center;background:#111;padding:20px;"><iframe id="pf" src="./panel_files/strona-klienta.html" style="border:none;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);" width="390" height="700" title="Podgląd"></iframe></div>
       </div>
       <div class="card card-pad" style="margin-top:14px;"><div style="font-size:13px;color:var(--muted);line-height:1.7;">✅ Strona klienta czyta dane z panelu na żywo — zmiany w menu, cenach, dostępności są widoczne natychmiast.<br>✅ Zamówienia złożone przez klientów pojawiają się w zakładce Zamówienia.<br>✅ Cross-selling działa na podstawie reguł z panelu.<br>✅ Grupy dodatków (mleko do kawy, kubeczek, rodzaj herbaty) automatycznie podpinają się do kategorii.</div></div>
     </div>
@@ -914,19 +957,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Edytuj / Dodaj danie — pełny modal wzorowany na Restaumatic -->
 <div class="mo" id="mo-dish">
   <div class="modal" style="max-width:680px;">
-    <div class="modal-hd"><h3 id="dish-modal-title">Dodaj danie</h3><button class="mc" onclick="closeModal('mo-dish')">✕</button></div>
+    <div class="modal-hd"><h3 id="dish-modal-title">Dodaj danie</h3><button class="mc" onclick="closeModal(&#39;mo-dish&#39;)">✕</button></div>
     <div class="modal-bd">
 
       <!-- Sekcja: Szczegóły dania -->
       <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">Szczegóły dania</div>
 
       <!-- Nazwa dania -->
-      <div class="field"><label>Nazwa dania *</label><input id="d-name" placeholder="np. Bajgiel z boczkiem i jajkiem farmera" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+      <div class="field"><label>Nazwa dania *</label><input id="d-name" placeholder="np. Bajgiel z boczkiem i jajkiem farmera" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
 
       <!-- Zdjęcie -->
       <div class="field">
         <label>Zdjęcie</label>
-        <div class="photo-drop" onclick="document.getElementById('dish-photo-input').click()" style="text-align:center;padding:12px;">
+        <div class="photo-drop" onclick="document.getElementById(&#39;dish-photo-input&#39;).click()" style="text-align:center;padding:12px;">
           <input type="file" id="dish-photo-input" accept="image/*" onchange="previewDishPhoto(this)">
           <div id="dish-photo-prev" style="display:none;margin-bottom:8px;position:relative;">
             <img id="dish-photo-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;">
@@ -944,7 +987,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field">
         <label>Kategoria</label>
         <div style="display:flex;gap:8px;">
-          <select id="d-cat" style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></select>
+          <select id="d-cat" style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></select>
           <button type="button" class="btn bo bsm" onclick="addNewCategory()" title="Dodaj nową kategorię">+ Nowa</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;">Kategoria pojawi się automatycznie na stronie klienta jako zakładka menu.</div>
@@ -956,27 +999,27 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div id="d-badges-selected" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px;"></div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
           <div style="font-size:11px;color:var(--muted);width:100%;margin-bottom:4px;font-weight:600;">Statusy:</div>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Nowość')">Nowość</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Szef kuchni poleca')">Szef kuchni poleca</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Oferta specjalna')">Oferta specjalna</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Bestseller')">Bestseller</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Danie dnia')">Danie dnia</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Danie tygodnia')">Danie tygodnia</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Danie sezonowe')">Danie sezonowe</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Ostre')">🌶 Ostre</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Nowość&#39;)">Nowość</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Szef kuchni poleca&#39;)">Szef kuchni poleca</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Oferta specjalna&#39;)">Oferta specjalna</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Bestseller&#39;)">Bestseller</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Danie dnia&#39;)">Danie dnia</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Danie tygodnia&#39;)">Danie tygodnia</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Danie sezonowe&#39;)">Danie sezonowe</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Ostre&#39;)">🌶 Ostre</button>
           <div style="font-size:11px;color:var(--muted);width:100%;margin-bottom:4px;font-weight:600;margin-top:6px;">Cechy dietetyczne:</div>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Bardzo ostre')">Bardzo ostre</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Super ostre')">Super ostre</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Wegetariańskie')">🌿 Wegetariańskie</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Vegańskie (vegan)')">🌱 Vegańskie</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Owoce morza')">🦞 Owoce morza</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Bez glutenu')">Bez glutenu</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Bez laktozy')">Bez laktozy</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Bez cukru')">Bez cukru</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Fit / Niskokaloryczne')">Fit</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Low Carb')">Low Carb</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'High protein')">High protein</button>
-          <button type="button" class="badge-pill" onclick="toggleBadge(this,'Lokalny produkt')">Lokalny produkt</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Bardzo ostre&#39;)">Bardzo ostre</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Super ostre&#39;)">Super ostre</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Wegetariańskie&#39;)">🌿 Wegetariańskie</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Vegańskie (vegan)&#39;)">🌱 Vegańskie</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Owoce morza&#39;)">🦞 Owoce morza</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Bez glutenu&#39;)">Bez glutenu</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Bez laktozy&#39;)">Bez laktozy</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Bez cukru&#39;)">Bez cukru</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Fit / Niskokaloryczne&#39;)">Fit</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Low Carb&#39;)">Low Carb</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;High protein&#39;)">High protein</button>
+          <button type="button" class="badge-pill" onclick="toggleBadge(this,&#39;Lokalny produkt&#39;)">Lokalny produkt</button>
         </div>
       </div>
 
@@ -992,7 +1035,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field">
         <label>Cena</label>
         <div style="display:flex;align-items:center;gap:8px;">
-          <input type="number" id="d-price" placeholder="0.00" step="0.50" style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <input type="number" id="d-price" placeholder="0.00" step="0.50" style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
           <span style="font-size:14px;color:var(--muted);">zł</span>
         </div>
       </div>
@@ -1000,7 +1043,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <!-- Składniki -->
       <div class="field">
         <label>Składniki dania (domyślne dodatki)</label>
-        <input id="d-ingredients" placeholder="np. sałata, pomidor, ogórek, ser feta" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+        <input id="d-ingredients" placeholder="np. sałata, pomidor, ogórek, ser feta" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
       </div>
 
       <!-- Dostępność -->
@@ -1008,14 +1051,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="frow">
         <div class="field">
           <label>Widoczność</label>
-          <select id="d-avail" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <select id="d-avail" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
             <option value="1">✓ Strona WWW — widoczne</option>
             <option value="0">✗ Ukryte (niedostępne)</option>
           </select>
         </div>
         <div class="field">
           <label>Harmonogram dostępności</label>
-          <select id="d-schedule" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <select id="d-schedule" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
             <option value="">(dowolny)</option>
             <option value="breakfast">Śniadania (7:00–11:00)</option>
             <option value="lunch">Lunch (11:00–14:00)</option>
@@ -1026,7 +1069,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     </div><!-- /modal-bd -->
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-dish')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-dish&#39;)">Anuluj</button>
       <button class="btn bp" id="dish-save-btn" onclick="saveDish()">Zapisz danie</button>
     </div>
   </div>
@@ -1035,7 +1078,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Dodaj / Edytuj grupę dodatków -->
 <div class="mo" id="mo-addon">
   <div class="modal" style="max-width:620px;">
-    <div class="modal-hd"><h3 id="addon-modal-title">Dodaj grupę dodatków</h3><button class="mc" onclick="closeModal('mo-addon')">✕</button></div>
+    <div class="modal-hd"><h3 id="addon-modal-title">Dodaj grupę dodatków</h3><button class="mc" onclick="closeModal(&#39;mo-addon&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="field"><label>Nazwa grupy *</label><input id="addon-name" placeholder="np. Mleko do kawy, Rodzaj herbaty, Kubeczek..."></div>
       <div class="field">
@@ -1048,7 +1091,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field">
         <label>Typ wyboru</label>
         <div style="display:flex;gap:16px;margin-top:4px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;"><input type="radio" name="addon-type-r" id="at-radio" value="Jednokrotny" checked style="accent-color:var(--brown);"> Jednokrotny — klient wybiera 1 opcję</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;"><input type="radio" name="addon-type-r" id="at-radio" value="Jednokrotny" checked="" style="accent-color:var(--brown);"> Jednokrotny — klient wybiera 1 opcję</label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;"><input type="radio" name="addon-type-r" id="at-check" value="Wielokrotny" style="accent-color:var(--brown);"> Wielokrotny — może wybrać kilka</label>
         </div>
       </div>
@@ -1067,7 +1110,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-addon')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-addon&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveAddon()">Zapisz grupę</button>
     </div>
   </div>
@@ -1076,7 +1119,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Dodaj / Edytuj parametr -->
 <div class="mo" id="mo-param">
   <div class="modal" style="max-width:560px;">
-    <div class="modal-hd"><h3 id="param-modal-title">Dodaj parametr</h3><button class="mc" onclick="closeModal('mo-param')">✕</button></div>
+    <div class="modal-hd"><h3 id="param-modal-title">Dodaj parametr</h3><button class="mc" onclick="closeModal(&#39;mo-param&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="field"><label>Nazwa parametru *</label><input id="param-name" placeholder="np. Pojemność kawy, Rodzaj herbaty..."></div>
       <div class="field">
@@ -1088,7 +1131,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-param')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-param&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveParam()">Zapisz parametr</button>
     </div>
   </div>
@@ -1098,7 +1141,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Dodaj promocję -->
 <div class="mo" id="mo-promo">
   <div class="modal">
-    <div class="modal-hd"><h3>Dodaj promocję</h3><button class="mc" onclick="closeModal('mo-promo')">✕</button></div>
+    <div class="modal-hd"><h3>Dodaj promocję</h3><button class="mc" onclick="closeModal(&#39;mo-promo&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="field"><label>Nazwa promocji</label><input id="promo-name" placeholder="np. Śniadanie z kawą -20%"></div>
       <div class="frow">
@@ -1112,13 +1155,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field"><label>Warunek (opcjonalnie)</label><input id="promo-cond" placeholder="np. min. zamówienie 30 zł"></div>
       <div class="field"><label>Aktywna</label>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-          <label class="toggle"><input type="checkbox" id="promo-active" checked><span class="tslider"></span></label>
+          <label class="toggle"><input type="checkbox" id="promo-active" checked=""><span class="tslider"></span></label>
           <span style="font-size:13px;">Tak</span>
         </div>
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-promo')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-promo&#39;)">Anuluj</button>
       <button class="btn bp" onclick="savePromo()">Zapisz promocję</button>
     </div>
   </div>
@@ -1127,7 +1170,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Generuj kupon -->
 <div class="mo" id="mo-coupon">
   <div class="modal">
-    <div class="modal-hd"><h3>Generuj kupon rabatowy</h3><button class="mc" onclick="closeModal('mo-coupon')">✕</button></div>
+    <div class="modal-hd"><h3>Generuj kupon rabatowy</h3><button class="mc" onclick="closeModal(&#39;mo-coupon&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="frow">
         <div class="field"><label>Kod kuponu</label><input id="coup-code" placeholder="np. HIRSCH10"><button class="btn bo bsm" style="margin-top:6px;" onclick="genCode()">Generuj losowy</button></div>
@@ -1140,7 +1183,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field"><label>Min. wartość zamówienia (zł)</label><input type="number" id="coup-min" value="0"></div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-coupon')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-coupon&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveCoupon()">Generuj kupon</button>
     </div>
   </div>
@@ -1149,20 +1192,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Zarządzaj kategoriami menu -->
 <div class="mo" id="mo-cats">
   <div class="modal" style="max-width:520px;">
-    <div class="modal-hd"><h3>Kategorie menu</h3><button class="mc" onclick="closeModal('mo-cats')">✕</button></div>
+    <div class="modal-hd"><h3>Kategorie menu</h3><button class="mc" onclick="closeModal(&#39;mo-cats&#39;)">✕</button></div>
     <div class="modal-bd">
       <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Kategorie są tworzone automatycznie na podstawie dań. Możesz zmienić nazwę istniejącej kategorii (zmiana dotyczy wszystkich dań w tej kategorii) lub dodać nową.</div>
       <div id="cats-manager-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Dodaj nową kategorię</div>
         <div style="display:flex;gap:8px;">
-          <input id="new-cat-name" placeholder="np. Sałatki, Zestawy, Pizza..." style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);">
+          <input id="new-cat-name" placeholder="np. Sałatki, Zestawy, Pizza..." style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--bg);color:var(--text);">
           <button class="btn bp" onclick="addNewCategoryFromModal()">Dodaj</button>
         </div>
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-cats')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-cats&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveCategoryRenames()">Zapisz zmiany</button>
     </div>
   </div>
@@ -1171,14 +1214,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Cross-selling -->
 <div class="mo" id="mo-cross">
   <div class="modal">
-    <div class="modal-hd"><h3>Dodaj regułę cross-selling</h3><button class="mc" onclick="closeModal('mo-cross')">✕</button></div>
+    <div class="modal-hd"><h3>Dodaj regułę cross-selling</h3><button class="mc" onclick="closeModal(&#39;mo-cross&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="field"><label>Gdy klient zamawia (danie/kategoria)</label><input id="cross-when" placeholder="np. Obiady, Kopytka z sosem..."></div>
       <div class="field"><label>Pokaż propozycję</label><input id="cross-show" placeholder="np. Zupa dnia, Szarlotka z lodami"></div>
       <div class="field"><label>Komunikat dla klienta</label><input id="cross-msg" value="Może dodasz do zestawu?"></div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-cross')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-cross&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveCross()">Zapisz regułę</button>
     </div>
   </div>
@@ -1187,7 +1230,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Modal: Przyjmij zamówienie -->
 <div class="mo" id="mo-accept-order">
   <div class="modal" style="max-width:500px;">
-    <div class="modal-hd"><h3>Przyjmij zamówienie <span id="acc-ord-id" style="color:var(--gold);"></span></h3><button class="mc" onclick="closeModal('mo-accept-order')">✕</button></div>
+    <div class="modal-hd"><h3>Przyjmij zamówienie <span id="acc-ord-id" style="color:var(--gold);"></span></h3><button class="mc" onclick="closeModal(&#39;mo-accept-order&#39;)">✕</button></div>
     <div class="modal-bd">
       <div style="background:var(--bg);border-radius:var(--r);padding:12px;margin-bottom:14px;border:1px solid var(--border);">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
@@ -1205,8 +1248,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
       <div class="field">
         <label>⏰ Na kiedy?</label>
-        <select id="acc-timing-select" onchange="document.getElementById('acc-custom-time').style.display=this.value==='custom'?'block':'none'"
-          style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+        <select id="acc-timing-select" onchange="document.getElementById(&#39;acc-custom-time&#39;).style.display=this.value===&#39;custom&#39;?&#39;block&#39;:&#39;none&#39;" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
           <option value="asap">Jak najszybciej</option>
           <option value="15">~15 minut</option>
           <option value="20">~20 minut</option>
@@ -1217,7 +1259,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <option value="custom">Konkretna godzina...</option>
         </select>
         <div id="acc-custom-time" style="display:none;margin-top:8px;">
-          <input type="time" id="acc-custom-time-inp" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <input type="time" id="acc-custom-time-inp" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);">
         </div>
       </div>
       <div class="field">
@@ -1230,7 +1272,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-accept-order')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-accept-order&#39;)">Anuluj</button>
       <button class="btn bgreen" onclick="acceptOrdFinal()" style="background:var(--green2);color:#fff;border-color:var(--green2);">✓ Przyjmij zamówienie</button>
     </div>
   </div>
@@ -1239,13 +1281,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Modal: Ręczny SMS -->
 <div class="mo" id="mo-sms">
   <div class="modal" style="max-width:460px;">
-    <div class="modal-hd"><h3>Wyślij SMS do klienta</h3><button class="mc" onclick="closeModal('mo-sms')">✕</button></div>
+    <div class="modal-hd"><h3>Wyślij SMS do klienta</h3><button class="mc" onclick="closeModal(&#39;mo-sms&#39;)">✕</button></div>
     <div class="modal-bd">
       <input type="hidden" id="sms-modal-ord-id">
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Odbiorca: <strong id="sms-modal-phone"></strong></div>
       <div class="field">
         <label>Treść wiadomości</label>
-        <textarea id="sms-modal-inp" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea>
+        <textarea id="sms-modal-inp" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="sms-char-count"></div>
       </div>
       <div style="font-size:12px;color:var(--muted);background:var(--bg);border-radius:var(--r);padding:8px 10px;border:1px solid var(--border);">
@@ -1253,7 +1295,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-sms')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-sms&#39;)">Anuluj</button>
       <button class="btn bp" onclick="sendSmsModal()">📱 Wyślij SMS</button>
     </div>
   </div>
@@ -1262,7 +1304,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Strefa dostawy -->
 <div class="mo" id="mo-zone">
   <div class="modal">
-    <div class="modal-hd"><h3>Dodaj strefę dostawy</h3><button class="mc" onclick="closeModal('mo-zone')">✕</button></div>
+    <div class="modal-hd"><h3>Dodaj strefę dostawy</h3><button class="mc" onclick="closeModal(&#39;mo-zone&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="field"><label>Nazwa strefy</label><input id="zone-name" placeholder="np. Centrum Mielca"></div>
       <div class="frow">
@@ -1276,7 +1318,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field"><label>Opis / ulice objęte strefą</label><textarea id="zone-desc" rows="2" placeholder="np. Centrum, ul. Mickiewicza, ul. Sękowskiego..."></textarea></div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-zone')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-zone&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveZone()">Zapisz strefę</button>
     </div>
   </div>
@@ -1285,7 +1327,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Przerwa w pracy -->
 <div class="mo" id="mo-holiday">
   <div class="modal">
-    <div class="modal-hd"><h3>Dodaj przerwę w pracy</h3><button class="mc" onclick="closeModal('mo-holiday')">✕</button></div>
+    <div class="modal-hd"><h3>Dodaj przerwę w pracy</h3><button class="mc" onclick="closeModal(&#39;mo-holiday&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="frow">
         <div class="field"><label>Data od</label><input type="date" id="hol-from"></div>
@@ -1301,7 +1343,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field"><label>Notatka (wyświetlana klientom)</label><input id="hol-note" placeholder="np. Zamykamy na cały dzień — urlop"></div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-holiday')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-holiday&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveHoliday()">Zapisz</button>
     </div>
   </div>
@@ -1310,7 +1352,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Nagroda lojalnościowa -->
 <div class="mo" id="mo-reward">
   <div class="modal">
-    <div class="modal-hd"><h3>Dodaj nagrodę</h3><button class="mc" onclick="closeModal('mo-reward')">✕</button></div>
+    <div class="modal-hd"><h3>Dodaj nagrodę</h3><button class="mc" onclick="closeModal(&#39;mo-reward&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="frow">
         <div class="field"><label>Nr pieczątki</label><input type="number" id="rew-stamp" placeholder="np. 5"></div>
@@ -1319,7 +1361,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field"><label>Nazwa nagrody</label><input id="rew-name" placeholder="np. Darmowa kawa"></div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-reward')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-reward&#39;)">Anuluj</button>
       <button class="btn bp" onclick="saveReward()">Dodaj</button>
     </div>
   </div>
@@ -1328,19 +1370,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Dodaj klienta ręcznie -->
 <div class="mo" id="mo-add-cust">
   <div class="modal" style="max-width:560px;">
-    <div class="modal-hd"><h3 id="cust-modal-title">Dodaj klienta</h3><button class="mc" onclick="closeModal('mo-add-cust')">✕</button></div>
+    <div class="modal-hd"><h3 id="cust-modal-title">Dodaj klienta</h3><button class="mc" onclick="closeModal(&#39;mo-add-cust&#39;)">✕</button></div>
     <div class="modal-bd">
       <div class="frow">
-        <div class="field"><label>Imię i nazwisko *</label><input id="nc-name" placeholder="np. Anna Kowalska" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-        <div class="field"><label>Telefon</label><input id="nc-phone" placeholder="511 100 200" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field"><label>Imię i nazwisko *</label><input id="nc-name" placeholder="np. Anna Kowalska" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field"><label>Telefon</label><input id="nc-phone" placeholder="511 100 200" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
       </div>
-      <div class="field"><label>E-mail</label><input type="email" id="nc-email" placeholder="anna@example.com" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-      <div class="field"><label>Adres dostawy</label><input id="nc-addr" placeholder="ul. Przykładowa 1, Mielec" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="nc-email" placeholder="anna@example.com" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+      <div class="field"><label>Adres dostawy</label><input id="nc-addr" placeholder="ul. Przykładowa 1, Mielec" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
       <div class="frow">
-        <div class="field"><label>Pieczątki</label><input type="number" id="nc-stamps" value="0" min="0" max="99" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-        <div class="field"><label>Wizyty / zamówienia</label><input type="number" id="nc-visits" value="0" min="0" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field"><label>Pieczątki</label><input type="number" id="nc-stamps" value="0" min="0" max="99" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field"><label>Wizyty / zamówienia</label><input type="number" id="nc-visits" value="0" min="0" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
       </div>
-      <div class="field"><label>Łączna kwota wydana (zł)</label><input type="number" id="nc-spent" value="0" min="0" step="0.01" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+      <div class="field"><label>Łączna kwota wydana (zł)</label><input type="number" id="nc-spent" value="0" min="0" step="0.01" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);"></div>
       <div class="frow">
         <div class="field"><label>Marketing SMS</label>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><label class="toggle"><input type="checkbox" id="nc-sms"><span class="tslider"></span></label><span style="font-size:13px;">Zgoda</span></div>
@@ -1351,7 +1393,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-add-cust')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-add-cust&#39;)">Anuluj</button>
       <button class="btn bp" id="cust-save-btn" onclick="saveCustModal()">Dodaj klienta</button>
     </div>
   </div>
@@ -1360,7 +1402,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- Modal scalania klientów -->
 <div class="mo" id="mo-merge-cust">
   <div class="modal" style="max-width:600px;">
-    <div class="modal-hd"><h3>Scal dwóch klientów ręcznie</h3><button class="mc" onclick="closeModal('mo-merge-cust')">✕</button></div>
+    <div class="modal-hd"><h3>Scal dwóch klientów ręcznie</h3><button class="mc" onclick="closeModal(&#39;mo-merge-cust&#39;)">✕</button></div>
     <div class="modal-bd">
       <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
         Użyj tej funkcji gdy ten sam klient ma dwa rekordy w bazie — np. inny e-mail w Restaumatic i Embargo. Wybierz <strong>klienta głównego</strong> (jego dane zostaną zachowane) i <strong>klienta do scalenia</strong> (jego pieczątki i kwoty zostaną dodane, a rekord usunięty).
@@ -1368,11 +1410,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="frow">
         <div class="field">
           <label>Klient główny (zostaje)</label>
-          <select id="merge-primary" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" onchange="updateMergePreview()"></select>
+          <select id="merge-primary" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);" onchange="updateMergePreview()"></select>
         </div>
         <div class="field">
           <label>Klient do scalenia (zostanie usunięty)</label>
-          <select id="merge-secondary" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" onchange="updateMergePreview()"></select>
+          <select id="merge-secondary" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:&#39;Inter&#39;,sans-serif;background:var(--card);color:var(--text);" onchange="updateMergePreview()"></select>
         </div>
       </div>
       <div id="merge-preview-manual" style="margin-top:12px;display:none;">
@@ -1381,7 +1423,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn bo" onclick="closeModal('mo-merge-cust')">Anuluj</button>
+      <button class="btn bo" onclick="closeModal(&#39;mo-merge-cust&#39;)">Anuluj</button>
       <button class="btn bp" style="background:var(--green2);" onclick="doManualMerge()">✅ Scal klientów</button>
     </div>
   </div>
@@ -3611,18 +3653,35 @@ window.onFirebaseOrders = function(freshArr) {
   renderDashboard();
 };
 
-// Poll co 2 sekundy z localStorage
-setInterval(()=>{
-  const fresh = S('orders')||[];
-  const curr = JSON.stringify(orders);
-  const next = JSON.stringify(fresh);
-  if(next !== curr){
-    orders = fresh;
-    renderOrders();
-    updateAlarm();
-    renderDashboard();
+// Pobierz zamówienia natychmiast po załadowaniu panelu
+// (na wypadek że Firebase wysłał dane zanim panel się załadował)
+function fetchOrdersNow() {
+  if (window._firebase && window._firebase.db) {
+    window._firebase.db.ref('orders').once('value').then(function(snap) {
+      var val = snap.val();
+      var arr = [];
+      if (val) {
+        arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(o){ return o && o.id; });
+      }
+      if (arr.length > 0) {
+        orders = arr;
+        renderOrders();
+        updateAlarm();
+        renderDashboard();
+      }
+    }).catch(function(){});
+  } else {
+    // Firebase jeszcze nie gotowy — spróbuj za chwilę
+    setTimeout(fetchOrdersNow, 500);
   }
-}, 2000);
+}
+// Uruchom po 1 sekundzie (Firebase SDK potrzebuje chwili na załadowanie)
+setTimeout(fetchOrdersNow, 1000);
+
+// Poll co 3 sekundy — backup synchronizacja
+setInterval(fetchOrdersNow, 3000);
 </script>
-</body>
-</html>
+
+
+</body></html>
