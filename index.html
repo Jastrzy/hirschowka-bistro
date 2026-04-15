@@ -575,6 +575,14 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .reveal.visible{opacity:1;transform:translateY(0);}
 </style>
 <script src="firebase-config.js"></script>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hirschówka">
+<link rel="apple-touch-icon" href="logo-round.png">
+<meta name="theme-color" content="#3B2512">
 </head>
 <body>
 
@@ -614,6 +622,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🛒 Zamów teraz</button>
       <button class="btn-ghost" onclick="document.getElementById('daily-section').scrollIntoView({behavior:'smooth'})">Danie dnia →</button>
+      <button class="btn-ghost" id="pwa-install-btn" onclick="installPWA()" style="background:#16a34a;color:#fff;border-color:#16a34a;font-weight:700;">📲 Pobierz aplikację</button>
     </div>
     <div class="hero-stats">
       <div class="hstat"><div class="num">7:00</div><div class="lbl">Otwieramy</div></div>
@@ -1415,6 +1424,38 @@ function subscribeNL(){
   const subs=LS('newsletter_subs')||[];subs.push({val,date:new Date().toISOString()});localStorage.setItem('newsletter_subs',JSON.stringify(subs));
   const r=document.getElementById('nl-result');r.style.color='var(--gold2)';r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
   document.getElementById('nl-phone').value='';document.getElementById('nl-emailinp').value='';
+}
+
+// ════ PWA INSTALL ════
+let pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  pwaPrompt = e;
+});
+function installPWA() {
+  if (pwaPrompt) {
+    // Android — natywny dialog instalacji
+    pwaPrompt.prompt();
+    pwaPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') {
+        toast('✅ Aplikacja zainstalowana! Znajdziesz ją na pulpicie telefonu.');
+        document.getElementById('pwa-install-btn').textContent = '✅ Zainstalowano!';
+      }
+      pwaPrompt = null;
+    });
+  } else {
+    // iOS Safari lub już zainstalowana
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      toast('Na iPhone: kliknij "Udostępnij" ⬆️ → "Dodaj do ekranu głównego" 📱');
+    } else {
+      toast('Otwórz tę stronę w Chrome na telefonie i kliknij "Pobierz aplikację"');
+    }
+  }
+}
+// Rejestruj Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
 
 // ════ NAV ════

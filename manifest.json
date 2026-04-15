@@ -1,0 +1,26 @@
+{
+  "name": "Hirschówka Bistro",
+  "short_name": "Hirschówka",
+  "description": "Zamów online — śniadania, obiady, kawy. Mielec, ul. Mickiewicza 17",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9F5EE",
+  "theme_color": "#3B2512",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo-round.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo-round.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["food", "shopping"]
+}
