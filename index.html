@@ -155,7 +155,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 /* ════ TICKER ════ */
 .ticker-bar{background:var(--rust);overflow:hidden;padding:0;}
-.ticker-inner{display:flex;animation:ticker 12s linear infinite;white-space:nowrap;}
+.ticker-inner{display:flex;animation:ticker 7s linear infinite;white-space:nowrap;}
 .ticker-item{display:inline-flex;align-items:center;gap:10px;padding:12px 40px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);text-decoration:none;cursor:pointer;transition:opacity .15s;}
 .ticker-item:hover{opacity:.8;}
 .ticker-dot{color:var(--gold2);font-size:18px;}
@@ -589,7 +589,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- ═══ NAV ═══ -->
 <nav class="nav" id="nav">
   <a href="#" class="nav-logo">
-    <img src="https://i.ibb.co/j9BQtnYt/logo-Hirsch-wka-okr-g-e.png" alt="Hirschówka Bistro" style="height:88px;width:88px;object-fit:contain;border-radius:50%;display:block;">
+    <img src="logo-round.png" alt="Hirschówka Bistro" onerror="this.src='https://i.ibb.co/j9BQtnYt/logo-Hirsch-wka-okr-g-e.png'" style="height:88px;width:88px;object-fit:contain;border-radius:50%;display:block;">
     <span>Hirsch<span style="color:var(--gold);">ówka</span> Bistro</span>
   </a>
   <ul class="nav-links" id="nav-links">
@@ -600,7 +600,10 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <li><a href="tel:511707232" class="nav-cta">Zadzwoń</a></li>
   </ul>
   <div class="nav-right" style="display:flex;align-items:center;gap:10px;">
-    <button class="nav-cart" onclick="openCart()">🛒 Koszyk <span class="cart-badge" id="cart-cnt">0</span></button>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+      <button class="nav-cart" onclick="openCart()">🛒 Koszyk <span class="cart-badge" id="cart-cnt">0</span></button>
+      <button id="pwa-install-btn" onclick="installPWA()" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif;white-space:nowrap;">📲 Pobierz aplikację</button>
+    </div>
     <button class="nav-burger" id="nav-burger" onclick="toggleNav()">
       <span></span><span></span><span></span>
     </button>
@@ -622,7 +625,6 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🛒 Zamów teraz</button>
       <button class="btn-ghost" onclick="document.getElementById('daily-section').scrollIntoView({behavior:'smooth'})">Danie dnia →</button>
-      <button class="btn-ghost" id="pwa-install-btn" onclick="installPWA()" style="background:#16a34a;color:#fff;border-color:#16a34a;font-weight:700;">📲 Pobierz aplikację</button>
     </div>
     <div class="hero-stats">
       <div class="hstat"><div class="num">7:00</div><div class="lbl">Otwieramy</div></div>
@@ -835,7 +837,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <footer class="footer">
   <!-- Logo prostokątne -->
   <div style="text-align:center;margin-bottom:24px;">
-    <img src="https://i.ibb.co/gMdK04wt/logo-Hirsch-wka.png" alt="Hirschówka Bistro" style="max-height:120px;max-width:360px;object-fit:contain;">
+    <img src="logo-rect.png" alt="Hirschówka Bistro" onerror="this.src='https://i.ibb.co/gMdK04wt/logo-Hirsch-wka.png'" style="max-height:120px;max-width:360px;object-fit:contain;">
   </div>
 
   <nav class="footer-links">
