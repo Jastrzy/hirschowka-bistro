@@ -161,7 +161,31 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .ticker-dot{color:var(--gold2);font-size:18px;}
 @keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
 
-/* ════ SECTION HEADERS ════ */
+/* ════ PŁYWAJĄCE JEDZENIE ════ */
+.food-float{
+  position:absolute;font-size:96px;opacity:0;
+  animation:foodFloat linear infinite;
+  pointer-events:none;z-index:1;user-select:none;
+  filter:drop-shadow(0 4px 8px rgba(59,37,18,.15));
+}
+@keyframes foodFloat{
+  0%  {opacity:0;transform:translateY(0) rotate(0deg) scale(.8);}
+  10% {opacity:.7;}
+  90% {opacity:.7;}
+  100%{opacity:0;transform:translateY(-120vh) rotate(25deg) scale(1.1);}
+}
+.food-float:nth-child(1){left:5%;animation-duration:14s;animation-delay:0s;font-size:84px;}
+.food-float:nth-child(2){left:15%;animation-duration:18s;animation-delay:2s;font-size:108px;}
+.food-float:nth-child(3){left:25%;animation-duration:12s;animation-delay:4s;font-size:72px;}
+.food-float:nth-child(4){left:38%;animation-duration:16s;animation-delay:1s;font-size:90px;}
+.food-float:nth-child(5){left:52%;animation-duration:20s;animation-delay:3s;font-size:102px;}
+.food-float:nth-child(6){left:65%;animation-duration:13s;animation-delay:6s;font-size:78px;}
+.food-float:nth-child(7){left:75%;animation-duration:17s;animation-delay:0.5s;font-size:114px;}
+.food-float:nth-child(8){left:85%;animation-duration:15s;animation-delay:5s;font-size:84px;}
+.food-float:nth-child(9){left:92%;animation-duration:19s;animation-delay:2.5s;font-size:66px;}
+.food-float:nth-child(10){left:10%;animation-duration:22s;animation-delay:7s;font-size:96px;}
+
+
 .section-header{text-align:center;margin-bottom:48px;}
 .section-tag{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);display:inline-flex;align-items:center;gap:12px;margin-bottom:14px;}
 .section-tag::before,.section-tag::after{content:'';display:block;width:40px;height:1px;background:var(--gold);}
@@ -614,6 +638,17 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <section class="hero" id="home">
   <div class="hero-bg"></div>
   <div class="hero-pattern"></div>
+  <!-- Pływające jedzenie -->
+  <div class="food-float">🥯</div>
+  <div class="food-float">🥗</div>
+  <div class="food-float">☕</div>
+  <div class="food-float">🥯</div>
+  <div class="food-float">🍵</div>
+  <div class="food-float">🥗</div>
+  <div class="food-float">☕</div>
+  <div class="food-float">🥯</div>
+  <div class="food-float">🍵</div>
+  <div class="food-float">🥗</div>
   <div class="hero-content">
     <div class="hero-tag"><span class="live-dot"></span><span id="hero-open-tag">Dziś gotujemy od 7:00</span></div>
     <h1>Domowa kuchnia,<br>do której <em>chce się wracać</em></h1>
