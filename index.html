@@ -41,13 +41,13 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .nav{
   position:fixed;top:0;left:0;right:0;z-index:200;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 48px;height:68px;
+  padding:0 48px;height:100px;
   background:rgba(249,245,238,.97);backdrop-filter:blur(10px);
   border-bottom:1px solid rgba(59,37,18,.08);
   transition:box-shadow .3s;
 }
 .nav.scrolled{box-shadow:0 2px 24px rgba(59,37,18,.12);}
-.nav-logo{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);text-decoration:none;letter-spacing:-.3px;}
+.nav-logo{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);text-decoration:none;letter-spacing:-.3px;display:flex;align-items:center;gap:12px;}
 .nav-logo span{color:var(--gold);}
 .nav-links{display:flex;gap:32px;list-style:none;align-items:center;}
 .nav-links a{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;}
@@ -73,7 +73,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 /* ════ HERO ════ */
 .hero{
   min-height:100vh;display:grid;grid-template-columns:1fr 340px;
-  align-items:center;gap:0;padding:100px 48px 60px;
+  align-items:center;gap:0;padding:108px 48px 60px;
   position:relative;overflow:hidden;
 }
 .hero-bg{
@@ -155,8 +155,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 /* ════ TICKER ════ */
 .ticker-bar{background:var(--rust);overflow:hidden;padding:0;}
-.ticker-inner{display:flex;animation:ticker 28s linear infinite;white-space:nowrap;}
-.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:12px 40px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);}
+.ticker-inner{display:flex;animation:ticker 12s linear infinite;white-space:nowrap;}
+.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:12px 40px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);text-decoration:none;cursor:pointer;transition:opacity .15s;}
+.ticker-item:hover{opacity:.8;}
 .ticker-dot{color:var(--gold2);font-size:18px;}
 @keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
 
@@ -579,7 +580,10 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 <!-- ═══ NAV ═══ -->
 <nav class="nav" id="nav">
-  <a href="#" class="nav-logo">Hirsch<span>ówka</span> Bistro</a>
+  <a href="#" class="nav-logo">
+    <img src="https://i.ibb.co/j9BQtnYt/logo-Hirsch-wka-okr-g-e.png" alt="Hirschówka Bistro" style="height:88px;width:88px;object-fit:contain;border-radius:50%;display:block;">
+    <span>Hirsch<span style="color:var(--gold);">ówka</span> Bistro</span>
+  </a>
   <ul class="nav-links" id="nav-links">
     <li><a href="#menu">Menu</a></li>
     <li><a href="#daily-section">Danie dnia</a></li>
@@ -613,7 +617,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="hero-stats">
       <div class="hstat"><div class="num">7:00</div><div class="lbl">Otwieramy</div></div>
-      <div class="hstat"><div class="num">4.9★</div><div class="lbl">Ocena Google</div></div>
+      <div class="hstat"><div class="num">5.0★</div><div class="lbl">Ocena Google</div></div>
       <div class="hstat"><div class="num">20 min</div><div class="lbl">Czas dostawy</div></div>
     </div>
   </div>
@@ -639,16 +643,16 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- TICKER — edytuj w panelu admina → Promocje → +Dodaj promocję -->
 <div class="ticker-bar">
   <div class="ticker-inner" id="ticker-inner">
-    <span class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</span>
-    <span class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</span>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
+    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
+    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</a>
   </div>
 </div>
 
@@ -668,7 +672,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       <button class="btn-primary" id="daily-btn" onclick="addDefaultDaily()">🛒 Zamów zestaw dnia</button>
     </div>
     <div class="daily-plate reveal">
-      <div class="daily-plate-badge">Dziś polecamy</div>
+      <div class="daily-plate-badge">Dziś gotujemy</div>
       <span class="daily-plate-emoji" id="daily-emoji">🍲</span>
       <div class="daily-plate-name" id="daily-plate-name">Żurek + Polędwiczki wieprzowe</div>
       <div class="daily-plate-desc" id="daily-plate-desc">Domowy żurek na zakwasie z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree</div>
@@ -725,16 +729,18 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
         <div class="daily-feat"><span class="feat-dot"></span>5 pieczątek → darmowy deser</div>
         <div class="daily-feat"><span class="feat-dot"></span>9 pieczątek → darmowy obiad</div>
       </div>
-      <a href="karta-klienta.html" class="btn-primary" style="display:inline-flex;">Sprawdź swoją kartę →</a>
+      <a href="#loyalty-section" class="btn-primary" style="display:inline-flex;" onclick="document.getElementById('loyalty-section').scrollIntoView({behavior:'smooth'});setTimeout(()=>document.getElementById('loy-phone').focus(),600);return false;">Sprawdź swoją kartę →</a>
     </div>
     <div class="loy-stamps-wrap reveal">
       <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Twoja karta</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:4px;" id="loy-status-txt">Wpisz numer telefonu, żeby sprawdzić kartę</div>
+      <div style="font-size:16px;font-weight:700;color:var(--brown);margin-bottom:4px;">Sprawdź swoje pieczątki 👇</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Wpisz numer telefonu aby zobaczyć swoje nagrody</div>
       <div class="loy-stamps-grid" id="loy-stamps"></div>
       <div class="loy-cta-row">
         <input class="loy-input" type="tel" id="loy-phone" placeholder="Numer telefonu" oninput="fmtLoyPhone(this)">
-        <button class="loy-btn" onclick="checkLoyalty()">Sprawdź</button>
+        <button class="loy-btn" onclick="checkLoyalty()">Sprawdź →</button>
       </div>
+      <div id="loy-status-txt" style="font-size:13px;color:var(--muted);margin-top:8px;min-height:18px;"></div>
     </div>
   </div>
 </section>
@@ -748,7 +754,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="reviews-header reveal">
       <div class="rating-block">
-        <div class="rating-num">4.9</div>
+        <div class="rating-num">5.0</div>
         <div class="rating-info"><div class="stars">★★★★★</div><div class="count">Ocena w Google Maps</div></div>
       </div>
       <a href="https://www.google.com/maps/search/Hirschówka+Bistro+Mielec+Mickiewicza+17" target="_blank" rel="noopener" class="google-btn"><span class="g-icon">G</span> Zobacz w Google Maps →</a>
@@ -818,15 +824,27 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 <!-- FOOTER -->
 <footer class="footer">
-  <div class="footer-logo">Hirsch<span>ówka</span> Bistro</div>
+  <!-- Logo prostokątne -->
+  <div style="text-align:center;margin-bottom:24px;">
+    <img src="https://i.ibb.co/gMdK04wt/logo-Hirsch-wka.png" alt="Hirschówka Bistro" style="max-height:120px;max-width:360px;object-fit:contain;">
+  </div>
+
   <nav class="footer-links">
     <a href="#menu">Menu</a>
     <a href="#daily-section">Danie dnia</a>
-    <a href="karta-klienta.html">Karta lojalnościowa</a>
+    <a href="#loyalty-section">Karta lojalnościowa</a>
     <a href="#contact-section">Kontakt</a>
     <a href="tel:511707232">511 707 232</a>
+    <a href="regulamin.html" style="color:var(--gold2);">Regulamin płatności</a>
   </nav>
-  <div class="footer-copy">© 2025 Hirschówka Bistro · ul. Mickiewicza 17, 39-300 Mielec · Wszelkie prawa zastrzeżone</div>
+
+  <!-- Dane firmy wymagane przez Przelewy24 -->
+  <div style="margin:20px auto;max-width:600px;font-size:12px;color:rgba(255,255,255,.45);line-height:1.8;text-align:center;border-top:1px solid rgba(255,255,255,.1);padding-top:20px;">
+    <strong style="color:rgba(255,255,255,.65);">Fresh Marcin Jastrzębski</strong> · ul. Mickiewicza 17, 39-300 Mielec · NIP: 542-258-72-08<br>
+    Tel: <a href="tel:511707232" style="color:rgba(255,255,255,.45);">511 707 232</a> · E-mail: <a href="mailto:kontakt@hirschowkabistro.pl" style="color:rgba(255,255,255,.45);">kontakt@hirschowkabistro.pl</a>
+  </div>
+
+  <div class="footer-copy">© 2025 Hirschówka Bistro · Wszelkie prawa zastrzeżone</div>
 </footer>
 
 <!-- ═══ OVERLAYS ═══ -->
@@ -973,10 +991,10 @@ const ZONES=[
 ];
 
 const REVIEWS=[
-  {name:'Paweł S.',ini:'P',r:5,date:'tydzień temu',text:'Śniadanie rewelacyjne — bajgiel z boczkiem i jajkiem sadzonym to najlepsza sprawa na poniedziałkowy poranek. Obsługa super, atmosfera przytulna. Wracam regularnie!'},
-  {name:'Milena B.',ini:'M',r:5,date:'2 tygodnie temu',text:'Kawa wyśmienita, a Matcha Latte to absolutny hit. Zawsze świeżo parzona, mleko idealne. Polecam też deser chia — zdrowo i pysznie!'},
-  {name:'Rafał G.',ini:'R',r:5,date:'3 tygodnie temu',text:'Zamawiałem z dostawą — sprawnie, jedzenie gorące, wszystko się zgadzało. Roladki schabowe jak u mamy. Na pewno zamówię znowu.'},
-  {name:'Katarzyna N.',ini:'K',r:4,date:'miesiąc temu',text:'Bardzo miłe bistro w centrum Mielca. Śniadania naprawdę smaczne. Jedyne czego mi brakuje to więcej opcji wegańskich, ale kawy są fantastyczne!'},
+  {name:'Kathy Sliwa',ini:'K',r:5,date:'Google Maps',text:'Przemiła obsługa, przepyszne jedzenie i w normalnych cenach! Zwiedziliśmy już prawie pół Polski i mogę szczerze napisać, że ta restauracja jest jedną z najlepszych w których jedliśmy! Wszystko na 5++++'},
+  {name:'SzamaPrawda',ini:'S',r:5,date:'Google Maps',text:'Świetne miejsce! Sałatka była świeża i pyszna, bajgiel również. Kawa pyszna. Atmosfera i obsługa cudowna. Zdecydowanie polecam! Mimo że trochę ukryte miejsce w Mielcu to zdecydowanie zasługuje na odwiedziny. Ceny przystępne.'},
+  {name:'Weronika Piątkowska',ini:'W',r:5,date:'Google Maps',text:'Bardzo smaczne, świeże i szybko podane danie, przystępne cenowo, obsługa bardzo miła i elastyczna. Polecam!'},
+  {name:'1Thepariah1',ini:'T',r:5,date:'Google Maps',text:'Jedzenie bardzo smaczne. Polecam.\nJedzenie: 5/5 | Obsługa: 5/5 | Klimat: 5/5'},
 ];
 
 // ════ STATE ════
