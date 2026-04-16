@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -2487,8 +2486,15 @@ function importMenuCSV(input){
 // ── MENU ──
 function renderMenu(){
   const cats=[...new Set(menuData.map(d=>d.cat))];
+  // Upewnij się że curMenuCat istnieje w nowych kategoriach
+  if(!cats.includes(curMenuCat) && cats.length > 0) curMenuCat = cats[0];
   document.getElementById('menu-cats').innerHTML=cats.map(c=>`<div class="cchip ${c===curMenuCat?'active':''}" onclick="switchCat('${c}',this)">${c}</div>`).join('');
   renderMenuItems();
+  // Przewiń do aktywnej zakładki
+  setTimeout(function(){
+    const active = document.querySelector('#menu-cats .cchip.active');
+    if(active) active.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  }, 100);
 }
 function switchCat(c,el){curMenuCat=c;document.querySelectorAll('.cchip').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderMenuItems();}
 function renderMenuItems(){
@@ -2651,7 +2657,13 @@ function saveDish(){
     menuData.push(obj);
     curMenuCat=obj.cat;
   }
-  W('menu',menuData);closeModal('mo-dish');renderMenu();toast(editDishId?'Danie "'+name+'" zaktualizowane ✓':'Danie "'+name+'" dodane ✓');
+  W('menu',menuData);
+  const savedCat = obj.cat;
+  editDishId = null;
+  closeModal('mo-dish');
+  curMenuCat = savedCat; // ustaw kategorię PO zamknięciu modala
+  renderMenu();
+  toast(editDishId!==null?'Danie "'+name+'" zaktualizowane ✓':'Danie "'+name+'" dodane ✓ — zakładka "'+savedCat+'" aktywna');
 }
 
 // ── ADDONS ──
