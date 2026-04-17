@@ -3147,14 +3147,23 @@ function openCatManager(){
 function addNewCategoryFromModal(){
   const name=(document.getElementById('new-cat-name').value||'').trim();
   if(!name){toast('Podaj nazwę kategorii');return;}
+
+  // Sprawdź czy już istnieje
+  const existingCats=[...new Set(menuData.map(d=>d.cat))];
+  if(existingCats.includes(name)){toast('Kategoria "'+name+'" już istnieje');return;}
+
   document.getElementById('new-cat-name').value='';
-  // Add to the list display
+
+  // Natychmiast dodaj do catRenames — to jest kluczowe!
+  catRenames['__new__'+name] = name;
+
+  // Dodaj do listy w modalu (wizualnie)
   const list=document.getElementById('cats-manager-list');
   const div=document.createElement('div');
   div.style.cssText='display:flex;align-items:center;gap:8px;';
   div.innerHTML=`<div style="width:24px;height:24px;background:rgba(59,37,18,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;">0</div><input type="text" value="${name}" data-orig="__new__${name}" oninput="catRenames[this.dataset.orig]=this.value" style="flex:1;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);"><span style="font-size:11px;color:var(--muted);">dań</span>`;
   list.appendChild(div);
-  toast('Kategoria "'+name+'" gotowa — zapisz zmiany');
+  toast('Kategoria "'+name+'" dodana — kliknij "Zapisz zmiany" ✓');
 }
 function saveCategoryRenames(){
   let added = [];
