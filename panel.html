@@ -2545,10 +2545,11 @@ function openDishModal(id){
   document.getElementById('d-ingredients').value=d?.ingredients||'';
   document.getElementById('d-schedule').value=d?.schedule||'';
 
-  // Build dynamic category select from existing categories + fixed list
+  // Build dynamic category select from existing categories + reserved + fixed list
   const fixedCats=['Śniadania i lunche','Dania obiadowe','Desery i słodkie przekąski','Napoje gorące','Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone','Napoje zimne'];
   const existingCats=[...new Set(menuData.map(d=>d.cat))];
-  const allCats=[...new Set([...existingCats,...fixedCats])].sort((a,b)=>a.localeCompare(b,'pl'));
+  const reservedCats = S('reserved-cats') || [];
+  const allCats=[...new Set([...existingCats,...reservedCats,...fixedCats])].sort((a,b)=>a.localeCompare(b,'pl'));
   const sel=document.getElementById('d-cat');
   sel.innerHTML=allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
   sel.value=d?.cat||allCats[0];
@@ -3156,18 +3157,47 @@ function addNewCategoryFromModal(){
   toast('Kategoria "'+name+'" gotowa — zapisz zmiany');
 }
 function saveCategoryRenames(){
-  // Apply renames to all dishes
-  Object.entries(catRenames).forEach(([orig,newName])=>{
-    if(!newName.trim()||orig.startsWith('__new__')) return;
-    if(orig===newName) return;
-    menuData.forEach(d=>{ if(d.cat===orig) d.cat=newName.trim(); });
-  });
-  W('menu',menuData);
-  closeModal('mo-cats');
-  renderMenu();
-  toast('Kategorie zaktualizowane ✓');
-}
+  let added = [];
 
+  Object.entries(catRenames).forEach(([orig, newName])=>{
+    if(!newName.trim()) return;
+
+    if(orig.startsWith('__new__')){
+      // Nowa kategoria — sprawdź czy już istnieje
+      const exists = menuData.some(d=>d.cat===newName.trim());
+      if(!exists){
+        // Dodaj przykładowe danie żeby kategoria była widoczna
+        const newId = Math.max(0,...menuData.map(x=>x.id))+1;
+        menuData.push({
+          id: newId,
+          cat: newName.trim(),
+          name: '(nowe danie — kliknij aby edytować)',
+          desc: '',
+          price: 0,
+          avail: false,
+          photo: '',
+          badges: [],
+          variants: [],
+          ingredients: ''
+        });
+        added.push(newName.trim());
+      }
+    } else {
+      // Zmiana nazwy istniejącej kategorii
+      if(orig === newName.trim()) return;
+      menuData.forEach(d=>{ if(d.cat===orig) d.cat=newName.trim(); });
+    }
+  });
+
+  W('menu', menuData);
+  closeModal('mo-cats');
+  if(added.length) curMenuCat = added[0];
+  renderMenu();
+  const msg = added.length
+    ? 'Dodano kategorię "'+added.join(', ')+'" — edytuj przykładowe danie lub usuń je i dodaj nowe ✓'
+    : 'Kategorie zaktualizowane ✓';
+  toast(msg);
+}
 // ── IMPORT: RESTAUMATIC (Excel + CSV) ──
 let restaumaticData = []; // parsed rows
 let embargoData = [];     // parsed rows
