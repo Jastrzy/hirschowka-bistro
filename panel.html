@@ -1273,7 +1273,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <div class="modal" style="max-width:520px;">
     <div class="modal-hd"><h3>Kategorie menu</h3><button class="mc" onclick="closeModal('mo-cats')">✕</button></div>
     <div class="modal-bd">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Kategorie są tworzone automatycznie na podstawie dań. Możesz zmienić nazwę istniejącej kategorii (zmiana dotyczy wszystkich dań w tej kategorii) lub dodać nową.</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Przeciągaj wiersze (⠿) aby zmienić kolejność. Możesz zmienić nazwę kategorii lub dodać nową. Kolejność jest zapisywana niezależnie od dań.</div>
       <div id="cats-manager-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Dodaj nową kategorię</div>
@@ -2485,8 +2485,12 @@ function importMenuCSV(input){
 
 // ── MENU ──
 function renderMenu(){
-  const cats=[...new Set(menuData.map(d=>d.cat))];
-  // Upewnij się że curMenuCat istnieje w nowych kategoriach
+  const ordered = getCatsOrdered();
+  // Dołącz kategorie z dań które nie są na liście
+  const fromDishes = [...new Set(menuData.map(d=>d.cat))];
+  fromDishes.forEach(c=>{ if(!ordered.includes(c)) ordered.push(c); });
+  const cats = ordered;
+  // Upewnij się że curMenuCat istnieje
   if(!cats.includes(curMenuCat) && cats.length > 0) curMenuCat = cats[0];
   document.getElementById('menu-cats').innerHTML=cats.map(c=>`<div class="cchip ${c===curMenuCat?'active':''}" onclick="switchCat('${c}',this)">${c}</div>`).join('');
   renderMenuItems();
@@ -2545,11 +2549,12 @@ function openDishModal(id){
   document.getElementById('d-ingredients').value=d?.ingredients||'';
   document.getElementById('d-schedule').value=d?.schedule||'';
 
-  // Build dynamic category select from existing categories + reserved + fixed list
-  const fixedCats=['Śniadania i lunche','Dania obiadowe','Desery i słodkie przekąski','Napoje gorące','Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone','Napoje zimne'];
+  // Build category select — kolejność z getCatsOrdered()
   const existingCats=[...new Set(menuData.map(d=>d.cat))];
-  const reservedCats = S('reserved-cats') || [];
-  const allCats=[...new Set([...existingCats,...reservedCats,...fixedCats])].sort((a,b)=>a.localeCompare(b,'pl'));
+  const orderedCats = getCatsOrdered();
+  // Dodaj kategorie z dań które nie są w liście (nowe)
+  existingCats.forEach(c=>{ if(!orderedCats.includes(c)) orderedCats.push(c); });
+  const allCats = orderedCats;
   const sel=document.getElementById('d-cat');
   sel.innerHTML=allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
   sel.value=d?.cat||allCats[0];
@@ -2698,7 +2703,7 @@ function openAddonModal(idx){
 
   // Cats
   selectedAddonCats = a?.cats ? a.cats.split(',').map(c=>c.trim()).filter(Boolean) : [];
-  const allCats=[...new Set([...menuData.map(d=>d.cat),'Śniadania i lunche','Dania obiadowe','Napoje gorące','Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone','Desery i słodkie przekąski','Napoje zimne'])];
+  const allCats = getCatsOrdered();
   document.getElementById('addon-cat-pills').innerHTML=allCats.map(c=>{
     const on=selectedAddonCats.includes(c);
     return `<button type="button" onclick="toggleAddonCat(this,'${c.replace(/'/g,"\\'")}')" data-cat="${c}"
@@ -3129,83 +3134,183 @@ function renderDanieDnia(){
 
 
 // ── CATEGORY MANAGER ──
+// Stała lista kategorii z kolejnością (przechowywana w localStorage)
+const DEFAULT_CATS = [
+  'Śniadania',
+  'Napary Premium',
+  'Bajgle',
+  'Bagietki na Ciepło',
+  'Zupy i Dania',
+  'Kawy tradycyjne',
+  'Słodka Chwila',
+  'Soki Świeżo Wyciskane'
+];
+
+// Pobierz aktualną listę kategorii z zachowaną kolejnością
+function getCatsOrdered(){
+  const stored = S('menu-cats-order');
+  if(stored && Array.isArray(stored) && stored.length > 0) return [...stored];
+  return [...DEFAULT_CATS];
+}
+
+// Zapisz kolejność kategorii
+function saveCatsOrder(arr){
+  W('menu-cats-order', arr);
+}
+
+// Inicjalizacja: ustaw domyślne kategorie jeśli nie ma jeszcze żadnych
+(function initCats(){
+  const stored = S('menu-cats-order');
+  if(!stored || !Array.isArray(stored) || stored.length === 0){
+    saveCatsOrder([...DEFAULT_CATS]);
+  }
+})();
+
 let catRenames = {};
+let _catDragSrc = null;
+
 function openCatManager(){
-  catRenames={};
-  const cats=[...new Set(menuData.map(d=>d.cat))];
-  document.getElementById('cats-manager-list').innerHTML=cats.map((c,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div style="width:24px;height:24px;background:rgba(59,37,18,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;">${menuData.filter(d=>d.cat===c).length}</div>
-      <input type="text" value="${c}" data-orig="${c}"
-        oninput="catRenames[this.dataset.orig]=this.value"
-        style="flex:1;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);">
-      <span style="font-size:11px;color:var(--muted);">dań</span>
-    </div>`).join('');
+  catRenames = {};
+  const cats = getCatsOrdered();
+  // Dołącz kategorie z dań które nie są na liście (np. stare dane)
+  const fromDishes = [...new Set(menuData.map(d=>d.cat))];
+  fromDishes.forEach(c=>{ if(!cats.includes(c)) cats.push(c); });
+
+  renderCatsManagerList(cats);
   document.getElementById('new-cat-name').value='';
   openModal('mo-cats');
 }
+
+function renderCatsManagerList(cats){
+  const list = document.getElementById('cats-manager-list');
+  list.innerHTML = cats.map((c,i)=>`
+    <div class="cat-mgr-row" draggable="true" data-cat="${c.replace(/"/g,'&quot;')}"
+      style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:grab;transition:opacity .15s;">
+      <span style="font-size:16px;color:var(--muted2);cursor:grab;flex-shrink:0;" title="Przeciągnij aby zmienić kolejność">⠿</span>
+      <div style="width:22px;height:22px;background:rgba(59,37,18,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0;">${menuData.filter(d=>d.cat===c).length}</div>
+      <input type="text" value="${c}" data-orig="${c}"
+        oninput="catRenames[this.dataset.orig]=this.value"
+        style="flex:1;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);">
+      <span style="font-size:11px;color:var(--muted);flex-shrink:0;">dań</span>
+      <button onclick="deleteCatFromModal('${c.replace(/'/g,"\\'")}',this)" title="Usuń kategorię"
+        style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;flex-shrink:0;">🗑</button>
+    </div>`).join('');
+
+  // Drag & drop
+  list.querySelectorAll('.cat-mgr-row').forEach(row=>{
+    row.addEventListener('dragstart', e=>{
+      _catDragSrc = row;
+      e.dataTransfer.effectAllowed='move';
+      setTimeout(()=>row.style.opacity='0.4',0);
+    });
+    row.addEventListener('dragend', ()=>{ row.style.opacity='1'; });
+    row.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; });
+    row.addEventListener('dragenter', e=>{ e.preventDefault(); if(row!==_catDragSrc) row.style.background='rgba(200,146,42,.1)'; });
+    row.addEventListener('dragleave', ()=>{ row.style.background=''; });
+    row.addEventListener('drop', e=>{
+      e.preventDefault();
+      row.style.background='';
+      if(!_catDragSrc || _catDragSrc===row) return;
+      const allRows = [...list.querySelectorAll('.cat-mgr-row')];
+      const srcIdx = allRows.indexOf(_catDragSrc);
+      const tgtIdx = allRows.indexOf(row);
+      if(srcIdx < tgtIdx) row.after(_catDragSrc);
+      else row.before(_catDragSrc);
+      _catDragSrc.style.opacity='1';
+    });
+  });
+}
+
+function deleteCatFromModal(cat, btn){
+  const count = menuData.filter(d=>d.cat===cat).length;
+  if(count > 0){
+    if(!confirm(`Kategoria "${cat}" ma ${count} dań. Usunięcie kategorii usunie też wszystkie dania w niej. Kontynuować?`)) return;
+    menuData = menuData.filter(d=>d.cat!==cat);
+    W('menu', menuData);
+  }
+  const row = btn.closest('.cat-mgr-row');
+  if(row) row.remove();
+  // Usuń z catRenames jeśli była
+  delete catRenames[cat];
+  toast(`Kategoria "${cat}" usunięta`);
+}
+
 function addNewCategoryFromModal(){
   const name=(document.getElementById('new-cat-name').value||'').trim();
   if(!name){toast('Podaj nazwę kategorii');return;}
 
-  // Sprawdź czy już istnieje
-  const existingCats=[...new Set(menuData.map(d=>d.cat))];
-  if(existingCats.includes(name)){toast('Kategoria "'+name+'" już istnieje');return;}
+  const list = document.getElementById('cats-manager-list');
+  const existing = [...list.querySelectorAll('.cat-mgr-row input')].map(i=>i.value.trim());
+  if(existing.includes(name)){toast('Kategoria "'+name+'" już istnieje');return;}
 
   document.getElementById('new-cat-name').value='';
 
-  // Natychmiast dodaj do catRenames — to jest kluczowe!
-  catRenames['__new__'+name] = name;
-
-  // Dodaj do listy w modalu (wizualnie)
-  const list=document.getElementById('cats-manager-list');
   const div=document.createElement('div');
-  div.style.cssText='display:flex;align-items:center;gap:8px;';
-  div.innerHTML=`<div style="width:24px;height:24px;background:rgba(59,37,18,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;">0</div><input type="text" value="${name}" data-orig="__new__${name}" oninput="catRenames[this.dataset.orig]=this.value" style="flex:1;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);"><span style="font-size:11px;color:var(--muted);">dań</span>`;
+  div.className='cat-mgr-row';
+  div.draggable=true;
+  div.dataset.cat=name;
+  div.style.cssText='display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:grab;transition:opacity .15s;';
+  div.innerHTML=`<span style="font-size:16px;color:var(--muted2);cursor:grab;flex-shrink:0;" title="Przeciągnij aby zmienić kolejność">⠿</span><div style="width:22px;height:22px;background:rgba(59,37,18,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0;">0</div><input type="text" value="${name}" data-orig="__new__${name}" oninput="catRenames[this.dataset.orig]=this.value" style="flex:1;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);"><span style="font-size:11px;color:var(--muted);flex-shrink:0;">dań</span><button onclick="deleteCatFromModal('${name.replace(/'/g,"\\'")}',this)" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;flex-shrink:0;">🗑</button>`;
   list.appendChild(div);
+
+  // Dodaj drag events
+  div.addEventListener('dragstart', e=>{ _catDragSrc=div; e.dataTransfer.effectAllowed='move'; setTimeout(()=>div.style.opacity='0.4',0); });
+  div.addEventListener('dragend', ()=>{ div.style.opacity='1'; });
+  div.addEventListener('dragover', e=>{ e.preventDefault(); });
+  div.addEventListener('dragenter', e=>{ e.preventDefault(); if(div!==_catDragSrc) div.style.background='rgba(200,146,42,.1)'; });
+  div.addEventListener('dragleave', ()=>{ div.style.background=''; });
+  div.addEventListener('drop', e=>{
+    e.preventDefault(); div.style.background='';
+    if(!_catDragSrc||_catDragSrc===div) return;
+    const allRows=[...list.querySelectorAll('.cat-mgr-row')];
+    const si=allRows.indexOf(_catDragSrc), ti=allRows.indexOf(div);
+    if(si<ti) div.after(_catDragSrc); else div.before(_catDragSrc);
+    _catDragSrc.style.opacity='1';
+  });
+
+  catRenames['__new__'+name]=name;
   toast('Kategoria "'+name+'" dodana — kliknij "Zapisz zmiany" ✓');
 }
+
 function saveCategoryRenames(){
+  const list = document.getElementById('cats-manager-list');
+  const rows = [...list.querySelectorAll('.cat-mgr-row')];
+
+  // Nowa kolejność z pozycji wierszy w DOM
+  const newOrder = [];
   let added = [];
 
-  Object.entries(catRenames).forEach(([orig, newName])=>{
-    if(!newName.trim()) return;
+  rows.forEach(row=>{
+    const inp = row.querySelector('input[data-orig]');
+    if(!inp) return;
+    const orig = inp.dataset.orig;
+    const newName = inp.value.trim();
+    if(!newName) return;
 
     if(orig.startsWith('__new__')){
-      // Nowa kategoria — sprawdź czy już istnieje
-      const exists = menuData.some(d=>d.cat===newName.trim());
+      // Nowa kategoria
+      const exists = menuData.some(d=>d.cat===newName);
       if(!exists){
-        // Dodaj przykładowe danie żeby kategoria była widoczna
         const newId = Math.max(0,...menuData.map(x=>x.id))+1;
-        menuData.push({
-          id: newId,
-          cat: newName.trim(),
-          name: '(nowe danie — kliknij aby edytować)',
-          desc: '',
-          price: 0,
-          avail: false,
-          photo: '',
-          badges: [],
-          variants: [],
-          ingredients: ''
-        });
-        added.push(newName.trim());
+        menuData.push({id:newId,cat:newName,name:'(nowe danie — kliknij aby edytować)',desc:'',price:0,avail:false,photo:'',badges:[],variants:[],ingredients:''});
+        added.push(newName);
       }
+      newOrder.push(newName);
     } else {
-      // Zmiana nazwy istniejącej kategorii
-      if(orig === newName.trim()) return;
-      menuData.forEach(d=>{ if(d.cat===orig) d.cat=newName.trim(); });
+      // Zmiana nazwy
+      if(orig !== newName){
+        menuData.forEach(d=>{ if(d.cat===orig) d.cat=newName; });
+      }
+      newOrder.push(newName);
     }
   });
 
+  saveCatsOrder(newOrder);
   W('menu', menuData);
   closeModal('mo-cats');
   if(added.length) curMenuCat = added[0];
   renderMenu();
-  const msg = added.length
-    ? 'Dodano kategorię "'+added.join(', ')+'" — edytuj przykładowe danie lub usuń je i dodaj nowe ✓'
-    : 'Kategorie zaktualizowane ✓';
-  toast(msg);
+  toast(added.length ? 'Dodano: "'+added.join(', ')+'" ✓' : 'Kategorie zaktualizowane ✓');
 }
 // ── IMPORT: RESTAUMATIC (Excel + CSV) ──
 let restaumaticData = []; // parsed rows
@@ -3769,6 +3874,31 @@ document.addEventListener('click', e => {
 // ── TOAST ──
 let tt;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ── MIGRACJA KATEGORII (jednorazowa) ──
+(function migrateCats(){
+  const MIGRATED_KEY = 'hb-cats-migrated-v2';
+  if(localStorage.getItem(MIGRATED_KEY)) return; // już zrobione
+
+  // Ustaw nową kolejność kategorii
+  const newOrder = [
+    'Śniadania',
+    'Napary Premium',
+    'Bajgle',
+    'Bagietki na Ciepło',
+    'Zupy i Dania',
+    'Kawy tradycyjne',
+    'Słodka Chwila',
+    'Soki Świeżo Wyciskane'
+  ];
+  W('menu-cats-order', newOrder);
+
+  // Wyczyść stary klucz reserved-cats (stare kategorie)
+  localStorage.removeItem('reserved-cats');
+
+  localStorage.setItem(MIGRATED_KEY, '1');
+  console.log('[Hirschówka] Migracja kategorii zakończona ✓');
+})();
 
 // ── INIT ──
 checkOpenStatus();
