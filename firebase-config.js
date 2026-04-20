@@ -55,6 +55,18 @@
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
+      // Jednorazowy push wszystkich kluczy przy starcie panelu
+      // (żeby Firebase miał aktualne dane nawet bez edycji)
+      setTimeout(function() {
+        cfg_keys.forEach(function(k) {
+          var val = localStorage.getItem(k);
+          if (val !== null) {
+            try { db.ref(k).set(JSON.parse(val)).catch(function(){}); } catch(e) {}
+          }
+        });
+        console.log('[FB] Initial push done ✓');
+      }, 2000);
+
       setInterval(function() {
         cfg_keys.forEach(function(k) {
           var now = localStorage.getItem(k);
