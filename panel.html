@@ -2650,7 +2650,7 @@ function saveDish(){
     avail:document.getElementById('d-avail').value==='1',
     photo,
     badges:[...selectedBadges],
-    variants:dishVariants.filter(v=>v.name),
+    variants:dishVariants.filter(v=>v.name && v.name.trim() !== ''),
     ingredients:(document.getElementById('d-ingredients').value||'').trim(),
     schedule:(document.getElementById('d-schedule').value||''),
   };
@@ -2664,8 +2664,11 @@ function saveDish(){
     curMenuCat=obj.cat;
   }
   W('menu',menuData);
+  // Natychmiastowy push do Firebase
+  if (window._firebase && window._firebase.db) {
+    try { window._firebase.db.ref('menu').set(menuData).catch(function(){}); } catch(e) {}
+  }
   const savedCat = obj.cat;
-  editDishId = null;
   closeModal('mo-dish');
   curMenuCat = savedCat; // ustaw kategorię PO zamknięciu modala
   renderMenu();
@@ -3817,6 +3820,10 @@ function doFinalImport(){
   // KLUCZOWE: zaktualizuj globalną zmienną customers — renderCusts() czyta z niej, nie z localStorage
   customers = existing;
   W('customers', customers);
+  // Natychmiastowy push do Firebase (nie czekaj na interwał)
+  if (window._firebase && window._firebase.db) {
+    try { window._firebase.db.ref('customers').set(customers).catch(function(){}); } catch(e) {}
+  }
   renderCusts();
 
   document.getElementById('import-final-result').innerHTML=`
@@ -3901,6 +3908,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 })();
 
 // ── INIT ──
+window._panelMenuReady = true; // sygnał dla Firebase że panel jest gotowy
 checkOpenStatus();
 renderDashboard();
 renderOrders();

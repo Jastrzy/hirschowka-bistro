@@ -957,17 +957,10 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 // ════════════════════════════════════════
 // DATA
 // ════════════════════════════════════════
-const ADDONS_DB=[
-  {name:'Mleko do kawy',required:true,type:'radio',cats:['Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Mleko krowie',p:0,def:true},{n:'Mleko owsiane',p:1.5},{n:'Mleko migdałowe',p:1.5},{n:'Mleko bez laktozy',p:0}]},
-  {name:'Rodzaj herbaty',required:true,type:'radio',cats:['Napoje gorące'],items:['Herbata'],opts:[{n:'Czarna',p:0.5,def:true},{n:'Smakowa',p:0.5},{n:'Zielona',p:0.5},{n:'Rumiankowa',p:0.5}]},
-  {name:'Kubeczek',required:false,type:'checkbox',cats:['Kawy klasyczne','Napoje gorące','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Kubeczek na wynos',p:0.5}]},
-  {name:'Wybierz dodatki',required:false,type:'checkbox',cats:['Dania obiadowe'],opts:[{n:'Kluski śląskie',p:8},{n:'Ziemniaki',p:8},{n:'Kasza',p:6},{n:'Kopytka',p:8},{n:'Surówka',p:7},{n:'Sos tysiąca wysp',p:2},{n:'Sos czosnkowy',p:2},{n:'Ketchup',p:2}]},
-  {name:'Wybór pieczywa',required:false,type:'radio',
-   cats:['Śniadania i lunche'],
-   // Only for bajgiel items — checked by item name
-   itemKeywords:['bajgiel','bagietka'],
-   opts:[{n:'Bajgiel pszenny',p:0,def:true},{n:'Bajgiel ziarnisty',p:0}]},
-];
+// ADDONS_DB — tylko fallback gdy panel nie ma jeszcze skonfigurowanych dodatków.
+// Kategorie muszą być zgodne z kategoriami w panelu (Kawy tradycyjne itp.)
+// UWAGA: Admin-addons z panelu (localStorage 'addons') mają PIERWSZEŃSTWO nad ADDONS_DB.
+const ADDONS_DB=[];
 
 const MENU_BASE=[
   {id:1,cat:'Śniadania i lunche',name:'Bajgiel z boczkiem, jajkiem sadzonym, sałatą, pomidorem i sosem',desc:'CHRUPIĄCY NA ZEWNĄTRZ, MIĘKKI W ŚRODKU - NA KAŻDY GUST',price:24,avail:true,badge:'new'},
@@ -1275,34 +1268,57 @@ function renderItem(item){
 // ════ ADDONS ════
 function getItemAddons(item){
   const groups=[];
-  // 1. Explicit addonGroups on item
-  if(item.addonGroups)item.addonGroups.forEach(n=>{const g=ADDONS_DB.find(a=>a.name===n);if(g&&!groups.find(x=>x.name===n))groups.push(g);});
-  // 2. Built-in ADDONS_DB — category + optional keyword filter
+
+  // 1. Admin addons z panelu (Firebase/localStorage) — PIERWSZEŃSTWO
+  (LS('addons')||[]).forEach(a=>{
+    if(groups.find(g=>g.name===a.name))return;
+    const cats=(a.cats||'').split(',').map(c=>c.trim()).filter(Boolean);
+    if(!cats.includes(item.cat))return;
+    const opts=(a.opts||'').split('\n').filter(Boolean).map(l=>{
+      const p=l.split('|');
+      return{n:p[0].trim(),p:parseFloat(p[1])||0,def:(p[2]||'').trim()==='def'};
+    });
+    if(!opts.length)return;
+    groups.push({name:a.name,required:!!a.required,type:a.type==='Jednokrotny'?'radio':'checkbox',cats:[item.cat],opts});
+  });
+
+  // 2. Explicit addonGroups na daniu (stary format)
+  if(item.addonGroups)item.addonGroups.forEach(n=>{
+    const g=ADDONS_DB.find(a=>a.name===n);
+    if(g&&!groups.find(x=>x.name===n))groups.push(g);
+  });
+
+  // 3. ADDONS_DB fallback — tylko jeśli nie ma admina o tej samej nazwie
   ADDONS_DB.forEach(g=>{
     if(groups.find(x=>x.name===g.name))return;
     if(!g.cats.includes(item.cat))return;
     if(g.itemKeywords){const n=item.name.toLowerCase();if(!g.itemKeywords.some(k=>n.includes(k)))return;}
     groups.push(g);
   });
-  // 3. Admin addons from localStorage — exact category match
-  (LS('addons')||[]).forEach(a=>{
-    if(groups.find(g=>g.name===a.name))return;
-    const cats=a.cats.split(',').map(c=>c.trim()).filter(Boolean);
-    if(!cats.includes(item.cat))return;
-    const opts=(a.opts||'').split('\n').filter(Boolean).map(l=>{const p=l.split('|');return{n:p[0].trim(),p:parseFloat(p[1])||0,def:p[2]==='def'};});
-    groups.push({name:a.name,required:!!a.required,type:a.type==='Jednokrotny'?'radio':'checkbox',cats:[item.cat],opts});
-  });
+
   return groups;
 }
 
 // ════ PRODUCT SHEET ════
 function openProduct(id){
   const item=getMenu().find(x=>x.id===id);if(!item||!item.avail)return;
-  curItem=item;curQty=1;curSizes=item.sizes||[];selSize=0;
+  // variants (z panelu: {name, price} gdzie price to cena absolutna)
+  // lub sizes (stary format: {n, p} gdzie p to delta)
+  const rawVariants = (item.variants||item.sizes||[]).filter(v=>(v.name||v.n||'').trim()!=='');
+  curItem=item;curQty=1;
+  curSizes=rawVariants.map(v=>{
+    const label = (v.name||v.n||'').trim();
+    // Jeśli to stary format (pole 'n' i 'p' jako delta) — użyj wprost
+    // Jeśli to nowy format (pole 'name' i 'price' jako cena absolutna) — przelicz deltę
+    const isNewFormat = v.name !== undefined;
+    const delta = isNewFormat ? (parseFloat(v.price)||0) - item.price : (parseFloat(v.p)||0);
+    return {n: label, p: delta};
+  });
+  selSize=0;
   document.getElementById('sp-title').textContent=item.name;
   const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
   const sz=document.getElementById('sp-sizes');
-  if(curSizes.length>1){sz.innerHTML=`<div style="padding:12px 22px;border-bottom:1px solid rgba(59,37,18,.08);"><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Rozmiar</div><div style="display:flex;gap:8px;">${curSizes.map((s,i)=>`<button onclick="selSz(${i})" id="sz-${i}" style="flex:1;padding:10px;border-radius:var(--r);border:2px solid ${i===0?'var(--brown)':'rgba(59,37,18,.15)'};background:${i===0?'rgba(59,37,18,.05)':'transparent'};color:${i===0?'var(--brown)':'var(--muted)'};font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);">${s.n||'Standard'}<br><span style="font-size:11px;">${item.price+s.p} zł</span></button>`).join('')}</div></div>`;}else sz.innerHTML='';
+  if(curSizes.length>=1){sz.innerHTML=`<div style="padding:12px 22px;border-bottom:1px solid rgba(59,37,18,.08);"><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Wariant</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${curSizes.map((s,i)=>`<button onclick="selSz(${i})" id="sz-${i}" style="flex:1;min-width:80px;padding:10px;border-radius:var(--r);border:2px solid ${i===0?'var(--brown)':'rgba(59,37,18,.15)'};background:${i===0?'rgba(59,37,18,.05)':'transparent'};color:${i===0?'var(--brown)':'var(--muted)'};font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);">${s.n||'Standard'}<br><span style="font-size:11px;">${(item.price+s.p).toFixed(2)} zł</span></button>`).join('')}</div></div>`;}else sz.innerHTML='';
   const groups=getItemAddons(item);
   curAddons=groups.map(g=>{const def=g.opts.find(o=>o.def)||g.opts[0];return{group:g,selected:g.type==='radio'?(def?.n||''):[],isCheckbox:g.type==='checkbox'};});
   renderAddonUI();updateSpTotal();

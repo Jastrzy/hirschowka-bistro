@@ -50,22 +50,53 @@
         }
       });
 
+      // Menu real-time → aktualizuj panel gdy zmieniono na innym urządzeniu
+      db.ref('menu').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var stored = localStorage.getItem('menu');
+        var fresh = JSON.stringify(val);
+        if (stored === fresh) return; // brak zmian
+        localStorage.setItem('menu', fresh);
+        // Zaktualizuj globalną zmienną menuData w panelu
+        if (window._panelMenuReady) {
+          try {
+            var arr = Array.isArray(val) ? val : Object.values(val);
+            window.menuData = arr.filter(function(d){ return d && d.name; });
+            if (typeof window.renderMenu === 'function') window.renderMenu();
+            console.log('[FB] Menu zaktualizowane z Firebase ✓');
+          } catch(e) {}
+        }
+      });
+
+      // Customers real-time → aktualizuj panel gdy zaimportowano na innym urządzeniu
+      db.ref('customers').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var stored = localStorage.getItem('customers');
+        var fresh = JSON.stringify(val);
+        if (stored === fresh) return;
+        // Nie nadpisuj jeśli lokalny zapis jest nowszy (np. tuż po imporcie)
+        localStorage.setItem('customers', fresh);
+        if (window._panelMenuReady) {
+          try {
+            var arr = Array.isArray(val) ? val : Object.values(val);
+            arr = arr.filter(function(c){ return c; });
+            // Aktualizuj tylko jeśli Firebase ma więcej lub równo danych co lokalne
+            var localArr = window.customers || [];
+            if (arr.length >= localArr.length) {
+              window.customers = arr;
+              if (typeof window.renderCusts === 'function') window.renderCusts();
+              console.log('[FB] Klienci zaktualizowani z Firebase ✓', arr.length);
+            }
+          } catch(e) {}
+        }
+      });
+
       // Synchronizuj localStorage → Firebase co 1s
       var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers','orders'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
-
-      // Jednorazowy push wszystkich kluczy przy starcie panelu
-      // (żeby Firebase miał aktualne dane nawet bez edycji)
-      setTimeout(function() {
-        cfg_keys.forEach(function(k) {
-          var val = localStorage.getItem(k);
-          if (val !== null) {
-            try { db.ref(k).set(JSON.parse(val)).catch(function(){}); } catch(e) {}
-          }
-        });
-        console.log('[FB] Initial push done ✓');
-      }, 2000);
 
       setInterval(function() {
         cfg_keys.forEach(function(k) {
