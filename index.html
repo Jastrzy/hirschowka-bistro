@@ -302,6 +302,14 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   transition:background .15s;
 }
 .iadd:hover{background:var(--brown2);}
+.ivar-wrap{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.ivar{
+  background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);
+  padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.2px;
+  cursor:pointer;font-family:var(--sans);white-space:nowrap;
+  transition:background .15s;text-align:center;
+}
+.ivar:hover{background:var(--brown2);}
 
 /* ════ LOYALTY ════ */
 .loyalty-section{padding:80px 48px;background:var(--cream2);}
@@ -1261,15 +1269,53 @@ function buildMenu(){
 
 function renderItem(item){
   const hasAddons=getItemAddons(item).length>0;
-  const hasSizes=item.sizes&&item.sizes.length>1;
-  const priceFrom=item.price+(hasSizes?Math.min(...item.sizes.map(s=>s.p)):0);
+  const rawVariants=item.variants||item.sizes||[];
+  const hasVariants=rawVariants.length>0;
+  const priceFrom=hasVariants?Math.min(...rawVariants.map(v=>parseFloat(v.price??v.p??0)||item.price)):item.price;
   let badge=item.badge==='new'?'<div class="ibadges"><span class="ib ib-new">Nowość</span></div>':!item.avail?'<div class="ibadges"><span class="ib ib-out">Chwilowo niedostępny</span></div>':'';
+  let actionBtn='';
+  if(!item.avail){
+    actionBtn='';
+  } else if(hasVariants){
+    // Osobny przycisk dla każdego wariantu
+    const varBtns=rawVariants.map((v,i)=>{
+      const vName=v.name||v.n||'Wariant';
+      const vPrice=parseFloat(v.price??v.p??0)||item.price;
+      return`<button class="ivar" onclick="event.stopPropagation();quickAddVariant(${item.id},${i})">${vName}<br><span style="font-size:10px;opacity:.8;">${vPrice.toFixed(2)} zł</span></button>`;
+    }).join('');
+    actionBtn=`<div class="ivar-wrap">${varBtns}</div>`;
+  } else {
+    actionBtn=`<button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom.toFixed(2)} zł${hasAddons?' ⓘ':''}</button>`;
+  }
   return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
     ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
     <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
-    <span class="iprice"><span class="ipfrom">${hasSizes?'od ':''}</span>${priceFrom} zł</span>
-    <button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom} zł${hasAddons||hasSizes?' ⓘ':''}</button>
+    <span class="iprice"><span class="ipfrom">${hasVariants?'od ':''}</span>${priceFrom.toFixed(2)} zł</span>
+    ${actionBtn}
   </div>`;
+}
+
+// Szybkie dodanie wariantu z karty menu (bez otwierania modalu, chyba że są addony)
+function quickAddVariant(itemId, variantIndex){
+  const item=getMenu().find(x=>x.id===itemId);if(!item||!item.avail)return;
+  const rawVariants=item.variants||item.sizes||[];
+  const v=rawVariants[variantIndex];if(!v)return;
+  const vName=v.name||v.n||'';
+  const vPrice=parseFloat(v.price??v.p??0)||item.price;
+  const hasAddons=getItemAddons(item).length>0;
+  if(hasAddons){
+    // Otwórz modal z pre-wybranym wariantem
+    openProduct(itemId);
+    // Po otwarciu modalu ustaw wybrany wariant
+    setTimeout(()=>selSz(variantIndex),50);
+    return;
+  }
+  // Dodaj bezpośrednio do koszyka
+  const modName=vName&&rawVariants.length>1?vName:'';
+  const mods=modName?[{n:modName,p:0}]:[];
+  cart.push({uid:Date.now(),itemId:item.id,name:item.name,cat:item.cat,mods,unitPrice:parseFloat(vPrice.toFixed(2)),qty:1});
+  updateCartBadge();
+  showCross(item);
 }
 
 // ════ ADDONS ════
