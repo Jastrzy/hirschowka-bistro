@@ -94,7 +94,7 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','zones','customers','orders'];
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','zones','customers','orders'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -121,6 +121,7 @@
         'promos':      function() { if(window.renderAdminPromos) window.renderAdminPromos(); if(window.renderAdminTicker) window.renderAdminTicker(); },
         'coupons':     null,
         'addons':      null,
+        'params':      null,
         'zones':       null
       };
 

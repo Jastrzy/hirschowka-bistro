@@ -305,9 +305,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .ivar-wrap{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
 .ivar{
   background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);
-  padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.2px;
+  padding:7px 12px;font-size:11px;font-weight:700;
   cursor:pointer;font-family:var(--sans);white-space:nowrap;
-  transition:background .15s;text-align:center;
+  text-align:center;transition:background .15s;line-height:1.3;
 }
 .ivar:hover{background:var(--brown2);}
 
@@ -965,17 +965,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 // ════════════════════════════════════════
 // DATA
 // ════════════════════════════════════════
-const ADDONS_DB=[
-  {name:'Mleko do kawy',required:true,type:'radio',cats:['Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Mleko krowie',p:0,def:true},{n:'Mleko owsiane',p:1.5},{n:'Mleko migdałowe',p:1.5},{n:'Mleko bez laktozy',p:0}]},
-  {name:'Rodzaj herbaty',required:true,type:'radio',cats:['Napoje gorące'],items:['Herbata'],opts:[{n:'Czarna',p:0.5,def:true},{n:'Smakowa',p:0.5},{n:'Zielona',p:0.5},{n:'Rumiankowa',p:0.5}]},
-  {name:'Kubeczek',required:false,type:'checkbox',cats:['Kawy klasyczne','Napoje gorące','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Kubeczek na wynos',p:0.5}]},
-  {name:'Wybierz dodatki',required:false,type:'checkbox',cats:['Dania obiadowe'],opts:[{n:'Kluski śląskie',p:8},{n:'Ziemniaki',p:8},{n:'Kasza',p:6},{n:'Kopytka',p:8},{n:'Surówka',p:7},{n:'Sos tysiąca wysp',p:2},{n:'Sos czosnkowy',p:2},{n:'Ketchup',p:2}]},
-  {name:'Wybór pieczywa',required:false,type:'radio',
-   cats:['Śniadania i lunche'],
-   // Only for bajgiel items — checked by item name
-   itemKeywords:['bajgiel','bagietka'],
-   opts:[{n:'Bajgiel pszenny',p:0,def:true},{n:'Bajgiel ziarnisty',p:0}]},
-];
+// ADDONS_DB — hardcoded addony usunięte.
+// Wszystkie grupy dodatków zarządzane są wyłącznie przez Panel → "Grupy dodatków".
+const ADDONS_DB=[];
 
 const MENU_BASE=[
   {id:1,cat:'Śniadania i lunche',name:'Bajgiel z boczkiem, jajkiem sadzonym, sałatą, pomidorem i sosem',desc:'CHRUPIĄCY NA ZEWNĄTRZ, MIĘKKI W ŚRODKU - NA KAŻDY GUST',price:24,avail:true,badge:'new'},
@@ -1065,15 +1057,8 @@ let appliedCoupon=null;
 function getMenu(){
   const adminData = LS('menu');
   if(adminData && adminData.length > 0){
-    // Panel ma dane — użyj ich, uzupełnij tylko addonGroups/sizes z MENU_BASE jeśli brakuje
-    return adminData.map(item=>{
-      const base = MENU_BASE.find(b=>b.id===item.id);
-      return {
-        ...item,
-        addonGroups: item.addonGroups || base?.addonGroups,
-        sizes: item.sizes || base?.sizes,
-      };
-    });
+    // Panel ma dane — używamy ich bez dokładania czegokolwiek z MENU_BASE
+    return adminData;
   }
   // Brak danych w panelu — użyj domyślnych
   return MENU_BASE;
@@ -1268,71 +1253,73 @@ function buildMenu(){
 }
 
 function renderItem(item){
-  const hasAddons=getItemAddons(item).length>0;
-  const rawVariants=item.variants||item.sizes||[];
-  const hasVariants=rawVariants.length>0;
-  const priceFrom=hasVariants?Math.min(...rawVariants.map(v=>parseFloat(v.price??v.p??0)||item.price)):item.price;
+  // Warianty TYLKO z item.variants (wprowadzone ręcznie w panelu). Nigdy z item.sizes.
+  const variants = (item.variants && item.variants.length > 0) ? item.variants : [];
+  const hasVariants = variants.length > 0;
+  const hasAddons = getItemAddons(item).length > 0;
+  const basePrice = item.price;
   let badge=item.badge==='new'?'<div class="ibadges"><span class="ib ib-new">Nowość</span></div>':!item.avail?'<div class="ibadges"><span class="ib ib-out">Chwilowo niedostępny</span></div>':'';
-  let actionBtn='';
-  if(!item.avail){
-    actionBtn='';
-  } else if(hasVariants){
-    // Osobny przycisk dla każdego wariantu
-    const varBtns=rawVariants.map((v,i)=>{
-      const vName=v.name||v.n||'Wariant';
-      const vPrice=parseFloat(v.price??v.p??0)||item.price;
-      return`<button class="ivar" onclick="event.stopPropagation();quickAddVariant(${item.id},${i})">${vName}<br><span style="font-size:10px;opacity:.8;">${vPrice.toFixed(2)} zł</span></button>`;
-    }).join('');
-    actionBtn=`<div class="ivar-wrap">${varBtns}</div>`;
-  } else {
-    actionBtn=`<button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom.toFixed(2)} zł${hasAddons?' ⓘ':''}</button>`;
+
+  let actionArea = '';
+  if(item.avail){
+    if(hasVariants){
+      // Osobny przycisk dla każdego wariantu — kliknięcie od razu dodaje do koszyka
+      const btns = variants.map((v,i)=>{
+        const vPrice = parseFloat(v.price) || basePrice;
+        const vName = v.name || '';
+        return `<button class="ivar" onclick="event.stopPropagation();quickAddVariant(${item.id},${i})">${vName}<br><span style="font-size:10px;opacity:.8;">${vPrice.toFixed(2)} zł</span></button>`;
+      }).join('');
+      actionArea = `<div class="ivar-wrap">${btns}</div>`;
+    } else {
+      // Brak wariantów — jeden przycisk, otwiera modal (addony) lub dodaje wprost
+      actionArea = `<button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${basePrice.toFixed(2)} zł${hasAddons?' ⓘ':''}</button>`;
+    }
   }
+
+  // Cena tekstowa: tylko gdy niedostępny (brak przycisku) LUB gdy warianty (pokazujemy "od X zł" przed przyciskami)
+  // Gdy jest jeden przycisk iadd — cena jest w przycisku, nie powielamy jej
+  let priceLabel = '';
+  if(!item.avail){
+    priceLabel = `<span class="iprice">${basePrice.toFixed(2)} zł</span>`;
+  } else if(hasVariants){
+    priceLabel = `<span class="iprice"><span class="ipfrom">od </span>${Math.min(...variants.map(v=>parseFloat(v.price)||basePrice)).toFixed(2)} zł</span>`;
+  }
+  // Gdy dostępny i brak wariantów — cena jest w przycisku iadd, priceLabel zostaje pusty
+
   return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
     ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
     <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
-    <span class="iprice"><span class="ipfrom">${hasVariants?'od ':''}</span>${priceFrom.toFixed(2)} zł</span>
-    ${actionBtn}
+    ${priceLabel}
+    ${actionArea}
   </div>`;
 }
 
-// Szybkie dodanie wariantu z karty menu (bez otwierania modalu, chyba że są addony)
+// Szybkie dodanie konkretnego wariantu z karty menu
 function quickAddVariant(itemId, variantIndex){
-  const item=getMenu().find(x=>x.id===itemId);if(!item||!item.avail)return;
-  const rawVariants=item.variants||item.sizes||[];
-  const v=rawVariants[variantIndex];if(!v)return;
-  const vName=v.name||v.n||'';
-  const vPrice=parseFloat(v.price??v.p??0)||item.price;
-  const hasAddons=getItemAddons(item).length>0;
+  const item = getMenu().find(x=>x.id===itemId);
+  if(!item||!item.avail) return;
+  const v = (item.variants||[])[variantIndex];
+  if(!v) return;
+  const vName = v.name || '';
+  const vPrice = parseFloat(v.price) || item.price;
+  const hasAddons = getItemAddons(item).length > 0;
   if(hasAddons){
     // Otwórz modal z pre-wybranym wariantem
     openProduct(itemId);
-    // Po otwarciu modalu ustaw wybrany wariant
-    setTimeout(()=>selSz(variantIndex),50);
+    setTimeout(()=>selSz(variantIndex), 50);
     return;
   }
-  // Dodaj bezpośrednio do koszyka
-  const modName=vName&&rawVariants.length>1?vName:'';
-  const mods=modName?[{n:modName,p:0}]:[];
-  cart.push({uid:Date.now(),itemId:item.id,name:item.name,cat:item.cat,mods,unitPrice:parseFloat(vPrice.toFixed(2)),qty:1});
+  const mods = vName ? [{n:vName, p:0}] : [];
+  cart.push({uid:Date.now(), itemId:item.id, name:item.name, cat:item.cat, mods, unitPrice:parseFloat(vPrice.toFixed(2)), qty:1});
   updateCartBadge();
   showCross(item);
 }
 
 // ════ ADDONS ════
+// Grupy dodatków pobierane wyłącznie z panelu admina (localStorage 'addons')
 function getItemAddons(item){
   const groups=[];
-  // 1. Explicit addonGroups on item
-  if(item.addonGroups)item.addonGroups.forEach(n=>{const g=ADDONS_DB.find(a=>a.name===n);if(g&&!groups.find(x=>x.name===n))groups.push(g);});
-  // 2. Built-in ADDONS_DB — category + optional keyword filter
-  ADDONS_DB.forEach(g=>{
-    if(groups.find(x=>x.name===g.name))return;
-    if(!g.cats.includes(item.cat))return;
-    if(g.itemKeywords){const n=item.name.toLowerCase();if(!g.itemKeywords.some(k=>n.includes(k)))return;}
-    groups.push(g);
-  });
-  // 3. Admin addons from localStorage — exact category match
   (LS('addons')||[]).forEach(a=>{
-    if(groups.find(g=>g.name===a.name))return;
     const cats=a.cats.split(',').map(c=>c.trim()).filter(Boolean);
     if(!cats.includes(item.cat))return;
     const opts=(a.opts||'').split('\n').filter(Boolean).map(l=>{const p=l.split('|');return{n:p[0].trim(),p:parseFloat(p[1])||0,def:p[2]==='def'};});
@@ -1345,8 +1332,8 @@ function getItemAddons(item){
 function openProduct(id){
   const item=getMenu().find(x=>x.id===id);if(!item||!item.avail)return;
   // variants (z panelu) lub sizes (stary format) — ujednolicamy do curSizes
-  const rawVariants = item.variants||item.sizes||[];
-  curItem=item;curQty=1;curSizes=rawVariants.map(v=>({n:v.name||v.n||'',p:parseFloat(v.price??v.p)>0?parseFloat(v.price??v.p)-item.price:parseFloat(v.price??v.p)||0}));selSize=0;
+  const rawVariants = item.variants||[];
+  curItem=item;curQty=1;curSizes=rawVariants.map(v=>({n:v.name||v.n||'',p:parseFloat(v.price||0)-item.price}));selSize=0;
   document.getElementById('sp-title').textContent=item.name;
   const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
   const sz=document.getElementById('sp-sizes');
