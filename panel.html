@@ -2650,7 +2650,7 @@ function saveDish(){
     avail:document.getElementById('d-avail').value==='1',
     photo,
     badges:[...selectedBadges],
-    variants:dishVariants.filter(v=>v.name && v.name.trim() !== ''),
+    variants:dishVariants.filter(v=>v.name),
     ingredients:(document.getElementById('d-ingredients').value||'').trim(),
     schedule:(document.getElementById('d-schedule').value||''),
   };
