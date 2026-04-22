@@ -1102,22 +1102,25 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         </div>
       </div>
 
-      <!-- Warianty / parametry -->
+
+
+      <!-- Parametr dania -->
       <div class="field">
-        <label>Dostępne warianty dania</label>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Warianty to np. rozmiar (mała/duża kawa). Użyj parametrów z zakładki <strong>Parametry</strong> lub dodaj własny.</div>
-        <div id="d-variants-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
-        <button type="button" class="btn bo bsm" onclick="addDishVariant()">+ Dodaj wariant</button>
+        <label>Parametr dania <span style="font-size:11px;font-weight:400;color:var(--muted);">(opcjonalnie — np. rozmiar kawy)</span></label>
+        <select id="d-param" onchange="onParamChange()" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <option value="">(brak — jedna cena)</option>
+        </select>
       </div>
 
-      <!-- Cena -->
-      <div class="field">
+      <!-- Cena — dynamiczna zależnie od parametru -->
+      <div id="d-price-section" class="field">
         <label>Cena</label>
         <div style="display:flex;align-items:center;gap:8px;">
           <input type="number" id="d-price" placeholder="0.00" step="0.50" style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
           <span style="font-size:14px;color:var(--muted);">zł</span>
         </div>
       </div>
+      <div id="d-param-prices" style="display:none;"></div>
 
       <!-- Składniki -->
       <div class="field">
@@ -2534,7 +2537,7 @@ function toggleAvail(id,v){const d=menuData.find(x=>x.id===id);if(d){d.avail=v;W
 function deleteDish(id){if(!confirm('Usunąć danie?'))return;menuData=menuData.filter(x=>x.id!==id);W('menu',menuData);renderMenuItems();toast('Danie usunięte');}
 
 let selectedBadges=[];
-let dishVariants=[];
+
 
 function openDishModal(id){
   editDishId=id;
@@ -2548,6 +2551,13 @@ function openDishModal(id){
   document.getElementById('d-avail').value=d?.avail===false?'0':'1';
   document.getElementById('d-ingredients').value=d?.ingredients||'';
   document.getElementById('d-schedule').value=d?.schedule||'';
+
+  // Parametr — wypełnij dropdown i pola cen
+  const paramSel=document.getElementById('d-param');
+  paramSel.innerHTML='<option value="">(brak — jedna cena)</option>'+
+    params.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  paramSel.value=d?.paramName||'';
+  renderParamPrices(d?.paramName||'', d?.paramPrices||[]);
 
   // Build category select — kolejność z getCatsOrdered()
   const existingCats=[...new Set(menuData.map(d=>d.cat))];
@@ -2574,8 +2584,7 @@ function openDishModal(id){
   renderSelectedBadges();
 
   // Variants
-  dishVariants=d?.variants?d.variants.map(v=>({...v})):[];
-  renderDishVariants();
+
 
   openModal('mo-dish');
 }
@@ -2608,16 +2617,7 @@ function removeBadge(btn,badge){
   renderSelectedBadges();
 }
 
-function renderDishVariants(){
-  const el=document.getElementById('d-variants-list');
-  if(!dishVariants.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">(brak wariantów — jeden rozmiar/wersja)</div>';return;}
-  el.innerHTML=dishVariants.map((v,i)=>`<div style="display:grid;grid-template-columns:1fr 80px 28px;gap:6px;align-items:center;">
-    <input type="text" value="${v.name}" oninput="dishVariants[${i}].name=this.value" placeholder="np. średnia" style="padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);">
-    <input type="number" value="${v.price}" oninput="dishVariants[${i}].price=parseFloat(this.value)||0" placeholder="cena" style="padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);">
-    <button type="button" onclick="dishVariants.splice(${i},1);renderDishVariants()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">🗑</button>
-  </div>`).join('');
-}
-function addDishVariant(){dishVariants.push({name:'',price:0});renderDishVariants();}
+
 
 function clearDishPhoto(){
   document.getElementById('dish-photo-img').src='';
@@ -2635,6 +2635,35 @@ function previewDishPhoto(inp){
     document.getElementById('dish-drop-txt').style.display='none';
   };r.readAsDataURL(f);
 }
+function renderParamPrices(paramName, existingPrices){
+  const sec=document.getElementById('d-price-section');
+  const pp=document.getElementById('d-param-prices');
+  if(!paramName){
+    sec.style.display='block';
+    pp.style.display='none';
+    pp.innerHTML='';
+    return;
+  }
+  const param=params.find(p=>p.name===paramName);
+  if(!param){sec.style.display='block';pp.style.display='none';return;}
+  const vals=param.vals.split('\n').filter(v=>v.trim());
+  sec.style.display='none';
+  pp.style.display='block';
+  pp.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">Ceny wariantów</div>'+
+    vals.map((v,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="flex:1;font-size:13px;color:var(--text);">${v}</span>
+        <input class="param-price-inp" type="number" value="${existingPrices[i]||''}" placeholder="0.00" step="0.50"
+          style="width:90px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+        <span style="font-size:13px;color:var(--muted);">zł</span>
+      </div>`).join('');
+}
+
+function onParamChange(){
+  const v=document.getElementById('d-param').value;
+  renderParamPrices(v,[]);
+}
+
 function saveDish(){
   const name=(document.getElementById('d-name').value||'').trim();
   const desc=(document.getElementById('d-desc').value||'').trim();
@@ -2642,17 +2671,29 @@ function saveDish(){
   const imgEl=document.getElementById('dish-photo-img');
   const hasPhoto=document.getElementById('dish-photo-prev').style.display!=='none';
   const photo=hasPhoto?imgEl.src:'';
+  // Cena — zależna od parametru
+  const selParam=document.getElementById('d-param').value;
+  let savePrice=parseFloat(document.getElementById('d-price').value)||0;
+  let saveParamName='';
+  let saveParamPrices=[];
+  if(selParam){
+    const pRows=document.querySelectorAll('.param-price-inp');
+    saveParamPrices=Array.from(pRows).map(inp=>parseFloat(inp.value)||0);
+    saveParamName=selParam;
+    savePrice=saveParamPrices[0]||0; // cena bazowa = pierwsza wartość
+  }
   const obj={
     name,
     desc,
-    price:parseFloat(document.getElementById('d-price').value)||0,
+    price:savePrice,
     cat:document.getElementById('d-cat').value,
     avail:document.getElementById('d-avail').value==='1',
     photo,
     badges:[...selectedBadges],
-    variants:dishVariants.filter(v=>v.name),
     ingredients:(document.getElementById('d-ingredients').value||'').trim(),
     schedule:(document.getElementById('d-schedule').value||''),
+    paramName:saveParamName,
+    paramPrices:saveParamPrices,
   };
   if(editDishId){
     const existing=menuData.find(x=>x.id===editDishId);
