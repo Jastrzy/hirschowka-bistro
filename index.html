@@ -1254,14 +1254,37 @@ function buildMenu(){
 
 function renderItem(item){
   const hasAddons=getItemAddons(item).length>0;
-  const hasSizes=item.sizes&&item.sizes.length>1;
-  const priceFrom=item.price+(hasSizes?Math.min(...item.sizes.map(s=>s.p)):0);
+  const rawVariants=(item.variants||item.sizes||[]).filter(v=>(v.name||v.n||'').trim()!=='');
+  const hasVariants=rawVariants.length>=1;
+  // Cena "od" — najniższy wariant lub cena bazowa
+  let priceFrom=item.price;
+  if(hasVariants){
+    const prices=rawVariants.map(v=>v.name!==undefined?parseFloat(v.price)||0:item.price+(parseFloat(v.p)||0));
+    priceFrom=Math.min(...prices);
+  }
+  const needsChoice=hasVariants||hasAddons;
   let badge=item.badge==='new'?'<div class="ibadges"><span class="ib ib-new">Nowość</span></div>':!item.avail?'<div class="ibadges"><span class="ib ib-out">Chwilowo niedostępny</span></div>':'';
+
+  if(hasVariants && item.avail){
+    // Dwa przyciski — jeden na każdy wariant
+    const varBtns=rawVariants.map(v=>{
+      const label=(v.name||v.n||'').trim();
+      const price=v.name!==undefined?parseFloat(v.price)||0:item.price+(parseFloat(v.p)||0);
+      return`<button class="iadd" style="flex:1;" onclick="event.stopPropagation();addVariantDirect(${item.id},'${label.replace(/'/g,"\\'")}',${price})">🛒 ${label}<br><span style="font-size:11px;font-weight:400;">${price.toFixed(2)} zł</span></button>`;
+    }).join('');
+    return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
+      ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
+      <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
+      <span class="iprice"><span class="ipfrom">od </span>${priceFrom.toFixed(2)} zł</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">${varBtns}${hasAddons?`<button class="iadd" style="flex:0 0 auto;background:rgba(59,37,18,.07);color:var(--brown);" onclick="event.stopPropagation();openProduct(${item.id})">⚙</button>`:''}</div>
+    </div>`;
+  }
+
   return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
     ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
     <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
-    <span class="iprice"><span class="ipfrom">${hasSizes?'od ':''}</span>${priceFrom} zł</span>
-    <button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom} zł${hasAddons||hasSizes?' ⓘ':''}</button>
+    <span class="iprice">${priceFrom} zł</span>
+    <button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom} zł${needsChoice?' ⓘ':''}</button>
   </div>`;
 }
 
@@ -1358,7 +1381,25 @@ function showCross(item){
   document.getElementById('cross-grid').innerHTML=sug.map(s=>`<div class="ccrd" onclick="addCrossItem(${s.id})">${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="cimg">🍽</div>`}<div class="cb"><div class="cn">${s.name.length>44?s.name.slice(0,44)+'…':s.name}</div><div class="cp">${s.price} zł</div><button class="ca" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join('');
   document.getElementById('ov-cross').classList.add('open');
 }
-function addCrossItem(id){const item=getMenu().find(x=>x.id===id);if(!item)return;const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');if(req.length){closeOv('ov-cross');openProduct(id);return;}cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});updateCartBadge();toast(item.name.slice(0,28)+'… dodane ✓');}
+function addVariantDirect(id, variantName, variantPrice){
+  const item=getMenu().find(x=>x.id===id);
+  if(!item||!item.avail)return;
+  // Jeśli są wymagane dodatki — otwórz okno produktu z prewybranym wariantem
+  const requiredAddons=getItemAddons(item).filter(g=>g.required);
+  if(requiredAddons.length>0){
+    openProduct(id);
+    // Preselect wariant po otwarciu
+    const varIdx=(item.variants||[]).findIndex(v=>(v.name||'').trim()===variantName);
+    if(varIdx>=0) setTimeout(()=>selSz(varIdx),50);
+    return;
+  }
+  // Brak wymaganych dodatków — dodaj bezpośrednio
+  cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,
+    mods:[{n:variantName,p:variantPrice-item.price}],
+    unitPrice:variantPrice,qty:1});
+  updateCartBadge();
+  showCross(item);
+}const item=getMenu().find(x=>x.id===id);if(!item)return;const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');if(req.length){closeOv('ov-cross');openProduct(id);return;}cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});updateCartBadge();toast(item.name.slice(0,28)+'… dodane ✓');}
 function closeCross(){closeOv('ov-cross');toast('Dodano do koszyka ✓');}
 
 // ════ CART ════
