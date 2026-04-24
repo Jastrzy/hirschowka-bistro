@@ -728,19 +728,10 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="daily-plate reveal" id="daily-cards-wrap">
       <div class="daily-plate-badge">Dziś gotujemy</div>
-      <!-- Dwie karty: zupa + drugie danie — wypełniane przez renderDaily() -->
-      <div id="daily-soup-card" style="margin-bottom:12px;">
-        <span class="daily-plate-emoji">🍲</span>
-        <div class="daily-plate-name">Zupa dnia</div>
-      </div>
-      <div id="daily-main-card">
-        <span class="daily-plate-emoji">🍽</span>
-        <div class="daily-plate-name">Drugie danie</div>
-      </div>
-      <div class="daily-plate-price" id="daily-set-price-bar" style="margin-top:14px;">
-        <span class="dpp" id="daily-price">22 zł</span>
-        <span class="dpp-tag">Zestaw dnia</span>
-      </div>
+      <!-- Trzy karty: zestaw + zupa + danie główne — wypełniane przez renderDaily() -->
+      <div id="daily-set-card" style="margin-bottom:12px;"></div>
+      <div id="daily-soup-card" style="margin-bottom:12px;"></div>
+      <div id="daily-main-card"></div>
     </div>
   </div>
 </section>
@@ -1137,7 +1128,8 @@ function addDailyItem(type){
   const k=LS('kitchen-day');
   if(!k||!k[type]?.name)return;
   const d=k[type];
-  cart.push({uid:Date.now(),itemId:0,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
+  // dailyType pozwala calcPackaging() rozpoznać typ bez zgadywania po nazwie
+  cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
   updateCartBadge();toast(d.name+' dodane do koszyka ✓');
 }
 function makeDailyCard(d, emoji, label, type){
@@ -1159,22 +1151,21 @@ function renderDaily(){
   const k = LS('kitchen-day');
   if(!k) return;
 
-  // Lewa kolumna — tekst z danych zestawu lub zupy
+  // Lewa kolumna — tekst
   const mainName = k.set?.name || (k.soup?.name&&k.main?.name ? k.soup.name+' + '+k.main.name : k.soup?.name||k.main?.name||'');
   if(mainName){
     document.getElementById('daily-name').textContent='Codziennie coś pysznego z naszej kuchni';
     document.getElementById('daily-desc').textContent='Dziś polecamy: '+mainName+'. Dostępne do wyczerpania.';
   }
 
-  // Prawa kolumna — trzy karty
-  const setEl=document.getElementById('daily-soup-card');   // reuse dla zestawu
-  const soupEl=document.getElementById('daily-main-card');  // reuse dla zupy
-  const mainEl=document.getElementById('daily-set-price-bar'); // reuse dla dania
+  // Prawa kolumna — trzy osobne kontenery
+  const setEl=document.getElementById('daily-set-card');
+  const soupEl=document.getElementById('daily-soup-card');
+  const mainEl=document.getElementById('daily-main-card');
 
-  if(setEl) setEl.innerHTML=makeDailyCard(k.set,'⭐','Zestaw dnia','set');
-  if(soupEl) soupEl.innerHTML=makeDailyCard(k.soup,'🍲','Zupa dnia','soup');
-  // Danie główne — wstawiamy przed paskiem ceny
-  if(mainEl) mainEl.outerHTML=makeDailyCard(k.main,'🍽','Danie główne','main')+'<div id="daily-set-price-bar" style="display:none;"></div>';
+  if(setEl)  setEl.innerHTML  = makeDailyCard(k.set,  '⭐','Zestaw dnia',  'set');
+  if(soupEl) soupEl.innerHTML = makeDailyCard(k.soup, '🍲','Zupa dnia',    'soup');
+  if(mainEl) mainEl.innerHTML = makeDailyCard(k.main, '🍽','Danie główne', 'main');
 }
 function addDefaultDaily(){
   const k=LS('kitchen-day');
@@ -1432,11 +1423,8 @@ function calcPackaging(){
   let total=0;
   cart.forEach(ci=>{
     if(ci.itemId!==0) return; // tylko pozycje dania dnia (itemId===0)
-    const n=(ci.name||'').toLowerCase();
-    let rate=0;
-    if(n.includes('zestaw')) rate=parseFloat(pkg.set)||0;
-    else if(n.includes('zupa')||n.includes('krem')||n.includes('rosół')||n.includes('barszcz')||n.includes('żurek')) rate=parseFloat(pkg.soup)||0;
-    else rate=parseFloat(pkg.main)||0;
+    const type=ci.dailyType||'main'; // 'set','soup','main'
+    const rate=parseFloat(pkg[type])||0;
     total+=rate*ci.qty;
   });
   return total;

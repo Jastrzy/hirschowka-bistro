@@ -843,30 +843,38 @@ function goPage(id,el){
 // ══════════════════════════════════════
 // MENU
 // ══════════════════════════════════════
-function renderDailyDish(){
-  const d=LS('daily-dish');
-  const w=document.getElementById('daily-wrap-app');
-  if(!d||!d.name){w.innerHTML='';return;}
-  w.innerHTML=`<div class="daily-card" style="position:relative;">
+function makeDailyCardApp(d, emoji, label, type){
+  if(!d||!d.name) return '';
+  return `<div class="daily-card" style="margin-bottom:12px;">
     <div class="daily-img-wrap">
-      ${d.photo?`<img src="${d.photo}" alt="${d.name}">`:`<div class="daily-img-placeholder">🍲</div>`}
+      ${d.photo?`<img src="${d.photo}" alt="${d.name}">`:`<div class="daily-img-placeholder">${emoji}</div>`}
     </div>
-    <div class="daily-badge">Dziś polecamy</div>
     <div class="daily-body">
-      <div class="daily-label">★ Danie dnia</div>
+      <div class="daily-label">${emoji} ${label}</div>
       <div class="daily-name">${d.name}</div>
-      <div class="daily-desc">${d.desc||''}</div>
+      ${d.desc?`<div class="daily-desc">${d.desc}</div>`:''}
       <div class="daily-row">
         <span class="daily-price">${d.price} zł</span>
-        <button class="daily-add-btn" onclick="addDailyToCart()">🛒 Zamów zestaw</button>
+        <button class="daily-add-btn" onclick="addDailyItemApp('${type}')">🛒 Dodaj</button>
       </div>
     </div>
   </div>`;
 }
-function addDailyToCart(){
-  const d=LS('daily-dish');if(!d)return;
-  cart.push({uid:Date.now(),itemId:0,name:d.name+' (Zestaw dnia)',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
-  updateCartBadge();toast('Zestaw dnia dodany ✓');
+function renderDailyDish(){
+  const k=LS('kitchen-day');
+  const w=document.getElementById('daily-wrap-app');
+  if(!k||(!k.set?.name&&!k.soup?.name&&!k.main?.name)){w.innerHTML='';return;}
+  w.innerHTML=
+    makeDailyCardApp(k.set,'⭐','Zestaw dnia','set')+
+    makeDailyCardApp(k.soup,'🍲','Zupa dnia','soup')+
+    makeDailyCardApp(k.main,'🍽','Danie główne','main');
+}
+function addDailyItemApp(type){
+  const k=LS('kitchen-day');
+  if(!k||!k[type]?.name)return;
+  const d=k[type];
+  cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
+  updateCartBadge();toast(d.name+' dodane do koszyka ✓');
 }
 
 function buildCatTabs(){
@@ -1033,11 +1041,8 @@ function calcPackagingApp(){
   let total=0;
   cart.forEach(ci=>{
     if(ci.itemId!==0) return;
-    const n=(ci.name||'').toLowerCase();
-    let rate=0;
-    if(n.includes('zestaw')) rate=parseFloat(pkg.set)||0;
-    else if(n.includes('zupa')||n.includes('krem')||n.includes('rosół')||n.includes('barszcz')||n.includes('żurek')) rate=parseFloat(pkg.soup)||0;
-    else rate=parseFloat(pkg.main)||0;
+    const type=ci.dailyType||'main';
+    const rate=parseFloat(pkg[type])||0;
     total+=rate*ci.qty;
   });
   return total;
