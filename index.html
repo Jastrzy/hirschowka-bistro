@@ -201,13 +201,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .daily-feat{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);}
 .feat-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
 .daily-plate{background:var(--white);border-radius:var(--r3);padding:20px;box-shadow:var(--shadow-lg);position:relative;}
-.daily-plate-badge{position:absolute;top:-12px;right:20px;background:var(--rust);color:var(--white);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:var(--r);}
-.daily-plate-emoji{font-size:72px;display:block;margin-bottom:14px;}
-.daily-plate-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);margin-bottom:6px;}
-.daily-plate-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
-.daily-plate-price{display:flex;align-items:center;justify-content:center;gap:12px;}
-.daily-mini-card{background:var(--white);border-radius:var(--r2);overflow:hidden;box-shadow:0 2px 8px rgba(59,37,18,.08);margin-bottom:12px;}
-.daily-mini-card:last-child{margin-bottom:0;}
+.daily-mini-card{background:var(--white);border-radius:var(--r2);overflow:hidden;box-shadow:0 2px 8px rgba(59,37,18,.08);margin-bottom:0;}
 .daily-mini-card img{width:100%;height:140px;object-fit:cover;display:block;}
 .daily-mini-card-ph{width:100%;height:80px;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--cream2);}
 .daily-mini-body{padding:12px 16px;}
@@ -215,6 +209,11 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .daily-mini-name{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--brown);margin-bottom:3px;line-height:1.3;}
 .daily-mini-desc{font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:6px;}
 .daily-mini-price{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--gold);}
+.daily-plate-badge{position:absolute;top:-12px;right:20px;background:var(--rust);color:var(--white);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:var(--r);}
+.daily-plate-emoji{font-size:72px;display:block;margin-bottom:14px;}
+.daily-plate-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);margin-bottom:6px;}
+.daily-plate-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
+.daily-plate-price{display:flex;align-items:center;justify-content:center;gap:12px;}
 .dpp{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--gold);}
 .dpp-tag{background:var(--green);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:var(--r);}
 
@@ -311,6 +310,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   transition:background .15s;
 }
 .iadd:hover{background:var(--brown2);}
+.ivar-wrap{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.ivar{background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap;text-align:center;transition:background .15s;line-height:1.3;}
+.ivar:hover{background:var(--brown2);}
 
 /* ════ LOYALTY ════ */
 .loyalty-section{padding:80px 48px;background:var(--cream2);}
@@ -728,7 +730,6 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="daily-plate reveal" id="daily-cards-wrap">
       <div class="daily-plate-badge">Dziś gotujemy</div>
-      <!-- Trzy karty: zestaw + zupa + danie główne — wypełniane przez renderDaily() -->
       <div id="daily-set-card" style="margin-bottom:12px;"></div>
       <div id="daily-soup-card" style="margin-bottom:12px;"></div>
       <div id="daily-main-card"></div>
@@ -960,17 +961,8 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 // ════════════════════════════════════════
 // DATA
 // ════════════════════════════════════════
-const ADDONS_DB=[
-  {name:'Mleko do kawy',required:true,type:'radio',cats:['Kawy klasyczne','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Mleko krowie',p:0,def:true},{n:'Mleko owsiane',p:1.5},{n:'Mleko migdałowe',p:1.5},{n:'Mleko bez laktozy',p:0}]},
-  {name:'Rodzaj herbaty',required:true,type:'radio',cats:['Napoje gorące'],items:['Herbata'],opts:[{n:'Czarna',p:0.5,def:true},{n:'Smakowa',p:0.5},{n:'Zielona',p:0.5},{n:'Rumiankowa',p:0.5}]},
-  {name:'Kubeczek',required:false,type:'checkbox',cats:['Kawy klasyczne','Napoje gorące','Kawy smakowe','Kawy sezonowe i autorskie','Kawy mrożone'],opts:[{n:'Kubeczek na wynos',p:0.5}]},
-  {name:'Wybierz dodatki',required:false,type:'checkbox',cats:['Dania obiadowe'],opts:[{n:'Kluski śląskie',p:8},{n:'Ziemniaki',p:8},{n:'Kasza',p:6},{n:'Kopytka',p:8},{n:'Surówka',p:7},{n:'Sos tysiąca wysp',p:2},{n:'Sos czosnkowy',p:2},{n:'Ketchup',p:2}]},
-  {name:'Wybór pieczywa',required:false,type:'radio',
-   cats:['Śniadania i lunche'],
-   // Only for bajgiel items — checked by item name
-   itemKeywords:['bajgiel','bagietka'],
-   opts:[{n:'Bajgiel pszenny',p:0,def:true},{n:'Bajgiel ziarnisty',p:0}]},
-];
+// ADDONS_DB — zarządzane wyłącznie przez Panel → Grupy dodatków
+const ADDONS_DB=[];
 
 const MENU_BASE=[
   {id:1,cat:'Śniadania i lunche',name:'Bajgiel z boczkiem, jajkiem sadzonym, sałatą, pomidorem i sosem',desc:'CHRUPIĄCY NA ZEWNĄTRZ, MIĘKKI W ŚRODKU - NA KAŻDY GUST',price:24,avail:true,badge:'new'},
@@ -1058,19 +1050,8 @@ let appliedCoupon=null;
 // Jeśli restaurator dodał/edytował dania w panelu — używamy JEGO danych w całości.
 // MENU_BASE to tylko dane startowe pokazywane przed pierwszym użyciem panelu.
 function getMenu(){
-  const adminData = LS('menu');
-  if(adminData && adminData.length > 0){
-    // Panel ma dane — użyj ich, uzupełnij tylko addonGroups/sizes z MENU_BASE jeśli brakuje
-    return adminData.map(item=>{
-      const base = MENU_BASE.find(b=>b.id===item.id);
-      return {
-        ...item,
-        addonGroups: item.addonGroups || base?.addonGroups,
-        sizes: item.sizes || base?.sizes,
-      };
-    });
-  }
-  // Brak danych w panelu — użyj domyślnych
+  const adminData=LS('menu');
+  if(adminData&&adminData.length>0) return adminData;
   return MENU_BASE;
 }
 
@@ -1128,13 +1109,12 @@ function addDailyItem(type){
   const k=LS('kitchen-day');
   if(!k||!k[type]?.name)return;
   const d=k[type];
-  // dailyType pozwala calcPackaging() rozpoznać typ bez zgadywania po nazwie
   cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
   updateCartBadge();toast(d.name+' dodane do koszyka ✓');
 }
-function makeDailyCard(d, emoji, label, type){
-  if(!d||!d.name) return '';
-  return `<div class="daily-mini-card">
+function makeDailyCard(d,emoji,label,type){
+  if(!d||!d.name)return'';
+  return`<div class="daily-mini-card">
     ${d.photo?`<img src="${d.photo}" alt="${d.name}">`:`<div class="daily-mini-card-ph">${emoji}</div>`}
     <div class="daily-mini-body">
       <div class="daily-mini-type">${emoji} ${label}</div>
@@ -1148,24 +1128,19 @@ function makeDailyCard(d, emoji, label, type){
   </div>`;
 }
 function renderDaily(){
-  const k = LS('kitchen-day');
-  if(!k) return;
-
-  // Lewa kolumna — tekst
-  const mainName = k.set?.name || (k.soup?.name&&k.main?.name ? k.soup.name+' + '+k.main.name : k.soup?.name||k.main?.name||'');
+  const k=LS('kitchen-day');
+  if(!k)return;
+  const mainName=k.set?.name||(k.soup?.name&&k.main?.name?k.soup.name+' + '+k.main.name:k.soup?.name||k.main?.name||'');
   if(mainName){
     document.getElementById('daily-name').textContent='Codziennie coś pysznego z naszej kuchni';
     document.getElementById('daily-desc').textContent='Dziś polecamy: '+mainName+'. Dostępne do wyczerpania.';
   }
-
-  // Prawa kolumna — trzy osobne kontenery
   const setEl=document.getElementById('daily-set-card');
   const soupEl=document.getElementById('daily-soup-card');
   const mainEl=document.getElementById('daily-main-card');
-
-  if(setEl)  setEl.innerHTML  = makeDailyCard(k.set,  '⭐','Zestaw dnia',  'set');
-  if(soupEl) soupEl.innerHTML = makeDailyCard(k.soup, '🍲','Zupa dnia',    'soup');
-  if(mainEl) mainEl.innerHTML = makeDailyCard(k.main, '🍽','Danie główne', 'main');
+  if(setEl)  setEl.innerHTML =makeDailyCard(k.set, '⭐','Zestaw dnia',  'set');
+  if(soupEl) soupEl.innerHTML=makeDailyCard(k.soup,'🍲','Zupa dnia',    'soup');
+  if(mainEl) mainEl.innerHTML=makeDailyCard(k.main,'🍽','Danie główne', 'main');
 }
 function addDefaultDaily(){
   const k=LS('kitchen-day');
@@ -1173,15 +1148,14 @@ function addDefaultDaily(){
   if(k?.main?.name){addDailyItem('main');return;}
 }
 
-// ════ KUCHNIA DNIA ════
-// Sekcja kitchen-section usunięta — dane wyświetlane w daily-section powyżej
+// ════ KUCHNIA DNIA — przeniesiona do daily-section ════
 function renderKitchen(){
-  const el = document.getElementById('kitchen-section');
-  if(el) el.style.display='none';
+  const el=document.getElementById('kitchen-section');
+  if(el)el.style.display='none';
   return;
-  const k = LS('kitchen-day');
-  if(!el) return;
-  if(!k || (!k.soup?.name && !k.main?.name)){ el.style.display='none'; return; }
+  const k=LS('kitchen-day');
+  if(!el)return;
+  if(!k||(!k.soup?.name&&!k.main?.name)){el.style.display='none';return;}
   el.style.display='block';
   const soupCard = k.soup?.name ? `
     <div class="kitchen-card reveal">
@@ -1297,33 +1271,53 @@ function buildMenu(){
 }
 
 function renderItem(item){
+  const hasParam=!!(item.paramName&&item.paramPrices&&item.paramPrices.length>0);
   const hasAddons=getItemAddons(item).length>0;
-  const hasSizes=item.sizes&&item.sizes.length>1;
-  const priceFrom=item.price+(hasSizes?Math.min(...item.sizes.map(s=>s.p)):0);
+  const basePrice=item.price;
   let badge=item.badge==='new'?'<div class="ibadges"><span class="ib ib-new">Nowość</span></div>':!item.avail?'<div class="ibadges"><span class="ib ib-out">Chwilowo niedostępny</span></div>':'';
+  let actionArea='';
+  if(item.avail){
+    if(hasParam){
+      const paramDef=(LS('params')||[]).find(p=>p.name===item.paramName);
+      const vals=paramDef?paramDef.vals.split('\n').filter(v=>v.trim()):[];
+      const btns=vals.map((v,i)=>{
+        const vPrice=parseFloat(item.paramPrices[i])||basePrice;
+        return`<button class="ivar" onclick="event.stopPropagation();quickAddParam(${item.id},${i})">${v}<br><span style="font-size:10px;opacity:.8;">${vPrice.toFixed(2)} zł</span></button>`;
+      }).join('');
+      actionArea=`<div class="ivar-wrap">${btns}</div>`;
+    } else {
+      actionArea=`<button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${basePrice.toFixed(2)} zł${hasAddons?' ⓘ':''}</button>`;
+    }
+  }
+  let priceLabel='';
+  if(!item.avail) priceLabel=`<span class="iprice">${basePrice.toFixed(2)} zł</span>`;
+  else if(hasParam&&item.paramPrices.length>0) priceLabel=`<span class="iprice"><span class="ipfrom">od </span>${Math.min(...item.paramPrices.map(p=>parseFloat(p)||0)).toFixed(2)} zł</span>`;
   return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
     ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
     <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
-    <span class="iprice"><span class="ipfrom">${hasSizes?'od ':''}</span>${priceFrom} zł</span>
-    <button class="iadd" onclick="event.stopPropagation();openProduct(${item.id})">🛒 ${priceFrom} zł${hasAddons||hasSizes?' ⓘ':''}</button>
+    ${priceLabel}
+    ${actionArea}
   </div>`;
+}
+function quickAddParam(itemId,paramIndex){
+  const item=getMenu().find(x=>x.id===itemId);
+  if(!item||!item.avail)return;
+  const paramDef=(LS('params')||[]).find(p=>p.name===item.paramName);
+  const vals=paramDef?paramDef.vals.split('\n').filter(v=>v.trim()):[];
+  const vName=vals[paramIndex]||'';
+  const vPrice=parseFloat(item.paramPrices[paramIndex])||item.price;
+  const hasAddons=getItemAddons(item).length>0;
+  if(hasAddons){openProduct(itemId);setTimeout(()=>selSz(paramIndex),50);return;}
+  const mods=vName?[{n:vName,p:0}]:[];
+  cart.push({uid:Date.now(),itemId:item.id,name:item.name,cat:item.cat,mods,unitPrice:parseFloat(vPrice.toFixed(2)),qty:1});
+  updateCartBadge();showCross(item);
 }
 
 // ════ ADDONS ════
+// Grupy dodatków — TYLKO z panelu (localStorage 'addons')
 function getItemAddons(item){
   const groups=[];
-  // 1. Explicit addonGroups on item
-  if(item.addonGroups)item.addonGroups.forEach(n=>{const g=ADDONS_DB.find(a=>a.name===n);if(g&&!groups.find(x=>x.name===n))groups.push(g);});
-  // 2. Built-in ADDONS_DB — category + optional keyword filter
-  ADDONS_DB.forEach(g=>{
-    if(groups.find(x=>x.name===g.name))return;
-    if(!g.cats.includes(item.cat))return;
-    if(g.itemKeywords){const n=item.name.toLowerCase();if(!g.itemKeywords.some(k=>n.includes(k)))return;}
-    groups.push(g);
-  });
-  // 3. Admin addons from localStorage — exact category match
   (LS('addons')||[]).forEach(a=>{
-    if(groups.find(g=>g.name===a.name))return;
     const cats=a.cats.split(',').map(c=>c.trim()).filter(Boolean);
     if(!cats.includes(item.cat))return;
     const opts=(a.opts||'').split('\n').filter(Boolean).map(l=>{const p=l.split('|');return{n:p[0].trim(),p:parseFloat(p[1])||0,def:p[2]==='def'};});
@@ -1336,8 +1330,11 @@ function getItemAddons(item){
 function openProduct(id){
   const item=getMenu().find(x=>x.id===id);if(!item||!item.avail)return;
   // variants (z panelu) lub sizes (stary format) — ujednolicamy do curSizes
-  const rawVariants = item.variants||item.sizes||[];
-  curItem=item;curQty=1;curSizes=rawVariants.map(v=>({n:v.name||v.n||'',p:parseFloat(v.price??v.p)>0?parseFloat(v.price??v.p)-item.price:parseFloat(v.price??v.p)||0}));selSize=0;
+  const paramDef=item.paramName?(LS('params')||[]).find(p=>p.name===item.paramName):null;
+  const paramVals=paramDef?paramDef.vals.split('\n').filter(v=>v.trim()):[];
+  curItem=item;curQty=1;
+  curSizes=paramVals.map((v,i)=>({n:v,p:(parseFloat(item.paramPrices?.[i])||item.price)-item.price}));
+  selSize=0;
   document.getElementById('sp-title').textContent=item.name;
   const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
   const sz=document.getElementById('sp-sizes');
@@ -1417,15 +1414,13 @@ function renderCartSum(){
 }
 function calcDel(){const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);const z=(LS('zones')||ZONES)[0];return sub>=(z.free||40)?0:(z.cost||5);}
 function calcPackaging(){
-  // Opłata za opakowania tylko przy dostawie lub odbiorze (nie na miejscu)
-  if(delType==='miejsce') return 0;
+  if(delType==='miejsce')return 0;
   const pkg=LS('packaging')||{soup:1,main:1,set:2};
   let total=0;
   cart.forEach(ci=>{
-    if(ci.itemId!==0) return; // tylko pozycje dania dnia (itemId===0)
-    const type=ci.dailyType||'main'; // 'set','soup','main'
-    const rate=parseFloat(pkg[type])||0;
-    total+=rate*ci.qty;
+    if(ci.itemId!==0)return;
+    const type=ci.dailyType||'main';
+    total+=(parseFloat(pkg[type])||0)*ci.qty;
   });
   return total;
 }
