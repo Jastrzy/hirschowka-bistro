@@ -117,11 +117,11 @@
       var read_keys = {
         'menu':        function() { if(window.buildMenu){window.buildMenu();window.buildCatTabs();} },
         'daily-dish':  function() { if(window.renderDaily) window.renderDaily(); },
-        'kitchen-day': function() { if(window.renderKitchen) window.renderKitchen(); },
+        'kitchen-day': function() { if(window.renderKitchen) window.renderKitchen(); if(window.renderDailyDish) window.renderDailyDish(); if(window.renderDaily) window.renderDaily(); },
         'promos':      function() { if(window.renderAdminPromos) window.renderAdminPromos(); if(window.renderAdminTicker) window.renderAdminTicker(); },
         'coupons':     null,
         'addons':      null,
-        'params':      null,
+        'params':      function() { if(window.buildMenu) window.buildMenu(); if(window.buildMenuContent) window.buildMenuContent(); },
         'packaging':   null,
         'zones':       null
       };

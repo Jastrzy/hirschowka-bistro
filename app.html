@@ -811,6 +811,11 @@ function initApp(){
   checkPushBanner();
   setInterval(updateOpenStatus,60000);
 }
+// Eksportuj funkcje dla firebase-config.js (wywołuje je po synchronizacji danych)
+window.renderDailyDish = renderDailyDish;
+window.buildMenu = buildCatTabs;
+window.buildMenuContent = buildMenuContent;
+window.buildCatTabs = buildCatTabs;
 
 // ══════════════════════════════════════
 // OPEN STATUS
