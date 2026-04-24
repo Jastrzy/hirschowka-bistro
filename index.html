@@ -1133,71 +1133,53 @@ function renderAdminPromos(){
 }
 
 // ════ DAILY DISH ════
+function addDailyItem(type){
+  const k=LS('kitchen-day');
+  if(!k||!k[type]?.name)return;
+  const d=k[type];
+  cart.push({uid:Date.now(),itemId:0,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
+  updateCartBadge();toast(d.name+' dodane do koszyka ✓');
+}
+function makeDailyCard(d, emoji, label, type){
+  if(!d||!d.name) return '';
+  return `<div class="daily-mini-card">
+    ${d.photo?`<img src="${d.photo}" alt="${d.name}">`:`<div class="daily-mini-card-ph">${emoji}</div>`}
+    <div class="daily-mini-body">
+      <div class="daily-mini-type">${emoji} ${label}</div>
+      <div class="daily-mini-name">${d.name}</div>
+      ${d.desc?`<div class="daily-mini-desc">${d.desc}</div>`:''}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+        <span class="daily-mini-price">${d.price} zł</span>
+        <button class="iadd" style="padding:7px 12px;font-size:11px;" onclick="addDailyItem('${type}')">🛒 Dodaj</button>
+      </div>
+    </div>
+  </div>`;
+}
 function renderDaily(){
-  const d = LS('daily-dish');  // tekst po lewej + cena zestawu
-  const k = LS('kitchen-day'); // dwa zdjęcia: soup + main
+  const k = LS('kitchen-day');
+  if(!k) return;
 
-  // Lewa kolumna — tekst z daily-dish
-  if(d&&d.name){
+  // Lewa kolumna — tekst z danych zestawu lub zupy
+  const mainName = k.set?.name || (k.soup?.name&&k.main?.name ? k.soup.name+' + '+k.main.name : k.soup?.name||k.main?.name||'');
+  if(mainName){
     document.getElementById('daily-name').textContent='Codziennie coś pysznego z naszej kuchni';
-    document.getElementById('daily-desc').textContent='Dziś polecamy: '+d.name+'. Dostępne do wyczerpania.';
-    document.getElementById('daily-btn').onclick=()=>{
-      cart.push({uid:Date.now(),itemId:0,name:d.name+' (Zestaw dnia)',cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
-      updateCartBadge();toast('Zestaw dnia dodany do koszyka ✓');
-    };
-    if(d.price) document.getElementById('daily-price').textContent=d.price+' zł';
+    document.getElementById('daily-desc').textContent='Dziś polecamy: '+mainName+'. Dostępne do wyczerpania.';
   }
 
-  // Prawa kolumna — karty zupy i dania z kitchen-day
-  const soupEl = document.getElementById('daily-soup-card');
-  const mainEl = document.getElementById('daily-main-card');
+  // Prawa kolumna — trzy karty
+  const setEl=document.getElementById('daily-soup-card');   // reuse dla zestawu
+  const soupEl=document.getElementById('daily-main-card');  // reuse dla zupy
+  const mainEl=document.getElementById('daily-set-price-bar'); // reuse dla dania
 
-  if(k && k.soup?.name){
-    soupEl.innerHTML=`<div class="daily-mini-card">
-      ${k.soup.photo
-        ? `<img src="${k.soup.photo}" alt="${k.soup.name}">`
-        : `<div class="daily-mini-card-ph">🍲</div>`}
-      <div class="daily-mini-body">
-        <div class="daily-mini-type">🍲 Zupa dnia</div>
-        <div class="daily-mini-name">${k.soup.name}</div>
-        ${k.soup.desc?`<div class="daily-mini-desc">${k.soup.desc}</div>`:''}
-        <div class="daily-mini-price">${k.soup.price} zł</div>
-      </div>
-    </div>`;
-  }
-
-  if(k && k.main?.name){
-    mainEl.innerHTML=`<div class="daily-mini-card">
-      ${k.main.photo
-        ? `<img src="${k.main.photo}" alt="${k.main.name}">`
-        : `<div class="daily-mini-card-ph">🍽</div>`}
-      <div class="daily-mini-body">
-        <div class="daily-mini-type">🍽 Drugie danie</div>
-        <div class="daily-mini-name">${k.main.name}</div>
-        ${k.main.desc?`<div class="daily-mini-desc">${k.main.desc}</div>`:''}
-        <div class="daily-mini-price">${k.main.price} zł</div>
-      </div>
-    </div>`;
-  }
-
-  // Cena zestawu
-  if(k&&k.setPrice){
-    document.getElementById('daily-price').textContent=k.setPrice+' zł';
-  }
+  if(setEl) setEl.innerHTML=makeDailyCard(k.set,'⭐','Zestaw dnia','set');
+  if(soupEl) soupEl.innerHTML=makeDailyCard(k.soup,'🍲','Zupa dnia','soup');
+  // Danie główne — wstawiamy przed paskiem ceny
+  if(mainEl) mainEl.outerHTML=makeDailyCard(k.main,'🍽','Danie główne','main')+'<div id="daily-set-price-bar" style="display:none;"></div>';
 }
 function addDefaultDaily(){
   const k=LS('kitchen-day');
-  if(k&&k.setPrice){
-    const name=`Zestaw: ${k.soup?.name||'zupa'} + ${k.main?.name||'drugie danie'}`;
-    cart.push({uid:Date.now(),itemId:0,name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(k.setPrice)||0,qty:1});
-    updateCartBadge();toast('Zestaw dnia dodany do koszyka ✓');
-    return;
-  }
-  const d=LS('daily-dish');
-  if(d&&d.name){
-    cart.push({uid:Date.now(),itemId:0,name:d.name+' (Zestaw dnia)',cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
-    updateCartBadge();toast('Zestaw dnia dodany do koszyka ✓');
-  }
+  if(k?.set?.name){addDailyItem('set');return;}
+  if(k?.main?.name){addDailyItem('main');return;}
 }
 
 // ════ KUCHNIA DNIA ════

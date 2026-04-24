@@ -734,109 +734,75 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <!-- DANIE DNIA -->
     <div class="page" id="page-daniednia">
-      <div class="sect-hdr"><h2>⭐ Danie dnia &amp; Kuchnia dnia</h2></div>
-
-      <!-- DANIE DNIA -->
-      <div class="card card-pad" style="margin-bottom:14px;border-left:4px solid var(--gold);">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">💡 Danie dnia — duży baner na stronie głównej</div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Pojawia się tuż pod hero jako wyróżniony zestaw z ceną. <strong>Zmieniaj każdego ranka.</strong></p>
+      <div class="sect-hdr"><h2>⭐ Danie dnia</h2></div>
+      <div class="card card-pad" style="margin-bottom:20px;border-left:4px solid var(--gold);">
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Uzupełnij poniższe trzy pozycje. Każda pojawi się na stronie klienta z przyciskiem "Dodaj do koszyka". <strong>Zmieniaj każdego ranka.</strong></p>
       </div>
-      <div class="card card-pad" style="margin-bottom:20px;">
-        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Ustaw dzisiejsze danie dnia</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
-          <div>
-            <div class="photo-drop" onclick="document.getElementById('daily-photo-upload2').click()" style="padding:20px;margin-bottom:14px;min-height:180px;">
-              <input type="file" id="daily-photo-upload2" accept="image/*" onchange="previewDailyPhoto2(this)">
-              <div id="daily-photo-prev2" style="display:none;margin-bottom:8px;position:relative;">
-                <img id="daily-photo-img2" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;">
-                <button onclick="event.stopPropagation();clearDailyPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;">✕</button>
-              </div>
-              <div class="drop-icon" id="daily-drop-icon2" style="font-size:40px;margin-bottom:8px;">📷</div>
-              <p id="daily-drop-txt2" style="font-size:13px;color:var(--muted);">Kliknij aby dodać zdjęcie</p>
+
+      <!-- Zestaw dnia -->
+      <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--gold);">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">⭐ Zestaw dnia</h3>
+        <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
+          <div class="photo-drop" onclick="document.getElementById('dd-set-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
+            <input type="file" id="dd-set-photo" accept="image/*" onchange="previewDdPhoto(this,'set')">
+            <div id="dd-set-prev" style="display:none;position:relative;">
+              <img id="dd-set-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
+              <button onclick="event.stopPropagation();clearDdPhoto('set')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
             </div>
+            <div id="dd-set-drop" style="font-size:28px;margin-bottom:4px;">⭐</div>
+            <p style="font-size:11px;color:var(--muted);">Zdjęcie</p>
           </div>
           <div>
-            <div class="field"><label>Nazwa dania dnia *</label><input id="daily-name2" placeholder="np. Żurek + Polędwiczki wieprzowe" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Cena zestawu (zł) *</label><input type="number" id="daily-price2" placeholder="np. 22" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Krótki opis</label><textarea id="daily-desc2" rows="3" placeholder="np. Domowy żurek z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <button class="btn bp" onclick="saveDaily2()" style="width:100%;">⭐ Zapisz danie dnia</button>
+            <div class="field"><label>Nazwa</label><input id="dd-set-name" placeholder="np. Zupa pomidorowa + Filet z indyka" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Opis</label><textarea id="dd-set-desc" rows="2" placeholder="np. Zupa + drugie danie w jednej cenie" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+            <div class="field"><label>Cena (zł)</label><input type="number" id="dd-set-price" placeholder="np. 32" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
           </div>
         </div>
-      </div>
-
-      <!-- KUCHNIA DNIA — zupa + drugie danie -->
-      <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:4px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:8px;">
-        <span style="font-size:18px;">🍲</span> Kuchnia dnia — zupa i drugie danie
-        <span style="font-size:12px;font-weight:400;color:var(--muted);">Sekcja pod Daniem dnia na stronie klienta</span>
-      </div>
-      <div style="background:rgba(59,37,18,.04);border-radius:var(--r);padding:10px 14px;margin:10px 0 16px;border:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.6;">
-        Dwie karty ze zdjęciami, opisami i cenami zupy oraz drugiego dania. Opcjonalnie cena zestawu (zupa + drugie). Jeśli pole jest puste — sekcja nie pojawia się na stronie.
       </div>
 
       <!-- Zupa dnia -->
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid #3b82f6;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍲 Zupa dnia</h3>
         <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('kitchen-soup-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="kitchen-soup-photo" accept="image/*" onchange="previewKitchenPhoto(this,'soup')">
-            <div id="kitchen-soup-prev" style="display:none;position:relative;">
-              <img id="kitchen-soup-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearKitchenPhoto('soup')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
+          <div class="photo-drop" onclick="document.getElementById('dd-soup-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
+            <input type="file" id="dd-soup-photo" accept="image/*" onchange="previewDdPhoto(this,'soup')">
+            <div id="dd-soup-prev" style="display:none;position:relative;">
+              <img id="dd-soup-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
+              <button onclick="event.stopPropagation();clearDdPhoto('soup')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
             </div>
-            <div id="kitchen-soup-drop" style="font-size:28px;margin-bottom:4px;">🍲</div>
-            <p style="font-size:11px;color:var(--muted);">Zdjęcie zupy</p>
+            <div id="dd-soup-drop" style="font-size:28px;margin-bottom:4px;">🍲</div>
+            <p style="font-size:11px;color:var(--muted);">Zdjęcie</p>
           </div>
           <div>
-            <div class="field"><label>Nazwa zupy</label><input id="kitchen-soup-name" placeholder="np. Żurek domowy z jajkiem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="kitchen-soup-desc" rows="2" placeholder="np. Na zakwasie, z białą kiełbasą, jajkiem i chrzanem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena zupy (zł)</label><input type="number" id="kitchen-soup-price" placeholder="np. 12" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Nazwa</label><input id="dd-soup-name" placeholder="np. Żurek domowy z jajkiem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Opis</label><textarea id="dd-soup-desc" rows="2" placeholder="np. Na zakwasie, z białą kiełbasą i chrzanem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+            <div class="field"><label>Cena (zł)</label><input type="number" id="dd-soup-price" placeholder="np. 12" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
           </div>
         </div>
       </div>
 
-      <!-- Drugie danie -->
-      <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--gold);">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍽 Drugie danie</h3>
+      <!-- Danie główne -->
+      <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--rust);">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍽 Danie główne</h3>
         <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('kitchen-main-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="kitchen-main-photo" accept="image/*" onchange="previewKitchenPhoto(this,'main')">
-            <div id="kitchen-main-prev" style="display:none;position:relative;">
-              <img id="kitchen-main-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearKitchenPhoto('main')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
+          <div class="photo-drop" onclick="document.getElementById('dd-main-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
+            <input type="file" id="dd-main-photo" accept="image/*" onchange="previewDdPhoto(this,'main')">
+            <div id="dd-main-prev" style="display:none;position:relative;">
+              <img id="dd-main-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
+              <button onclick="event.stopPropagation();clearDdPhoto('main')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
             </div>
-            <div id="kitchen-main-drop" style="font-size:28px;margin-bottom:4px;">🍽</div>
-            <p style="font-size:11px;color:var(--muted);">Zdjęcie dania</p>
+            <div id="dd-main-drop" style="font-size:28px;margin-bottom:4px;">🍽</div>
+            <p style="font-size:11px;color:var(--muted);">Zdjęcie</p>
           </div>
           <div>
-            <div class="field"><label>Nazwa dania</label><input id="kitchen-main-name" placeholder="np. Polędwiczki wieprzowe z ziemniakami" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="kitchen-main-desc" rows="2" placeholder="np. Z sosem chrzanowym, ziemniakami puree i surówką z kapusty" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena dania (zł)</label><input type="number" id="kitchen-main-price" placeholder="np. 26" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Nazwa</label><input id="dd-main-name" placeholder="np. Polędwiczki wieprzowe z ziemniakami" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+            <div class="field"><label>Opis</label><textarea id="dd-main-desc" rows="2" placeholder="np. Z sosem chrzanowym i surówką z kapusty" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+            <div class="field"><label>Cena (zł)</label><input type="number" id="dd-main-price" placeholder="np. 26" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
           </div>
         </div>
       </div>
 
-      <!-- Cena zestawu -->
-      <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--green2);">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">🍱 Cena zestawu (zupa + drugie)</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Zostaw puste jeśli nie oferujesz zestawu. Przy niższej cenie niż suma automatycznie pojawi się przekreślona cena normalna.</p>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <input type="number" id="kitchen-set-price" placeholder="np. 32" step="0.50"
-            style="width:140px;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:16px;font-weight:700;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
-          <span style="font-size:14px;color:var(--muted);">zł za zestaw</span>
-          <div id="kitchen-set-savings" style="font-size:12px;color:var(--green2);font-weight:700;"></div>
-        </div>
-        <script>
-          document.getElementById('kitchen-set-price')?.addEventListener('input',function(){
-            const sp=parseFloat(document.getElementById('kitchen-soup-price')?.value)||0;
-            const mp=parseFloat(document.getElementById('kitchen-main-price')?.value)||0;
-            const sv=document.getElementById('kitchen-set-savings');
-            if(sv&&sp&&mp){const save=(sp+mp)-parseFloat(this.value);sv.textContent=save>0?`Oszczędność: ${save.toFixed(2)} zł`:'';}
-          });
-        </script>
-      </div>
-
-      <button class="btn bp" onclick="saveKitchenDay()" style="width:100%;padding:14px;font-size:15px;">🍲 Zapisz kuchnię dnia — zaktualizuj stronę</button>
-
+      <button class="btn bp" onclick="saveDanieDnia()" style="width:100%;padding:14px;font-size:15px;">⭐ Zapisz danie dnia — zaktualizuj stronę</button>
       <div id="daily-preview-card" style="display:none;margin-top:14px;"></div>
     </div>
 
@@ -2541,6 +2507,9 @@ let selectedBadges=[];
 
 function openDishModal(id){
   editDishId=id;
+  _dishSaving=false; // reset blokady przy każdym otwarciu
+  const saveBtn=document.getElementById('dish-save-btn');
+  if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Zapisz danie';}
   const d=id?menuData.find(x=>x.id===id):null;
   document.getElementById('dish-modal-title').textContent=d?'Edytuj danie: '+d.name:'Dodaj danie';
 
@@ -2664,10 +2633,19 @@ function onParamChange(){
   renderParamPrices(v,[]);
 }
 
+let _dishSaving = false; // blokada przed podwójnym zapisem
 function saveDish(){
+  if(_dishSaving) return; // zablokuj ponowne kliknięcie
+
   const name=(document.getElementById('d-name').value||'').trim();
   const desc=(document.getElementById('d-desc').value||'').trim();
   if(!name){toast('Podaj nazwę dania — pole "Nazwa dania" jest wymagane');return;}
+
+  // Zablokuj przycisk natychmiast po walidacji
+  _dishSaving = true;
+  const saveBtn = document.getElementById('dish-save-btn');
+  if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='Zapisuję…'; }
+
   const imgEl=document.getElementById('dish-photo-img');
   const hasPhoto=document.getElementById('dish-photo-prev').style.display!=='none';
   const photo=hasPhoto?imgEl.src:'';
@@ -2711,9 +2689,12 @@ function saveDish(){
   }
   const savedCat = obj.cat;
   closeModal('mo-dish');
-  curMenuCat = savedCat; // ustaw kategorię PO zamknięciu modala
+  curMenuCat = savedCat;
   renderMenu();
   toast(editDishId!==null?'Danie "'+name+'" zaktualizowane ✓':'Danie "'+name+'" dodane ✓ — zakładka "'+savedCat+'" aktywna');
+  // Odblokuj (na wypadek gdyby modal nie zamknął się poprawnie)
+  _dishSaving = false;
+  if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='Zapisz danie'; }
 }
 
 // ── ADDONS ──
@@ -3056,123 +3037,51 @@ function saveDaily(){
 }
 
 // ── DANIE DNIA (dedykowana strona) ──
-function renderDanieDnia(){
-  const d = S('daily-dish');
-  if(!d) return;
-  // Prefill form
-  if(d.name) document.getElementById('daily-name2').value=d.name;
-  if(d.price) document.getElementById('daily-price2').value=d.price;
-  if(d.desc) document.getElementById('daily-desc2').value=d.desc;
-  if(d.photo){
-    document.getElementById('daily-photo-img2').src=d.photo;
-    document.getElementById('daily-photo-prev2').style.display='block';
-    document.getElementById('daily-drop-icon2').style.display='none';
-    document.getElementById('daily-drop-txt2').style.display='none';
-    updateDailyPreview(d);
-  }
-}
-function previewDailyPhoto2(inp){
-  const f=inp.files[0];if(!f)return;
-  const r=new FileReader();r.onload=e=>{
-    document.getElementById('daily-photo-img2').src=e.target.result;
-    document.getElementById('daily-photo-prev2').style.display='block';
-    document.getElementById('daily-drop-icon2').style.display='none';
-    document.getElementById('daily-drop-txt2').style.display='none';
-  };r.readAsDataURL(f);
-}
-function clearDailyPhoto(){
-  document.getElementById('daily-photo-img2').src='';
-  document.getElementById('daily-photo-prev2').style.display='none';
-  document.getElementById('daily-drop-icon2').style.display='block';
-  document.getElementById('daily-drop-txt2').style.display='block';
-  document.getElementById('daily-photo-upload2').value='';
-}
-function saveDaily2(){
-  const name=(document.getElementById('daily-name2').value||'').trim();
-  const price=(document.getElementById('daily-price2').value||'').trim();
-  if(!name){toast('Podaj nazwę dania dnia');return;}
-  if(!price){toast('Podaj cenę zestawu');return;}
-  const imgEl=document.getElementById('daily-photo-img2');
-  const hasPhoto=document.getElementById('daily-photo-prev2').style.display!=='none';
-  const daily={name,price,desc:document.getElementById('daily-desc2').value,photo:hasPhoto?imgEl.src:''};
-  W('daily-dish',daily);
-  toast('⭐ Danie dnia zapisane ✓ — strona główna zaktualizowana');
-}
-
-// ── KUCHNIA DNIA ──
-function previewKitchenPhoto(inp, type){
+// ── DANIE DNIA (nowe — trzy pozycje: set, soup, main) ──
+function previewDdPhoto(inp, type){
   const f=inp.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=e=>{
-    document.getElementById('kitchen-'+type+'-img').src=e.target.result;
-    document.getElementById('kitchen-'+type+'-prev').style.display='block';
-    document.getElementById('kitchen-'+type+'-drop').style.display='none';
+    document.getElementById('dd-'+type+'-img').src=e.target.result;
+    document.getElementById('dd-'+type+'-prev').style.display='block';
+    document.getElementById('dd-'+type+'-drop').style.display='none';
   };
   r.readAsDataURL(f);
 }
-function clearKitchenPhoto(type){
-  document.getElementById('kitchen-'+type+'-img').src='';
-  document.getElementById('kitchen-'+type+'-prev').style.display='none';
-  document.getElementById('kitchen-'+type+'-drop').style.display='block';
-  document.getElementById('kitchen-'+type+'-photo').value='';
+function clearDdPhoto(type){
+  document.getElementById('dd-'+type+'-img').src='';
+  document.getElementById('dd-'+type+'-prev').style.display='none';
+  document.getElementById('dd-'+type+'-drop').style.display='block';
+  document.getElementById('dd-'+type+'-photo').value='';
 }
-function saveKitchenDay(){
-  const getSrc=(id)=>{
-    const el=document.getElementById(id);
-    const prev=document.getElementById(id.replace('-img','-prev'));
-    return (prev&&prev.style.display!=='none')?el.src:'';
+function saveDanieDnia(){
+  const getSrc=(t)=>{
+    const prev=document.getElementById('dd-'+t+'-prev');
+    const img=document.getElementById('dd-'+t+'-img');
+    return (prev&&prev.style.display!=='none')?img.src:'';
   };
-  const soup={
-    name:(document.getElementById('kitchen-soup-name').value||'').trim(),
-    desc:(document.getElementById('kitchen-soup-desc').value||'').trim(),
-    price:(document.getElementById('kitchen-soup-price').value||'').trim(),
-    photo:getSrc('kitchen-soup-img'),
-  };
-  const main={
-    name:(document.getElementById('kitchen-main-name').value||'').trim(),
-    desc:(document.getElementById('kitchen-main-desc').value||'').trim(),
-    price:(document.getElementById('kitchen-main-price').value||'').trim(),
-    photo:getSrc('kitchen-main-img'),
-  };
-  const setPrice=(document.getElementById('kitchen-set-price').value||'').trim();
-  if(!soup.name&&!main.name){toast('Wpisz co najmniej jedno danie');return;}
-  W('kitchen-day',{soup,main,setPrice,date:new Date().toISOString().slice(0,10)});
-  toast('🍲 Kuchnia dnia zapisana ✓ — widoczna na stronie klienta');
+  const getField=(t,f)=>(document.getElementById('dd-'+t+'-'+f)?.value||'').trim();
+  const set={name:getField('set','name'),desc:getField('set','desc'),price:getField('set','price'),photo:getSrc('set')};
+  const soup={name:getField('soup','name'),desc:getField('soup','desc'),price:getField('soup','price'),photo:getSrc('soup')};
+  const main={name:getField('main','name'),desc:getField('main','desc'),price:getField('main','price'),photo:getSrc('main')};
+  if(!set.name&&!soup.name&&!main.name){toast('Wpisz co najmniej jedną pozycję');return;}
+  W('kitchen-day',{set,soup,main,date:new Date().toISOString().slice(0,10)});
+  toast('⭐ Danie dnia zapisane ✓ — strona zaktualizowana');
 }
 function renderDanieDnia(){
-  // Załaduj istniejące dane do formularzy
-  const d=S('daily-dish');
-  if(d){
-    if(d.name) document.getElementById('daily-name2').value=d.name;
-    if(d.price) document.getElementById('daily-price2').value=d.price;
-    if(d.desc) document.getElementById('daily-desc2').value=d.desc;
-    if(d.photo){
-      document.getElementById('daily-photo-img2').src=d.photo;
-      document.getElementById('daily-photo-prev2').style.display='block';
-      document.getElementById('daily-drop-icon2').style.display='none';
-      document.getElementById('daily-drop-txt2').style.display='none';
-    }
-  }
   const k=S('kitchen-day');
-  if(k){
-    if(k.soup?.name) document.getElementById('kitchen-soup-name').value=k.soup.name;
-    if(k.soup?.desc) document.getElementById('kitchen-soup-desc').value=k.soup.desc;
-    if(k.soup?.price) document.getElementById('kitchen-soup-price').value=k.soup.price;
-    if(k.soup?.photo){
-      document.getElementById('kitchen-soup-img').src=k.soup.photo;
-      document.getElementById('kitchen-soup-prev').style.display='block';
-      document.getElementById('kitchen-soup-drop').style.display='none';
+  if(!k) return;
+  ['set','soup','main'].forEach(t=>{
+    const d=k[t];if(!d)return;
+    if(d.name) document.getElementById('dd-'+t+'-name').value=d.name;
+    if(d.desc) document.getElementById('dd-'+t+'-desc').value=d.desc;
+    if(d.price) document.getElementById('dd-'+t+'-price').value=d.price;
+    if(d.photo){
+      document.getElementById('dd-'+t+'-img').src=d.photo;
+      document.getElementById('dd-'+t+'-prev').style.display='block';
+      document.getElementById('dd-'+t+'-drop').style.display='none';
     }
-    if(k.main?.name) document.getElementById('kitchen-main-name').value=k.main.name;
-    if(k.main?.desc) document.getElementById('kitchen-main-desc').value=k.main.desc;
-    if(k.main?.price) document.getElementById('kitchen-main-price').value=k.main.price;
-    if(k.main?.photo){
-      document.getElementById('kitchen-main-img').src=k.main.photo;
-      document.getElementById('kitchen-main-prev').style.display='block';
-      document.getElementById('kitchen-main-drop').style.display='none';
-    }
-    if(k.setPrice) document.getElementById('kitchen-set-price').value=k.setPrice;
-  }
+  });
 }
 
 
