@@ -94,7 +94,7 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','zones','customers','orders'];
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','customers','orders'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -122,6 +122,7 @@
         'coupons':     null,
         'addons':      null,
         'params':      null,
+        'packaging':   null,
         'zones':       null
       };
 

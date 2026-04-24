@@ -1028,13 +1028,34 @@ function updateCartBadge(){
 function openCart(){
   renderCartSheet();document.getElementById('ov-cart').classList.add('open');
 }
+function calcPackagingApp(){
+  const pkg=LS('packaging')||{soup:1,main:1,set:2};
+  let total=0;
+  cart.forEach(ci=>{
+    if(ci.itemId!==0) return;
+    const n=(ci.name||'').toLowerCase();
+    let rate=0;
+    if(n.includes('zestaw')) rate=parseFloat(pkg.set)||0;
+    else if(n.includes('zupa')||n.includes('krem')||n.includes('rosół')||n.includes('barszcz')||n.includes('żurek')) rate=parseFloat(pkg.soup)||0;
+    else rate=parseFloat(pkg.main)||0;
+    total+=rate*ci.qty;
+  });
+  return total;
+}
 function renderCartSheet(){
   const wrap=document.getElementById('cart-items');
   if(!cart.length){wrap.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:40px;margin-bottom:8px">🛒</div><div style="font-size:15px;font-weight:600;color:var(--brown)">Koszyk jest pusty</div></div>`;document.getElementById('cs-sum').innerHTML='';document.getElementById('checkout-total').textContent='0,00 zł';return;}
   wrap.innerHTML=cart.map(ci=>`<div class="ci"><div class="ci-info"><div class="ci-name">${ci.name}</div>${ci.mods.length?`<div class="ci-mods">${ci.mods.map(m=>m.n+(m.p>0?' +'+m.p.toFixed(2)+' zł':'')).join(', ')}</div>`:''}<div class="ci-qty"><button class="ciqb" onclick="ciqCh(${ci.uid},-1)">−</button><span class="cin">${ci.qty}</span><button class="ciqb" onclick="ciqCh(${ci.uid},1)">+</button><button class="cidel" onclick="ciRm(${ci.uid})">🗑</button></div></div><div class="ci-price">${(ci.unitPrice*ci.qty).toFixed(2)} zł</div></div>`).join('');
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
-  document.getElementById('cs-sum').innerHTML=`<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div><div class="csr"><span>Dostawa</span><span>${sub>=40?'<span style="color:var(--green2)">Bezpłatna</span>':'5,00 zł'}</span></div><div class="csr cs-total"><span>Łącznie</span><span>${(sub+(sub>=40?0:5)).toFixed(2)} zł</span></div>`;
-  document.getElementById('checkout-total').textContent=(sub+(sub>=40?0:5)).toFixed(2)+' zł';
+  const del=sub>=40?0:5;
+  const pkg=calcPackagingApp();
+  const total=sub+del+pkg;
+  document.getElementById('cs-sum').innerHTML=
+    `<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div>`+
+    `<div class="csr"><span>Dostawa</span><span>${sub>=40?'<span style="color:var(--green2)">Bezpłatna</span>':del.toFixed(2)+' zł'}</span></div>`+
+    (pkg>0?`<div class="csr"><span>📦 Opakowania</span><span>${pkg.toFixed(2)} zł</span></div>`:'')+
+    `<div class="csr cs-total"><span>Łącznie</span><span>${total.toFixed(2)} zł</span></div>`;
+  document.getElementById('checkout-total').textContent=total.toFixed(2)+' zł';
 }
 function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c.qty+d);updateCartBadge();renderCartSheet();}}
 function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCartSheet();}
@@ -1047,7 +1068,8 @@ function placeOrder(){
   if(!name){toast('Podaj imię i nazwisko');return;}
   if(!phone){toast('Podaj numer telefonu');return;}
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
-  const total=parseFloat((sub+(sub>=40?0:5)).toFixed(2));
+  const pkg=calcPackagingApp();
+  const total=parseFloat((sub+(sub>=40?0:5)+pkg).toFixed(2));
   const oid='#'+(10000+Math.floor(Math.random()*89999));
   const order={id:oid,items:cart.map(c=>`${c.name} ×${c.qty}`).join(', '),total,time:new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}),date:new Date().toLocaleDateString('pl'),status:'pending',customer:name,phone,addr:document.getElementById('c-addr').value};
   userOrders.unshift(order);

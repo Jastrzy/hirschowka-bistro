@@ -1413,12 +1413,34 @@ function renderCart(){
 function renderCartSum(){
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const dc=delType==='dostawa'?calcDel():0;
+  const pkg=calcPackaging();
   const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
-  const total=Math.max(0,sub+dc-disc);
-  document.getElementById('cs-sum').innerHTML=`<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div>${delType==='dostawa'?`<div class="csr"><span>Dostawa</span><span>${dc===0?'<span style="color:var(--green2)">Bezpłatna</span>':dc.toFixed(2)+' zł'}</span></div>`:''  }${disc>0?`<div class="csr" style="color:var(--green2)"><span>Rabat (${appliedCoupon.code})</span><span>-${disc.toFixed(2)} zł</span></div>`:''}<div class="csr cs-total"><span>Łącznie</span><span>${total.toFixed(2)} zł</span></div>`;
+  const total=Math.max(0,sub+dc+pkg-disc);
+  document.getElementById('cs-sum').innerHTML=
+    `<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div>`+
+    (delType==='dostawa'?`<div class="csr"><span>Dostawa</span><span>${dc===0?'<span style="color:var(--green2)">Bezpłatna</span>':dc.toFixed(2)+' zł'}</span></div>`:'')+
+    (pkg>0?`<div class="csr"><span>📦 Opakowania</span><span>${pkg.toFixed(2)} zł</span></div>`:'')+
+    (disc>0?`<div class="csr" style="color:var(--green2)"><span>Rabat (${appliedCoupon.code})</span><span>-${disc.toFixed(2)} zł</span></div>`:'')+
+    `<div class="csr cs-total"><span>Łącznie</span><span>${total.toFixed(2)} zł</span></div>`;
   document.getElementById('checkout-total').textContent=total.toFixed(2)+' zł';
 }
 function calcDel(){const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);const z=(LS('zones')||ZONES)[0];return sub>=(z.free||40)?0:(z.cost||5);}
+function calcPackaging(){
+  // Opłata za opakowania tylko przy dostawie lub odbiorze (nie na miejscu)
+  if(delType==='miejsce') return 0;
+  const pkg=LS('packaging')||{soup:1,main:1,set:2};
+  let total=0;
+  cart.forEach(ci=>{
+    if(ci.itemId!==0) return; // tylko pozycje dania dnia (itemId===0)
+    const n=(ci.name||'').toLowerCase();
+    let rate=0;
+    if(n.includes('zestaw')) rate=parseFloat(pkg.set)||0;
+    else if(n.includes('zupa')||n.includes('krem')||n.includes('rosół')||n.includes('barszcz')||n.includes('żurek')) rate=parseFloat(pkg.soup)||0;
+    else rate=parseFloat(pkg.main)||0;
+    total+=rate*ci.qty;
+  });
+  return total;
+}
 function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c.qty+d);updateCartBadge();renderCart();}}
 function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart();}
 
@@ -1451,8 +1473,9 @@ function placeOrder(){
   if(delType==='dostawa'&&!document.getElementById('addr-street').value.trim()){toast('Podaj adres dostawy');return;}
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const dc=delType==='dostawa'?calcDel():0;
+  const pkg=calcPackaging();
   const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
-  const total=parseFloat(Math.max(0,sub+dc-disc).toFixed(2));
+  const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));
   const orders=LS('orders')||[];
   const oid='#'+(10000+Math.floor(Math.random()*89999));
   const typeMap = {'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
