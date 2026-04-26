@@ -50,15 +50,34 @@
         }
       });
 
-      // Menu real-time → aktualizuj panel gdy zmieniono na innym urządzeniu
+      // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
+      // (nie nadpisuj gdy obsługa właśnie edytowała menu)
+      var _menuLastWrite = 0; // timestamp ostatniego lokalnego zapisu
+      var _origSetItem = localStorage.setItem.bind(localStorage);
+      // Śledź kiedy panel ostatnio zapisał menu lokalnie
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history'];
+      var _localWriteTs = {};
+      var __origSet = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = function(key, value) {
+        __origSet(key, value);
+        if (_trackKeys.indexOf(key) >= 0) {
+          _localWriteTs[key] = Date.now();
+        }
+      };
+
       db.ref('menu').on('value', function(snap) {
         var val = snap.val();
         if (!val) return;
-        var stored = localStorage.getItem('menu');
+        // Nie nadpisuj jeśli panel zapisywał menu w ostatnich 10 sekundach
+        var lastWrite = _localWriteTs['menu'] || 0;
+        if (Date.now() - lastWrite < 10000) {
+          console.log('[FB] Menu: pomijam nadpisanie — lokalny zapis jest świeży');
+          return;
+        }
         var fresh = JSON.stringify(val);
-        if (stored === fresh) return; // brak zmian
+        var stored = localStorage.getItem('menu');
+        if (stored === fresh) return;
         localStorage.setItem('menu', fresh);
-        // Zaktualizuj globalną zmienną menuData w panelu
         if (window._panelMenuReady) {
           try {
             var arr = Array.isArray(val) ? val : Object.values(val);
@@ -73,16 +92,16 @@
       db.ref('customers').on('value', function(snap) {
         var val = snap.val();
         if (!val) return;
+        var lastWrite = _localWriteTs['customers'] || 0;
+        if (Date.now() - lastWrite < 10000) return; // świeży lokalny zapis
         var stored = localStorage.getItem('customers');
         var fresh = JSON.stringify(val);
         if (stored === fresh) return;
-        // Nie nadpisuj jeśli lokalny zapis jest nowszy (np. tuż po imporcie)
         localStorage.setItem('customers', fresh);
         if (window._panelMenuReady) {
           try {
             var arr = Array.isArray(val) ? val : Object.values(val);
             arr = arr.filter(function(c){ return c; });
-            // Aktualizuj tylko jeśli Firebase ma więcej lub równo danych co lokalne
             var localArr = window.customers || [];
             if (arr.length >= localArr.length) {
               window.customers = arr;
@@ -93,7 +112,7 @@
         }
       });
 
-      // Synchronizuj localStorage → Firebase co 1s
+      // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
       var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','customers','orders','loyalty-history','rewards'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
@@ -103,6 +122,8 @@
           var now = localStorage.getItem(k);
           if (now !== null && now !== last[k]) {
             last[k] = now;
+            // Oznacz jako lokalny zapis
+            _localWriteTs[k] = Date.now();
             try { db.ref(k).set(JSON.parse(now)).catch(function(){}); } catch(e) {}
           }
         });
