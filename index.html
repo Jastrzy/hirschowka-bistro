@@ -1402,7 +1402,7 @@ function renderCartSum(){
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const dc=delType==='dostawa'?calcDel():0;
   const pkg=calcPackaging();
-  const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
+  const disc=appliedCoupon?Math.min(sub, sub*(appliedCoupon.disc/100)):0;
   const total=Math.max(0,sub+dc+pkg-disc);
   document.getElementById('cs-sum').innerHTML=
     `<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div>`+
@@ -1443,7 +1443,29 @@ function checkZone(){
 }
 
 // ════ COUPON ════
-function applyCoupon(){const code=(document.getElementById('coup-in').value||'').trim().toUpperCase();const found=(LS('coupons')||[]).find(c=>c.code.toUpperCase()===code);const res=document.getElementById('coup-res');if(!found){res.style.color='var(--rust)';res.textContent='❌ Nieprawidłowy kupon.';return;}const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);if(sub<(found.min||0)){res.style.color='var(--rust)';res.textContent=`❌ Minimalna wartość: ${found.min} zł`;return;}appliedCoupon=found;res.style.color='var(--green2)';res.textContent=`✅ Zastosowano: -${found.disc}%`;renderCartSum();}
+function applyCoupon(){
+  const code=(document.getElementById('coup-in').value||'').trim().toUpperCase();
+  const res=document.getElementById('coup-res');
+  const all=LS('coupons')||[];
+  const found=all.find(c=>(c.code||'').toUpperCase()===code);
+  if(!found){res.style.color='var(--rust)';res.textContent='❌ Nieprawidłowy kod kuponu.';return;}
+  // Sprawdź datę ważności
+  if(found.exp){
+    const today=new Date().toISOString().slice(0,10);
+    if(found.exp < today){res.style.color='var(--rust)';res.textContent='❌ Ten kupon wygasł.';return;}
+  }
+  // Sprawdź limit użyć
+  if(found.limit && (found.used||0) >= found.limit){res.style.color='var(--rust)';res.textContent='❌ Kupon został już wykorzystany.';return;}
+  // Sprawdź minimalną wartość
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  if(sub<(found.min||0)){res.style.color='var(--rust)';res.textContent=`❌ Minimalna wartość zamówienia: ${found.min} zł`;return;}
+  appliedCoupon=found;
+  const label=found.disc>=100?'Darmowe!':'-'+found.disc+'%';
+  const rewardInfo=found.loyaltyReward?` (${found.rewardName||'Nagroda lojalnościowa'})`:''
+  res.style.color='var(--green2)';
+  res.textContent=`✅ Zastosowano: ${label}${rewardInfo}`;
+  renderCartSum();
+}
 
 // ════ ORDER ════
 function placeOrder(){
@@ -1482,6 +1504,12 @@ function placeOrder(){
   const custs=LS('customers')||[];
   const raw=phone.replace(/\s/g,'');
   if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){custs.push({name,phone,email:document.getElementById('c-email')?.value||'',sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});localStorage.setItem('customers',JSON.stringify(custs));}
+  // Oznacz kupon jako użyty
+  if(appliedCoupon){
+    const all=LS('coupons')||[];
+    const c=all.find(x=>(x.code||'').toUpperCase()===(appliedCoupon.code||'').toUpperCase());
+    if(c){ c.used=(c.used||0)+1; try{localStorage.setItem('coupons',JSON.stringify(all));}catch(e){} }
+  }
   cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
   document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
