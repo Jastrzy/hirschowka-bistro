@@ -942,10 +942,26 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="sblk">
       <h4>Dane kontaktowe</h4>
-      <input class="finp" id="c-name" placeholder="Imię i nazwisko *" autocomplete="name">
-      <input class="finp" id="c-phone" type="tel" placeholder="Tel. komórkowy *" autocomplete="tel">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input class="finp" id="c-name" placeholder="Imię *" autocomplete="given-name">
+        <input class="finp" id="c-surname" placeholder="Nazwisko *" autocomplete="family-name">
+      </div>
+      <input class="finp" id="c-phone" type="tel" placeholder="Nr telefonu (9 cyfr) *" autocomplete="tel"
+        maxlength="11" oninput="this.value=this.value.replace(/[^0-9+]/g,'').slice(0,11)"
+        pattern="[0-9]{9}">
+      <div id="phone-hint" style="font-size:11px;color:var(--muted);margin:-4px 0 8px;display:none;">Wprowadź 9 cyfr bez spacji, np. 511707232</div>
       <input class="finp" id="c-email" type="email" placeholder="Email" autocomplete="email">
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="need-invoice" style="accent-color:var(--brown);width:15px;height:15px;"> Potrzebuję faktury</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin-bottom:8px;cursor:pointer;font-weight:500;">
+        <input type="checkbox" id="need-invoice" onchange="toggleInvoice(this.checked)" style="accent-color:var(--brown);width:16px;height:16px;">
+        Potrzebuję faktury VAT
+      </label>
+      <div id="invoice-block" style="display:none;background:var(--cream2);border-radius:var(--r);padding:14px;border:1px solid var(--border);margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Dane do faktury</div>
+        <input class="finp" id="inv-company" placeholder="Nazwa firmy *">
+        <input class="finp" id="inv-nip" placeholder="NIP (10 cyfr) *" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+        <input class="finp" id="inv-address" placeholder="Adres firmy *">
+        <input class="finp" id="inv-city" placeholder="Kod pocztowy i miasto *">
+      </div>
     </div>
     <div class="sblk">
       <div class="crow"><input type="checkbox" id="c-terms"><label for="c-terms">* Potwierdzam zapoznanie się z <a href="#">Regulaminem</a> oraz <a href="#">Polityką prywatności</a>.</label></div>
@@ -1027,8 +1043,10 @@ const CROSS=[
 
 // Strefy dostaw — zarządzane w panelu (delivery-zones)
 // Współrzędne restauracji: Hirschówka Bistro, ul. Mickiewicza 17, Mielec
-const REST_LAT = 50.3050;
-const REST_LNG = 21.4290;
+// Współrzędne restauracji: Hirschówka Bistro, ul. Mickiewicza 17, Mielec
+// Zweryfikowane z Google Maps iframe w tym pliku: 50.2878, 21.4309
+const REST_LAT = 50.2878;
+const REST_LNG = 21.4309;
 const DEFAULT_DELIVERY_ZONES = [
   {km:3, cost:6,  label:'Do 3 km'},
   {km:6, cost:10, label:'Do 6 km'},
@@ -1431,7 +1449,7 @@ function calcDel(){
     return zone?zone.cost:null; // null = poza zasięgiem
   }
   // Fallback — pierwsza strefa
-  return (getDeliveryZones()[0]?.cost)||6;
+  return (getDeliveryZones()[0]?.cost)||6; // 6 zł = domyślna pierwsza strefa
 }
 function calcPackaging(){
   if(delType==='miejsce')return 0;
@@ -1449,6 +1467,17 @@ function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart
 
 // ════ DELIVERY / PAYMENT ════
 function setDel(type,el){delType=type;document.querySelectorAll('.del-chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+function toggleInvoice(show){
+  document.getElementById('invoice-block').style.display=show?'block':'none';
+}
+function validatePhone(){
+  const ph=(document.getElementById('c-phone')?.value||'').replace(/\s/g,'');
+  const hint=document.getElementById('phone-hint');
+  const isValid=/^(\+48)?[0-9]{9}$/.test(ph);
+  if(hint) hint.style.display=(!isValid&&ph.length>0)?'block':'none';
+  return isValid||ph.length===0;
+}
+
 function selDO(type){delType=type;if(type!=='dostawa')window._deliveryKm=null;['dostawa','odbior','miejsce'].forEach(t=>document.getElementById('do-'+t)?.classList.toggle('on',t===type));document.getElementById('addr-block').style.display=type==='dostawa'?'block':'none';setDel(type,document.getElementById('dc-'+type));renderCartSum();}
 function selPay(type){payType=type;document.querySelectorAll('.payopt').forEach(p=>{p.classList.remove('on');p.querySelector('.dor2')?.classList.remove('on');});const el=document.getElementById('pay-'+type);if(el){el.classList.add('on');el.querySelector('.dor2')?.classList.add('on');}}
 let _geoTimer=null;
@@ -1523,10 +1552,14 @@ function applyCoupon(){
 function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj regulamin');return;}
-  const name=(document.getElementById('c-name')?.value||'').trim();
-  const phone=(document.getElementById('c-phone')?.value||'').trim();
-  if(!name){toast('Podaj imię i nazwisko');return;}
+  const firstName=(document.getElementById('c-name')?.value||'').trim();
+  const surname=(document.getElementById('c-surname')?.value||'').trim();
+  const name=surname?`${firstName} ${surname}`.trim():firstName;
+  const phone=(document.getElementById('c-phone')?.value||'').replace(/\s/g,'').trim();
+  if(!firstName){toast('Podaj imię');return;}
   if(!phone){toast('Podaj numer telefonu');return;}
+  const cleanPhone=phone.replace(/^\+48/,'');
+  if(cleanPhone.length!==9||!/^[0-9]{9}$/.test(cleanPhone)){toast('Numer telefonu musi mieć dokładnie 9 cyfr');const h=document.getElementById('phone-hint');if(h)h.style.display='block';return;}
   if(delType==='dostawa'&&!document.getElementById('addr-street').value.trim()){toast('Podaj adres dostawy');return;}
   if(delType==='dostawa'&&window._deliveryKm===null&&document.getElementById('addr-street').value.trim()){
     // Sprawdź czy to celowo poza zasięgiem czy jeszcze nie sprawdzono
@@ -1539,15 +1572,17 @@ function placeOrder(){
   const pkg=calcPackaging();
   const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
   const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));
-  const orders=LS('orders')||[];
   const oid='#'+(10000+Math.floor(Math.random()*89999));
   const typeMap = {'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
-  orders.unshift({
+  // Zapisujemy TYLKO nowe zamówienie — firebase-config używa push()
+  // żeby nie nadpisywać statusów innych zamówień zmienionych przez panel
+  const newOrder = {
     id: oid,
     type: typeMap[delType]||'delivery',
     items: cart.map(c=>`${c.name} ×${c.qty}`).join(', '),
     itemsArr: cart.map(c=>({name:c.name,qty:c.qty,unitPrice:c.unitPrice,mods:c.mods||[]})),
     total,
+    timestamp: Date.now(),
     time: new Date().toTimeString().slice(0,5),
     date: new Date().toLocaleDateString('pl'),
     status: 'pending',
@@ -1557,8 +1592,15 @@ function placeOrder(){
     payment: payType,
     comment: (document.getElementById('order-notes')?.value||'').trim(),
     deliveryCost: dc,
-  });
-  localStorage.setItem('orders',JSON.stringify(orders));
+    invoice: document.getElementById('need-invoice')?.checked ? {
+      company:(document.getElementById('inv-company')?.value||'').trim(),
+      nip:(document.getElementById('inv-nip')?.value||'').trim(),
+      address:(document.getElementById('inv-address')?.value||'').trim(),
+      city:(document.getElementById('inv-city')?.value||'').trim(),
+    } : null,
+  };
+  // Zapisz jako jednoelementową tablicę — firebase-config.js wyśle push() do Firebase
+  localStorage.setItem('orders', JSON.stringify([newOrder]));
   const custs=LS('customers')||[];
   const raw=phone.replace(/\s/g,'');
   if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){custs.push({name,phone,email:document.getElementById('c-email')?.value||'',sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});localStorage.setItem('customers',JSON.stringify(custs));}
