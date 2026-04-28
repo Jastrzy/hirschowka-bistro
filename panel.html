@@ -1866,6 +1866,7 @@ function acceptOrdFinal(){
   o.status = 'accepted';
   o.timing = timing;
   o.acceptedAt = new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'});
+  _ordersLastWrite = Date.now();
   W('orders', orders);
 
   // SMS jeśli token skonfigurowany i zaznaczono checkbox
@@ -1908,6 +1909,7 @@ function setOrdStatus(id, newStatus){
       toast(hitReward?`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`:`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
     }
   }
+  _ordersLastWrite = Date.now();
   W('orders', orders);
   // SMS przy wysyłce
   if(newStatus==='delivering' && o.phone) sendSmsToCustomer(o, 'delivering');
@@ -1921,6 +1923,7 @@ function rejectOrd(id){
   const o = orders.find(x=>x.id===id);
   if(o && o.phone) sendSmsToCustomer(o, 'rejected');
   orders = orders.filter(x=>x.id!==id);
+  _ordersLastWrite = Date.now();
   W('orders', orders);
   renderOrders();
   toast('Zamówienie odrzucone');
@@ -3995,49 +3998,72 @@ renderQR();
 updateAlarm();
 
 // Callback dla Firebase — wywoływany gdy Firebase dostanie zamówienia
+// Timestamp ostatniego lokalnego zapisu zamówień
+// Firebase nie może nadpisać zamówień przez 8 sekund po lokalnej zmianie
+var _ordersLastWrite = 0;
+
 window.onFirebaseOrders = function(freshArr) {
+  // Nie nadpisuj jeśli panel właśnie zmienił status zamówienia
+  if(Date.now() - _ordersLastWrite < 8000) {
+    console.log('[FB] Orders: pomijam nadpisanie — lokalny zapis jest świeży');
+    // Ale sprawdź czy są nowe zamówienia (nowe ID)
+    const prevIds = new Set((orders||[]).map(o=>o.id));
+    const brandNew = freshArr.filter(o=>!prevIds.has(o.id));
+    if(brandNew.length > 0) {
+      // Dodaj tylko nowe zamówienia, nie nadpisuj statusów istniejących
+      brandNew.forEach(o => orders.push(o));
+      renderOrders(); updateAlarm(); renderDashboard();
+      brandNew.filter(o=>['pending','nowe','do akceptacji','new']
+        .includes((o.status||'').toLowerCase()))
+        .forEach(o => sendOrderEmail(o));
+    }
+    return;
+  }
+
   // Wykryj nowe zamówienia (pending) których wcześniej nie było
   const prevIds = new Set((orders||[]).map(o=>o.id));
   const newPending = freshArr.filter(o=>
     !prevIds.has(o.id) &&
     ['pending','nowe','do akceptacji','new'].includes((o.status||'').toLowerCase())
   );
-  orders = freshArr;
+
+  // Przy mergowaniu — zachowaj lokalny status jeśli jest nowszy
+  const mergedOrders = freshArr.map(fbOrder => {
+    const localOrder = (orders||[]).find(lo=>lo.id===fbOrder.id);
+    if(!localOrder) return fbOrder;
+    // Jeśli lokalny status jest bardziej zaawansowany niż Firebase — zachowaj lokalny
+    const statusRank = {pending:0,nowe:0,'do akceptacji':0,new:0,accepted:1,ready:2,delivering:3,done:4,rejected:5};
+    const fbRank = statusRank[(fbOrder.status||'').toLowerCase()]??0;
+    const localRank = statusRank[(localOrder.status||'').toLowerCase()]??0;
+    return localRank > fbRank ? localOrder : fbOrder;
+  });
+
+  orders = mergedOrders;
   renderOrders();
   updateAlarm();
   renderDashboard();
-  // Wyślij email dla każdego nowego zamówienia
   newPending.forEach(o => sendOrderEmail(o));
 };
 
-// Pobierz zamówienia natychmiast po załadowaniu panelu
-// (na wypadek że Firebase wysłał dane zanim panel się załadował)
+// Jednorazowe pobranie przy starcie panelu
 function fetchOrdersNow() {
   if (window._firebase && window._firebase.db) {
     window._firebase.db.ref('orders').once('value').then(function(snap) {
       var val = snap.val();
-      var arr = [];
-      if (val) {
-        arr = Array.isArray(val) ? val : Object.values(val);
-        arr = arr.filter(function(o){ return o && o.id; });
-      }
-      if (arr.length > 0) {
+      if(!val) return;
+      var arr = Array.isArray(val) ? val : Object.values(val);
+      arr = arr.filter(function(o){ return o && o.id; });
+      if(arr.length > 0 && Date.now() - _ordersLastWrite >= 8000) {
         orders = arr;
-        renderOrders();
-        updateAlarm();
-        renderDashboard();
+        renderOrders(); updateAlarm(); renderDashboard();
       }
     }).catch(function(){});
   } else {
-    // Firebase jeszcze nie gotowy — spróbuj za chwilę
     setTimeout(fetchOrdersNow, 500);
   }
 }
-// Uruchom po 1 sekundzie (Firebase SDK potrzebuje chwili na załadowanie)
 setTimeout(fetchOrdersNow, 1000);
-
-// Poll co 3 sekundy — backup synchronizacja
-setInterval(fetchOrdersNow, 3000);
+// Usunięto setInterval — Firebase listener (onFirebaseOrders) wystarczy do sync
 </script>
 </body>
 </html>

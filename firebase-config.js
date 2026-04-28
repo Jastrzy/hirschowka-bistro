@@ -19,7 +19,14 @@
   function getArr(val) {
     if (!val) return [];
     var a = Array.isArray(val) ? val : Object.values(val);
-    return a.filter(function(o){ return o && o.id; });
+    // Sortuj po czasie złożenia (id lub timestamp) żeby kolejność była właściwa
+    a = a.filter(function(o){ return o && o.id; });
+    a.sort(function(a,b){
+      var ta = a.timestamp||a.time||a.id||'';
+      var tb = b.timestamp||b.time||b.id||'';
+      return ta < tb ? -1 : ta > tb ? 1 : 0;
+    });
+    return a;
   }
 
   load('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', function() {
@@ -44,7 +51,11 @@
       db.ref('orders').on('value', function(snap) {
         var arr = getArr(snap.val());
         console.log('[FB] Zamowienia:', arr.length);
-        localStorage.setItem('orders', JSON.stringify(arr));
+        // Nie nadpisuj localStorage jeśli panel właśnie zapisywał zamówienia
+        var lastWrite = (window._ordersLastWrite || 0);
+        if (Date.now() - lastWrite >= 8000) {
+          localStorage.setItem('orders', JSON.stringify(arr));
+        }
         if (typeof window.onFirebaseOrders === 'function') {
           window.onFirebaseOrders(arr);
         }
@@ -160,16 +171,27 @@
         });
       });
 
-      // Przechwytuj zapis zamówień → wyślij do Firebase natychmiast
+      // Przechwytuj zapis zamówień → dodaj TYLKO nowe zamówienie (push, nie set)
+      // set nadpisałby zmiany statusów zrobione przez panel
+      var _lastSentOrderIds = new Set();
       var _orig = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
         _orig(key, value);
         if (key === 'orders') {
           try {
-            db.ref('orders').set(JSON.parse(value)).then(function() {
-              console.log('[FB] Zamowienie wyslane ✓');
-            }).catch(function(e) {
-              console.warn('[FB] Blad zapisu:', e.message);
+            var arr = JSON.parse(value);
+            if (!Array.isArray(arr)) return;
+            // Wyślij tylko zamówienia których jeszcze nie wysłaliśmy
+            arr.forEach(function(order) {
+              if (!order || !order.id) return;
+              if (_lastSentOrderIds.has(order.id)) return;
+              _lastSentOrderIds.add(order.id);
+              // Push dodaje zamówienie bez nadpisywania reszty
+              db.ref('orders').push(order).then(function() {
+                console.log('[FB] Zamowienie wyslane (push):', order.id);
+              }).catch(function(e) {
+                console.warn('[FB] Blad zapisu:', e.message);
+              });
             });
           } catch(e) {}
         }
@@ -187,11 +209,21 @@
         });
       });
 
+      var _sentAppOrderIds = new Set();
       var _orig = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
         _orig(key, value);
         if (key === 'orders') {
-          try { db.ref('orders').set(JSON.parse(value)).catch(function(){}); } catch(e) {}
+          try {
+            var arr = JSON.parse(value);
+            if (!Array.isArray(arr)) return;
+            arr.forEach(function(order) {
+              if (!order || !order.id) return;
+              if (_sentAppOrderIds.has(order.id)) return;
+              _sentAppOrderIds.add(order.id);
+              db.ref('orders').push(order).catch(function(){});
+            });
+          } catch(e) {}
         }
       };
 
