@@ -1466,7 +1466,7 @@ function checkZone(){
 }
 
 async function geocodeAndCheck(street,city,info){
-  const apiKey=LS('geo-api-key')||'AIzaSyBI2qxIkXkc0AB0OTFnhQYu_2wu0hbBDL8';
+  const apiKey=LS('geo-api-key')||'';
   const query=encodeURIComponent(`${street}, ${city}, Polska`);
   try{
     const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}&language=pl&region=pl`);
