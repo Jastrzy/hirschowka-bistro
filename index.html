@@ -1025,11 +1025,20 @@ const CROSS=[
   {match:['Napoje zimne'],suggest:['Śniadania i lunche','Desery i słodkie przekąski']},
 ];
 
-const ZONES=[
-  {name:'Centrum Mielca',keys:['mickiewicza','sękowskiego','kościuszki','kilińskiego','moniuszki','wolności','piłsudskiego'],cost:5,free:40,time:20},
-  {name:'Mielec — osiedla',keys:['drzewieckiego','smoczka','partyzantów','kopernika'],cost:7,free:50,time:30},
-  {name:'Mielec — obrzeża',keys:['rzeszowska','kolbuszowska','wojska'],cost:9,free:60,time:40},
+// Strefy dostaw — zarządzane w panelu (delivery-zones)
+// Współrzędne restauracji: Hirschówka Bistro, ul. Mickiewicza 17, Mielec
+const REST_LAT = 50.3050;
+const REST_LNG = 21.4290;
+const DEFAULT_DELIVERY_ZONES = [
+  {km:3, cost:6,  label:'Do 3 km'},
+  {km:6, cost:10, label:'Do 6 km'},
 ];
+// Haversine — odległość między dwoma punktami GPS w km
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
 
 const REVIEWS=[
   {name:'Kathy Sliwa',ini:'K',r:5,date:'Google Maps',text:'Przemiła obsługa, przepyszne jedzenie i w normalnych cenach! Zwiedziliśmy już prawie pół Polski i mogę szczerze napisać, że ta restauracja jest jedną z najlepszych w których jedliśmy! Wszystko na 5++++'},
@@ -1400,7 +1409,8 @@ function renderCart(){
 }
 function renderCartSum(){
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
-  const dc=delType==='dostawa'?calcDel():0;
+  const rawDc=delType==='dostawa'?calcDel():0;
+  const dc=(rawDc===null)?0:rawDc; // null = poza zasięgiem, nie doliczamy
   const pkg=calcPackaging();
   const disc=appliedCoupon?Math.min(sub, sub*(appliedCoupon.disc/100)):0;
   const total=Math.max(0,sub+dc+pkg-disc);
@@ -1412,7 +1422,17 @@ function renderCartSum(){
     `<div class="csr cs-total"><span>Łącznie</span><span>${total.toFixed(2)} zł</span></div>`;
   document.getElementById('checkout-total').textContent=total.toFixed(2)+' zł';
 }
-function calcDel(){const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);const z=(LS('zones')||ZONES)[0];return sub>=(z.free||40)?0:(z.cost||5);}
+function getDeliveryZones(){return LS('delivery-zones')||DEFAULT_DELIVERY_ZONES;}
+function calcDel(){
+  // Jeśli znamy odległość z geocodingu — użyj jej
+  if(window._deliveryKm!=null){
+    const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
+    const zone=zones.find(z=>window._deliveryKm<=z.km);
+    return zone?zone.cost:null; // null = poza zasięgiem
+  }
+  // Fallback — pierwsza strefa
+  return (getDeliveryZones()[0]?.cost)||6;
+}
 function calcPackaging(){
   if(delType==='miejsce')return 0;
   const pkg=LS('packaging')||{soup:1,main:1,set:2};
@@ -1429,17 +1449,49 @@ function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart
 
 // ════ DELIVERY / PAYMENT ════
 function setDel(type,el){delType=type;document.querySelectorAll('.del-chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
-function selDO(type){delType=type;['dostawa','odbior','miejsce'].forEach(t=>document.getElementById('do-'+t)?.classList.toggle('on',t===type));document.getElementById('addr-block').style.display=type==='dostawa'?'block':'none';setDel(type,document.getElementById('dc-'+type));renderCartSum();}
+function selDO(type){delType=type;if(type!=='dostawa')window._deliveryKm=null;['dostawa','odbior','miejsce'].forEach(t=>document.getElementById('do-'+t)?.classList.toggle('on',t===type));document.getElementById('addr-block').style.display=type==='dostawa'?'block':'none';setDel(type,document.getElementById('dc-'+type));renderCartSum();}
 function selPay(type){payType=type;document.querySelectorAll('.payopt').forEach(p=>{p.classList.remove('on');p.querySelector('.dor2')?.classList.remove('on');});const el=document.getElementById('pay-'+type);if(el){el.classList.add('on');el.querySelector('.dor2')?.classList.add('on');}}
+let _geoTimer=null;
+window._deliveryKm=null; // ostatnio obliczona odległość
+
 function checkZone(){
-  const street=(document.getElementById('addr-street')?.value||'').toLowerCase();
+  const street=(document.getElementById('addr-street')?.value||'').trim();
+  const city=(document.getElementById('addr-city')?.value||'Mielec').trim();
   const info=document.getElementById('zone-info');
-  if(!street){info.textContent='📍 Podaj adres, aby poznać cenę dostawy.';return;}
-  const zone=ZONES.find(z=>z.keys.some(k=>street.includes(k)));
-  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
-  if(zone){const free=sub>=zone.free;info.innerHTML=free?`<span style="color:var(--green2)">✅ Darmowa dostawa (zamówienie ≥${zone.free} zł)</span>`:`🚗 ${zone.name} · ${zone.cost} zł · darmowa od ${zone.free} zł · ~${zone.time} min`;}
-  else info.innerHTML=`🚗 Dostawa: ${calcDel()} zł · Sprawdź dostępność`;
-  renderCartSum();
+  if(!street){info.innerHTML='📍 Podaj adres, aby poznać cenę dostawy.';window._deliveryKm=null;renderCartSum();return;}
+  // Debounce — czekaj 800ms po ostatnim wpisaniu
+  clearTimeout(_geoTimer);
+  info.innerHTML='<span style="color:var(--muted)">⏳ Sprawdzam adres...</span>';
+  _geoTimer=setTimeout(()=>geocodeAndCheck(street,city,info),800);
+}
+
+async function geocodeAndCheck(street,city,info){
+  const apiKey=LS('geo-api-key')||'AIzaSyBI2qxIkXkc0AB0OTFnhQYu_2wu0hbBDL8';
+  const query=encodeURIComponent(`${street}, ${city}, Polska`);
+  try{
+    const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}&language=pl&region=pl`);
+    const data=await res.json();
+    if(data.status!=='OK'||!data.results.length){
+      info.innerHTML='⚠️ Nie znaleziono adresu — sprawdź wpisany adres.';
+      window._deliveryKm=null;renderCartSum();return;
+    }
+    const loc=data.results[0].geometry.location;
+    const km=haversineKm(REST_LAT,REST_LNG,loc.lat,loc.lng);
+    window._deliveryKm=km;
+    const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
+    const zone=zones.find(z=>km<=z.km);
+    if(zone){
+      info.innerHTML=`🚗 <strong>${data.results[0].formatted_address}</strong><br>Odległość: ${km.toFixed(1)} km · Dostawa: <strong>${zone.cost} zł</strong> (${zone.label})`;
+    } else {
+      const maxKm=Math.max(...zones.map(z=>z.km));
+      info.innerHTML=`⛔ <strong>${data.results[0].formatted_address}</strong><br>Odległość: ${km.toFixed(1)} km — poza zasięgiem dostawy (max ${maxKm} km).<br>📞 Zadzwoń aby ustalić szczegóły: <a href="tel:+48511707232" style="color:var(--brown);font-weight:700;">+48 511 707 232</a>`;
+      window._deliveryKm=null;
+    }
+    renderCartSum();
+  }catch(e){
+    info.innerHTML='⚠️ Błąd sprawdzania adresu — spróbuj ponownie.';
+    window._deliveryKm=null;renderCartSum();
+  }
 }
 
 // ════ COUPON ════
@@ -1476,8 +1528,14 @@ function placeOrder(){
   if(!name){toast('Podaj imię i nazwisko');return;}
   if(!phone){toast('Podaj numer telefonu');return;}
   if(delType==='dostawa'&&!document.getElementById('addr-street').value.trim()){toast('Podaj adres dostawy');return;}
+  if(delType==='dostawa'&&window._deliveryKm===null&&document.getElementById('addr-street').value.trim()){
+    // Sprawdź czy to celowo poza zasięgiem czy jeszcze nie sprawdzono
+    const info=document.getElementById('zone-info');
+    if(info&&info.innerHTML.includes('poza zasięgiem')){toast('⛔ Adres poza zasięgiem dostawy. Zadzwoń: +48 511 707 232');return;}
+  }
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
-  const dc=delType==='dostawa'?calcDel():0;
+  const rawDc=delType==='dostawa'?calcDel():0;
+  const dc=(rawDc===null)?0:rawDc; // null = poza zasięgiem, nie doliczamy
   const pkg=calcPackaging();
   const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
   const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));

@@ -113,7 +113,7 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','customers','orders','loyalty-history','rewards'];
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','customers','orders','loyalty-history','rewards'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -146,7 +146,9 @@
         'packaging':   null,
         'loyalty-history': null,
         'rewards':     null,
-        'zones':       null
+        'zones':       null,
+        'delivery-zones': null,
+        'geo-api-key': null
       };
 
       Object.keys(read_keys).forEach(function(k) {

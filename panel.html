@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- EmailJS — wysyłka emaili bez serwera -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <title>Hirschówka Bistro — Panel Restauratora</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -697,8 +699,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <!-- Edycja stref -->
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">Ustawienia stref dostaw</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div class="field">
+            <label>Klucz Google Geocoding API</label>
+            <input id="geo-api-key" type="password" placeholder="AIza..." value="${S('geo-api-key')||'AIzaSyBI2qxIkXkc0AB0OTFnhQYu_2wu0hbBDL8'}"
+              style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          </div>
+          <div class="field">
+            <label>Adres restauracji (punkt dostawy)</label>
+            <input id="rest-address" value="${S('rest-address')||'Mickiewicza 17, Mielec'}"
+              style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          </div>
+        </div>
         <div id="zones-editor"></div>
-        <button class="btn bp bsm" style="margin-top:12px;" onclick="saveZonesSettings()">💾 Zapisz ustawienia</button>
+        <button class="btn bp bsm" style="margin-top:12px;" onclick="saveZonesSettings()">💾 Zapisz ustawienia stref</button>
       </div>
 
       <!-- SMSAPI -->
@@ -718,6 +732,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <button class="btn bo bsm" onclick="testSms()">📨 Wyślij testowego SMS</button>
         </div>
         <div id="sms-test-result" style="margin-top:8px;"></div>
+      </div>
+      <!-- EmailJS — powiadomienia email -->
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:1px solid var(--border);">📧 Powiadomienia email (EmailJS)</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+          Przy każdym nowym zamówieniu system wyśle email na <strong>kontakt@hirschowkabistro.pl</strong>.<br>
+          Wymaga konta na <a href="https://www.emailjs.com" target="_blank" style="color:var(--brown);">emailjs.com</a> (darmowe do 200 maili/miesiąc).
+        </p>
+        <div class="field"><label>Public Key</label><input id="emailjs-key" placeholder="Wklej swój EmailJS Public Key" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field"><label>Service ID</label><input id="emailjs-service" placeholder="np. service_xxxxxxx" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field"><label>Template ID</label><input id="emailjs-template" placeholder="np. template_xxxxxxx" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn bp bsm" onclick="saveEmailJsSettings()">Zapisz ustawienia email</button>
+          <button class="btn bo bsm" onclick="testEmail()">📧 Wyślij email testowy</button>
+        </div>
+        <div id="email-test-result" style="margin-top:8px;"></div>
+        <div style="background:rgba(59,37,18,.04);border-radius:var(--r);padding:10px 14px;margin-top:14px;font-size:12px;color:var(--muted);line-height:1.8;">
+          <strong>Jak skonfigurować EmailJS:</strong><br>
+          1. Załóż konto na emailjs.com<br>
+          2. Dodaj Email Service (Gmail lub własny SMTP)<br>
+          3. Utwórz Email Template z polami: {{order_id}}, {{customer_name}}, {{customer_phone}}, {{order_items}}, {{order_total}}, {{order_type}}, {{order_date}}<br>
+          4. Skopiuj Public Key, Service ID i Template ID powyżej
+        </div>
       </div>
     </div>
 
@@ -1593,27 +1630,41 @@ let alarmInterval = null;    // interval dzwonka
 let alarmAudio = null;
 let manualStatusOverride = null; // null = auto, true/false = ręczne
 
-// Dźwięk alarmu (Web Audio API — działa bez pliku)
+// Dźwięk alarmu — charakterystyczny sygnał restauracyjny
 function createAlarmSound(){
   try {
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.setValueAtTime(660, ctx.currentTime+0.15);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime+0.4);
+    const t = ctx.currentTime;
+
+    function beep(freq, start, dur, vol){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t+start);
+      gain.gain.setValueAtTime(0, t+start);
+      gain.gain.linearRampToValueAtTime(vol, t+start+0.02);
+      gain.gain.setValueAtTime(vol, t+start+dur-0.05);
+      gain.gain.linearRampToValueAtTime(0, t+start+dur);
+      osc.start(t+start);
+      osc.stop(t+start+dur);
+    }
+
+    // Charakterystyczna sekwencja: ding-dong-ding
+    beep(1047, 0.00, 0.18, 0.9);  // C6 — wysoki
+    beep(784,  0.20, 0.18, 0.9);  // G5 — środkowy
+    beep(1047, 0.40, 0.28, 0.9);  // C6 — wysoki długi
+    // Przerwa i powtórzenie
+    beep(1047, 0.80, 0.18, 0.8);
+    beep(784,  1.00, 0.18, 0.8);
+    beep(1047, 1.20, 0.28, 0.8);
   } catch(e){}
 }
 
 function startAlarm(){
   if(alarmInterval) return;
   createAlarmSound();
-  alarmInterval = setInterval(createAlarmSound, 3000);
+  alarmInterval = setInterval(createAlarmSound, 4000);
   document.getElementById('alarm-bar').classList.add('show');
 }
 function stopAlarm(){
@@ -1919,13 +1970,21 @@ async function sendSmsToCustomer(order, tplKey){
 async function sendSmsRaw(phone, msg, cb){
   const token = S('smsapi-token');
   const sender = S('smsapi-sender')||'Hirschowka';
-  if(!token){ cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
+  if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/\s|\+48/g,'').replace(/\D/g,'');
   try{
-    const res = await fetch(`https://api.smsapi.pl/sms.do?access_token=${token}&to=${cleanPhone}&message=${encodeURIComponent(msg)}&from=${sender}&format=json`);
+    // POST z FormData — prawidłowe kodowanie UTF-8 polskich znaków
+    const body = new FormData();
+    body.append('access_token', token);
+    body.append('to', cleanPhone);
+    body.append('message', msg);
+    body.append('from', sender);
+    body.append('format', 'json');
+    body.append('encoding', 'utf-8');
+    const res = await fetch('https://api.smsapi.pl/sms.do', {method:'POST', body});
     const data = await res.json();
-    cb(data.error ? {ok:false,err:data.error} : {ok:true});
-  } catch(e){ cb({ok:false,err:e.message}); }
+    if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
+  } catch(e){ if(cb) cb({ok:false,err:e.message}); }
 }
 function saveSmsSettings(){
   W('smsapi-token', document.getElementById('smsapi-token').value.trim());
@@ -1935,6 +1994,38 @@ function saveSmsSettings(){
   W('sms-tpl-rejected', document.getElementById('sms-tpl-rejected').value.trim());
   toast('✅ Ustawienia SMS zapisane');
 }
+
+// ── EMAIL POWIADOMIENIA ──
+async function sendOrderEmail(order){
+  // Wyślij email na adres restauracji przez EmailJS
+  const serviceId = S('emailjs-service') || 'YOUR_SERVICE_ID';
+  const templateId = S('emailjs-template') || 'YOUR_TEMPLATE_ID';
+  const publicKey = S('emailjs-key') || '';
+  if(!publicKey || publicKey === '') {
+    console.log('[Email] Brak konfiguracji EmailJS — pomijam');
+    return;
+  }
+  try {
+    if(typeof emailjs !== 'undefined') emailjs.init({publicKey});
+    const items = (order.items||[]).map(i=>`${i.qty||1}x ${i.name} — ${(i.unitPrice*(i.qty||1)).toFixed(2)} zł`).join('\n');
+    await emailjs.send(serviceId, templateId, {
+      order_id: order.id,
+      customer_name: order.customer || 'Klient',
+      customer_phone: order.phone || '—',
+      customer_address: order.address || 'Odbiór osobisty',
+      order_type: order.type === 'dostawa' ? 'Dostawa' : order.type === 'odbior' ? 'Odbiór osobisty' : 'Na miejscu',
+      order_items: items,
+      order_total: (order.total||0).toFixed(2)+' zł',
+      order_payment: order.payment || '—',
+      order_notes: order.notes || '—',
+      order_date: new Date().toLocaleString('pl-PL'),
+      to_email: 'kontakt@hirschowkabistro.pl',
+    });
+    console.log('[Email] Powiadomienie wysłane ✓');
+  } catch(e) {
+    console.warn('[Email] Błąd wysyłki:', e);
+  }
+}
 async function testSms(){
   const token = document.getElementById('smsapi-token').value.trim();
   const sender = document.getElementById('smsapi-sender').value.trim()||'Hirschowka';
@@ -1943,11 +2034,32 @@ async function testSms(){
   result.innerHTML='<div style="font-size:12px;color:var(--muted);">Wysyłam...</div>';
   const phone = prompt('Podaj numer telefonu do testu (np. 511707232):');
   if(!phone) return;
-  sendSmsRaw(phone, 'Test SMS z Hirschówki Bistro ✓', r=>{
+  sendSmsRaw(phone, 'Test SMS z Hirschowki Bistro', r=>{
     result.innerHTML = r.ok
       ? '<div style="color:var(--green2);font-size:12px;">✅ SMS wysłany pomyślnie!</div>'
       : `<div style="color:var(--red);font-size:12px;">❌ Błąd: ${r.err}</div>`;
   });
+}
+function saveEmailJsSettings(){
+  W('emailjs-key', document.getElementById('emailjs-key').value.trim());
+  W('emailjs-service', document.getElementById('emailjs-service').value.trim());
+  W('emailjs-template', document.getElementById('emailjs-template').value.trim());
+  toast('✅ Ustawienia EmailJS zapisane');
+}
+async function testEmail(){
+  const result = document.getElementById('email-test-result');
+  result.innerHTML='<div style="font-size:12px;color:var(--muted);">Wysyłam email testowy...</div>';
+  try {
+    await sendOrderEmail({
+      id:'TEST', customer:'Test', phone:'511707232',
+      address:'ul. Testowa 1', type:'dostawa',
+      items:[{name:'Kawa testowa',qty:1,unitPrice:8}],
+      total:8, payment:'Gotówka', notes:'Test powiadomień email',
+    });
+    result.innerHTML='<div style="color:var(--green2);font-size:12px;">✅ Email wysłany na kontakt@hirschowkabistro.pl</div>';
+  } catch(e){
+    result.innerHTML=`<div style="color:var(--red);font-size:12px;">❌ Błąd: ${e.message||e}</div>`;
+  }
 }
 
 // ── STATUS RESTAURACJI ──
@@ -2085,9 +2197,8 @@ function renderDashboard(){
 
 
 let deliveryZones = S('delivery-zones') || [
-  {km:2,   label:'Strefa 1 (0–2 km)',   cost:8,  color:'#22c55e', alpha:'22'},
-  {km:4,   label:'Strefa 2 (2–4 km)',   cost:10, color:'#f59e0b', alpha:'22'},
-  {km:8,   label:'Strefa 3 (4–8 km)',   cost:14, color:'#ef4444', alpha:'22'},
+  {km:3, label:'Blisko (do 3 km)',  cost:6,  color:'#22c55e', alpha:'22'},
+  {km:6, label:'Dalej (do 6 km)',   cost:10, color:'#f59e0b', alpha:'22'},
 ];
 const REST_LAT = 50.3050; // Hirschówka Mielec
 const REST_LNG = 21.4290;
@@ -2131,7 +2242,11 @@ function renderZonesEditor(){
 }
 function saveZonesSettings(){
   W('delivery-zones', deliveryZones);
-  toast('✅ Strefy dostaw zapisane');
+  const key=document.getElementById('geo-api-key')?.value.trim();
+  if(key) W('geo-api-key', key);
+  const addr=document.getElementById('rest-address')?.value.trim();
+  if(addr) W('rest-address', addr);
+  toast('✅ Strefy dostaw zapisane ✓');
 }
 
 function renderDeliveryMap(){
@@ -3952,10 +4067,18 @@ updateAlarm();
 
 // Callback dla Firebase — wywoływany gdy Firebase dostanie zamówienia
 window.onFirebaseOrders = function(freshArr) {
+  // Wykryj nowe zamówienia (pending) których wcześniej nie było
+  const prevIds = new Set((orders||[]).map(o=>o.id));
+  const newPending = freshArr.filter(o=>
+    !prevIds.has(o.id) &&
+    ['pending','nowe','do akceptacji','new'].includes((o.status||'').toLowerCase())
+  );
   orders = freshArr;
   renderOrders();
   updateAlarm();
   renderDashboard();
+  // Wyślij email dla każdego nowego zamówienia
+  newPending.forEach(o => sendOrderEmail(o));
 };
 
 // Pobierz zamówienia natychmiast po załadowaniu panelu
