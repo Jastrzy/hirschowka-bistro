@@ -716,7 +716,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Użyj {id} = numer zamówienia, {czas} = czas realizacji, {imie} = imię klienta. Bez polskich znaków (SMS może je zniekształcić).</div>
           <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">✅ Zamówienie przyjęte</label><textarea id="sms-tpl-accepted" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Czesc! Zamowienie #{id} z Hirschowki przyjete. Czas realizacji: {czas}. Smacznego!</textarea></div>
           <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🔔 Gotowe do odbioru</label><textarea id="sms-tpl-ready" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Twoje zamowienie #{id} jest gotowe do odbioru! Zapraszamy :) Hirschowka Bistro</textarea></div>
-          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🚗 Zamówienie w drodze</label><textarea id="sms-tpl-delivering" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Twoje zamowienie #{id} jest w drodze! Hirschowka Bistro</textarea></div>
+          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🚗 Zamówienie w drodze</label><textarea id="sms-tpl-delivering" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Twoje zamowienie #{id} jest w drodze! Dotrze za ok. {czas} min. Hirschowka Bistro</textarea></div>
           <div class="field"><label style="font-size:12px;">❌ Zamówienie odrzucone</label><textarea id="sms-tpl-rejected" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Przepraszamy, nie mozemy teraz zrealizowac zamowienia #{id}. Zadzwon: +48511707232. Hirschowka</textarea></div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1915,7 +1915,12 @@ function setOrdStatus(id, newStatus){
   _ordersLastWrite = Date.now();
   W('orders', orders);
   // SMS przy zmianie statusu
-  if(newStatus==='delivering' && o.phone) sendSmsToCustomer(o, 'delivering');
+  if(newStatus==='delivering'){
+    // Zapytaj o czas dostawy przed wysłaniem SMS
+    const dTime = prompt('Szacowany czas dostawy (minuty):', '30');
+    if(dTime) o.deliveryTime = dTime;
+    if(o.phone) sendSmsToCustomer(o, 'delivering');
+  }
   if(newStatus==='ready' && o.phone) sendSmsToCustomer(o, 'ready');
   renderOrders();
   const labels={delivering:'W drodze 🚗',ready:'Gotowe do odbioru 🔔',done:'Zrealizowane ✓'};
@@ -1957,7 +1962,7 @@ async function sendSmsToCustomer(order, tplKey){
   if(!token || !order.phone) return;
   const tpls = {
     accepted: (S('sms-tpl-accepted')||'Czesc! Zamowienie #{id} z Hirschowki przyjete. Czas realizacji: {czas}. Smacznego!').replace('{id}',order.id).replace('{czas}',order.timing||'wkrotce').replace('{imie}',(order.customer||'').split(' ')[0]),
-    delivering: (S('sms-tpl-delivering')||'Twoje zamowienie #{id} jest w drodze! Do zobaczenia :) Hirschowka Bistro').replace('{id}',order.id),
+    delivering: (S('sms-tpl-delivering')||'Twoje zamowienie #{id} jest w drodze! Dotrze za ok. {czas} min. Hirschowka Bistro').replace('{id}',order.id).replace('{czas}',order.deliveryTime||order.timing||'30'),
     rejected: (S('sms-tpl-rejected')||'Przepraszamy, nie mozemy teraz zrealizowac zamowienia #{id}. Zadzwon: +48511707232. Hirschowka').replace('{id}',order.id),
     ready: (S('sms-tpl-ready')||'Twoje zamowienie #{id} jest gotowe do odbioru! Zapraszamy :) Hirschowka Bistro').replace('{id}',order.id),
   };
@@ -1969,9 +1974,9 @@ async function sendSmsRaw(phone, msg, cb){
   const token = S('smsapi-token');
   const sender = S('smsapi-sender')||'Hirschowka';
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
-  const cleanPhone = '48'+phone.replace(/\s|\+48/g,'').replace(/\D/g,'');
+  const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
   try{
-    // POST z FormData — prawidłowe kodowanie UTF-8 polskich znaków
+    // Bezpośrednie wywołanie SMSAPI — działało wcześniej
     const body = new FormData();
     body.append('access_token', token);
     body.append('to', cleanPhone);
