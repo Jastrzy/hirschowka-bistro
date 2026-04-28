@@ -684,17 +684,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="page" id="page-strefy">
       <div class="sect-hdr"><h2>Obszary dostaw</h2></div>
 
-      <!-- Mapa -->
-      <div class="card card-pad" style="margin-bottom:14px;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);">🗺 Mapa zasięgu dostaw — Hirschówka Bistro, ul. Mickiewicza 17</h3>
-        <div id="delivery-map" style="width:100%;height:380px;border-radius:var(--r);overflow:hidden;background:var(--bg);border:1px solid var(--border);position:relative;">
-          <div id="map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);font-size:13px;">
-            <div style="font-size:32px;">🗺</div>
-            <div>Ładowanie mapy...</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;" id="zone-legend"></div>
-      </div>
+
 
       <!-- Edycja stref -->
       <div class="card card-pad" style="margin-bottom:14px;">
@@ -2205,7 +2195,6 @@ const REST_LNG = 21.4290;
 
 function renderZones(){
   renderZonesEditor();
-  renderDeliveryMap();
 }
 function renderZonesEditor(){
   const el = document.getElementById('zones-editor');
@@ -2215,7 +2204,7 @@ function renderZonesEditor(){
       <div>
         <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px;">Zasięg (km)</div>
         <input type="number" value="${z.km}" min="0.5" max="50" step="0.5"
-          oninput="deliveryZones[${i}].km=parseFloat(this.value)||0;renderDeliveryMap()"
+          oninput="deliveryZones[${i}].km=parseFloat(this.value)||0"
           style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
       </div>
       <div>
@@ -2233,12 +2222,7 @@ function renderZonesEditor(){
     </div>`).join('')+`
     <button class="btn bo bsm" style="margin-top:4px;" onclick="deliveryZones.push({km:10,label:'Nowa strefa',cost:18,color:'#8b5cf6',alpha:'22'});renderZones()">+ Dodaj strefę</button>`;
   // Legend
-  const leg = document.getElementById('zone-legend');
-  if(leg) leg.innerHTML = deliveryZones.map(z=>`
-    <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;">
-      <div style="width:14px;height:14px;border-radius:50%;background:${z.color};opacity:.8;"></div>
-      ${z.label} — ${z.cost} zł
-    </div>`).join('');
+
 }
 function saveZonesSettings(){
   W('delivery-zones', deliveryZones);
@@ -2249,47 +2233,7 @@ function saveZonesSettings(){
   toast('✅ Strefy dostaw zapisane ✓');
 }
 
-function renderDeliveryMap(){
-  const el = document.getElementById('delivery-map');
-  if(!el) return;
-  // Użyj OpenStreetMap + Leaflet (darmowe, bez klucza API)
-  if(!window.L){
-    el.innerHTML=`<div id="map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);font-size:13px;"><div style="font-size:32px;">⏳</div><div>Ładowanie biblioteki map...</div></div>`;
-    const link = document.createElement('link');
-    link.rel='stylesheet'; link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.onload = () => { window._leafletReady=true; initLeafletMap(); };
-    document.body.appendChild(script);
-  } else {
-    initLeafletMap();
-  }
-}
-let leafletMap = null;
-let leafletCircles = [];
-function initLeafletMap(){
-  const el = document.getElementById('delivery-map');
-  if(!el||!window.L) return;
-  el.innerHTML=''; // clear loading
-  if(leafletMap){ leafletMap.remove(); leafletMap=null; }
-  leafletMap = L.map(el).setView([REST_LAT, REST_LNG], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:18
-  }).addTo(leafletMap);
-  // Marker restauracji
-  const icon = L.divIcon({html:'<div style="background:var(--brown,#3B2512);color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);">☕</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]});
-  L.marker([REST_LAT,REST_LNG],{icon}).addTo(leafletMap).bindPopup('<strong>Hirschówka Bistro</strong><br>ul. Mickiewicza 17, Mielec');
-  // Okręgi stref
-  const colors=['#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-  [...deliveryZones].reverse().forEach((z,i)=>{
-    const col = z.color||colors[deliveryZones.length-1-i]||'#888';
-    L.circle([REST_LAT,REST_LNG],{
-      radius:z.km*1000, color:col, fillColor:col,
-      fillOpacity:0.12, weight:2, dashArray:'8,4'
-    }).addTo(leafletMap).bindTooltip(`${z.label} — ${z.cost} zł`,{permanent:false,direction:'top'});
-  });
-}
+
 
 
 // ── CUSTOMERS ──
@@ -3059,22 +3003,7 @@ function saveCross(){crossRules.push({when:document.getElementById('cross-when')
 function delCross(i){crossRules.splice(i,1);W('cross',crossRules);renderCross();}
 
 // ── ZONES ──
-function renderZones(){
-  document.getElementById('zones-list').innerHTML=zones.map((z,i)=>`
-  <div class="zone-row">
-    <div class="zone-color" style="background:${z.color}"></div>
-    <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${z.name}</div><div style="font-size:12px;color:var(--muted);">${z.desc} · czas: ${z.time} min</div></div>
-    <div style="text-align:right;min-width:100px;"><div style="font-size:13px;font-weight:600;">${z.cost} zł</div><div style="font-size:11px;color:var(--muted);">darmowa od ${z.free} zł</div></div>
-    <button class="edit-btn" style="color:var(--red)" onclick="delZone(${i})">🗑</button>
-  </div>`).join('')||'<div style="color:var(--muted);padding:20px;font-size:13px;">Brak stref.</div>';
-}
-function saveZone(){
-  const name=document.getElementById('zone-name').value.trim();
-  if(!name){toast('Podaj nazwę');return;}
-  zones.push({name,cost:parseFloat(document.getElementById('zone-cost').value)||0,free:parseFloat(document.getElementById('zone-free').value)||0,time:parseInt(document.getElementById('zone-time').value)||30,color:document.getElementById('zone-color').value,desc:document.getElementById('zone-desc').value});
-  W('zones',zones);closeModal('mo-zone');renderZones();toast('Strefa dodana ✓');
-}
-function delZone(i){zones.splice(i,1);W('zones',zones);renderZones();}
+
 
 // ── SCHEDULE ──
 function renderSchedule(){
