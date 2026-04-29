@@ -468,11 +468,27 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 /* CROSS */
 .cross-ok{background:rgba(45,74,47,.08);border-bottom:1px solid rgba(45,74,47,.15);padding:10px 22px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--green);}
+.free-del-bar{padding:14px 22px;border-bottom:1px solid rgba(59,37,18,.08);}
+.free-del-track{height:6px;background:var(--cream2);border-radius:3px;overflow:hidden;margin:6px 0;}
+.free-del-fill{height:100%;background:var(--brown);border-radius:3px;transition:width .4s;}
+.free-del-txt{font-size:12px;color:var(--muted);font-weight:600;}
+.free-del-done{font-size:12px;color:var(--green2);font-weight:700;}
+.cart-suggest{padding:12px 22px 0;}
+.cart-suggest-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.cart-suggest-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+.csug{flex:0 0 140px;background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;}
+.csug img{width:100%;height:60px;object-fit:cover;display:block;}
+.csug-ph{width:100%;height:60px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.csug-body{padding:6px 8px;}
+.csug-name{font-size:11px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:3px;}
+.csug-price{font-size:11px;color:var(--gold);font-weight:700;}
+.csug-add{width:100%;background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);padding:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;}
 .cross-sub{font-size:11px;font-weight:700;color:var(--muted);padding:12px 22px 6px;text-transform:uppercase;letter-spacing:.5px;}
 .cross-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 22px 16px;}
 .ccrd{background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:border-color .15s;}
 .ccrd:hover{border-color:var(--gold);}
 .ccrd .cimg{width:100%;height:80px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:30px;}
+.ccrd img{width:100%;height:80px;object-fit:cover;display:block;}
 .ccrd .cb{padding:10px 12px;}
 .ccrd .cn{font-size:12px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:4px;}
 .ccrd .cp{font-size:13px;font-weight:700;color:var(--gold);}
@@ -900,7 +916,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- ═══ OVERLAYS ═══ -->
 <div class="ov" id="ov-product"><div class="sheet fi"><div class="sh-hd"><h3 id="sp-title"></h3><button class="sh-cl" onclick="closeOv('ov-product')">✕</button></div><div id="sp-desc" style="padding:10px 22px;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(59,37,18,.08);display:none;"></div><div id="sp-sizes"></div><div id="sp-addons"></div><div class="qty-row"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)">+</button></div><button class="addmain" onclick="doAdd()">Dodaj — <span id="sp-tot"></span></button></div></div></div>
 
-<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div class="cross-sub">Polecamy do tego</div><div class="cross-grid" id="cross-grid"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy</button></div></div>
+<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><div class="cross-sub">Polecamy do tego</div><div class="cross-grid" id="cross-grid"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy</button></div></div>
 
 <div class="ov" id="ov-cart">
   <div class="sheet">
@@ -1394,15 +1410,84 @@ function doAdd(){
 }
 
 // ════ CROSS SELL ════
+function getFreeDel(){
+  const zones=getDeliveryZones();
+  return zones[zones.length-1]?.free||FREE_DEL_THRESHOLD;
+}
+function renderFreeDelBar(){
+  const el=document.getElementById('cross-free-del-bar');
+  if(!el||delType!=='dostawa'){if(el)el.innerHTML='';return;}
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  const threshold=getFreeDel();
+  if(sub>=threshold){
+    el.innerHTML=`<div class="free-del-bar"><div class="free-del-done">🎉 Masz darmową dostawę!</div></div>`;
+  } else {
+    const pct=Math.min(100,(sub/threshold)*100);
+    const brak=(threshold-sub).toFixed(2);
+    el.innerHTML=`<div class="free-del-bar">
+      <div class="free-del-txt">Do darmowej dostawy brakuje Ci <strong>${brak} zł</strong></div>
+      <div class="free-del-track"><div class="free-del-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+}
+function renderCrossSuggest(triggerItem){
+  const el=document.getElementById('cross-suggest-block');
+  if(!el)return;
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  const threshold=getFreeDel();
+  const brak=threshold-sub;
+  // Opcja B — sugestie na podstawie reguł kategorii z panelu
+  const rules=LS('cross')||[];
+  const menu=getMenu().filter(x=>x.avail);
+  const sug=[];
+  rules.forEach(r=>{
+    if(triggerItem.cat===r.when||triggerItem.name===r.when){
+      menu.forEach(m=>{
+        if((m.cat===r.show||m.name===r.show)&&m.id!==triggerItem.id&&!sug.find(s=>s.id===m.id))
+          sug.push(m);
+      });
+    }
+  });
+  // Opcja D — jeśli brakuje mało do progu pokaż tanie pozycje
+  if(brak>0&&brak<=40&&delType==='dostawa'){
+    const cheap=menu.filter(m=>m.price<=brak+5&&!sug.find(s=>s.id===m.id)&&m.id!==triggerItem.id)
+      .sort((a,b)=>a.price-b.price).slice(0,3);
+    cheap.forEach(m=>{if(!sug.find(s=>s.id===m.id))sug.push(m);});
+  }
+  el.innerHTML=sug.length?`<div class="cart-suggest">
+    <div class="cart-suggest-title">Dodaj do zestawu</div>
+    <div class="cart-suggest-row">${sug.slice(0,4).map(s=>`
+      <div class="csug" onclick="addCrossItem(${s.id})">
+        ${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="csug-ph">🍽</div>`}
+        <div class="csug-body">
+          <div class="csug-name">${s.name.length>28?s.name.slice(0,28)+'…':s.name}</div>
+          <div class="csug-price">${s.price} zł</div>
+          <button class="csug-add" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`:'';
+}
 function showCross(item){
-  const rule=CROSS.find(r=>r.match.includes(item.cat));
-  const sugCats=rule?rule.suggest:['Desery i słodkie przekąski'];
+  renderFreeDelBar();
+  renderCrossSuggest(item);
+  // Cross-grid — z reguł panelu (małe karty)
+  const rules=LS('cross')||[];
   const inCart=cart.map(c=>c.itemId);
-  let sug=getMenu().filter(d=>sugCats.includes(d.cat)&&d.avail&&!inCart.includes(d.id));
-  if(!sug.length)sug=getMenu().filter(d=>d.cat!==item.cat&&d.avail&&!inCart.includes(d.id));
-  const seen=new Set();sug=sug.filter(d=>{if(seen.has(d.id))return false;seen.add(d.id);return true;}).slice(0,4);
-  if(!sug.length){toast('Dodano do koszyka ✓');return;}
-  document.getElementById('cross-grid').innerHTML=sug.map(s=>`<div class="ccrd" onclick="addCrossItem(${s.id})">${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="cimg">🍽</div>`}<div class="cb"><div class="cn">${s.name.length>44?s.name.slice(0,44)+'…':s.name}</div><div class="cp">${s.price} zł</div><button class="ca" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join('');
+  let sug=[];
+  rules.forEach(r=>{
+    if(item.cat===r.when||item.name===r.when){
+      getMenu().filter(x=>x.avail).forEach(m=>{
+        if((m.cat===r.show||m.name===r.show)&&!inCart.includes(m.id)&&!sug.find(s=>s.id===m.id))
+          sug.push(m);
+      });
+    }
+  });
+  // Fallback — inna kategoria
+  if(!sug.length){
+    sug=getMenu().filter(d=>d.cat!==item.cat&&d.avail&&!inCart.includes(d.id)).slice(0,4);
+  }
+  document.getElementById('cross-grid').innerHTML=sug.slice(0,4).map(s=>`<div class="ccrd" onclick="addCrossItem(${s.id})">${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="cimg">🍽</div>`}<div class="cb"><div class="cn">${s.name.length>44?s.name.slice(0,44)+'…':s.name}</div><div class="cp">${s.price} zł</div><button class="ca" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join('');
   document.getElementById('ov-cross').classList.add('open');
 }
 function addCrossItem(id){const item=getMenu().find(x=>x.id===id);if(!item)return;const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');if(req.length){closeOv('ov-cross');openProduct(id);return;}cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});updateCartBadge();toast(item.name.slice(0,28)+'… dodane ✓');}
@@ -1441,15 +1526,14 @@ function renderCartSum(){
   document.getElementById('checkout-total').textContent=total.toFixed(2)+' zł';
 }
 function getDeliveryZones(){return LS('delivery-zones')||DEFAULT_DELIVERY_ZONES;}
+const FREE_DEL_THRESHOLD = 120; // próg darmowej dostawy w zł
 function calcDel(){
-  // Jeśli znamy odległość z geocodingu — użyj jej
   if(window._deliveryKm!=null){
     const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
     const zone=zones.find(z=>window._deliveryKm<=z.km);
-    return zone?zone.cost:null; // null = poza zasięgiem
+    return zone?zone.cost:null;
   }
-  // Fallback — pierwsza strefa
-  return (getDeliveryZones()[0]?.cost)||6; // 6 zł = domyślna pierwsza strefa
+  return (getDeliveryZones()[0]?.cost)||6;
 }
 function calcPackaging(){
   if(delType==='miejsce')return 0;
