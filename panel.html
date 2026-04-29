@@ -1339,6 +1339,26 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 </div>
 
+<!-- Modal: SMS do klienta -->
+<div class="mo" id="mo-sms-cust">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hd"><h3>Wyślij SMS do klienta</h3><button class="mc" onclick="closeModal('mo-sms-cust')">✕</button></div>
+    <div class="modal-bd">
+      <div id="sms-cust-info" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
+      <div class="field">
+        <label>Treść SMS</label>
+        <textarea id="sms-cust-msg" rows="4" placeholder="Wpisz treść wiadomości..." style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Bez polskich znaków (ą→a, ę→e itd.) — unikniesz problemów z kodowaniem.</div>
+      <div id="sms-cust-result" style="margin-top:10px;"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bo" onclick="closeModal('mo-sms-cust')">Anuluj</button>
+      <button class="btn bp" onclick="sendSmsToCustomerManual()">📱 Wyślij SMS</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Przyjmij zamówienie -->
 <div class="mo" id="mo-accept-order">
   <div class="modal" style="max-width:500px;">
@@ -1562,11 +1582,7 @@ let menuData = S('menu') || [
   {id:8,cat:'Obiady',name:'Kopytka z sosem pieczarkowym',desc:'Leśne pieczarki, koperek',price:15,avail:true,photo:''},
   {id:9,cat:'Wypieki',name:'Szarlotka z lodami',desc:'Ciepła, wanilia, cynamon',price:11,avail:true,photo:''},
 ];
-let customers = S('customers') || [
-  {name:'Anna Kowalska',phone:'511 100 200',email:'anna@example.com',sms:false,emailMkt:false,stamps:1,visits:1,last:'26.03.2026',registeredAt:'2026-03-26'},
-  {name:'Marek Wiśniewski',phone:'601 200 300',email:'marek@example.com',sms:true,emailMkt:true,stamps:7,visits:7,last:'25.03.2026',registeredAt:'2026-03-01'},
-  {name:'Tomasz Bąk',phone:'695 400 500',email:'',sms:false,emailMkt:false,stamps:4,visits:9,last:'24.03.2026',registeredAt:'2025-12-10'},
-];
+let customers = S('customers') || [];
 let orders = S('orders') || [
   {id:'#0042',type:'pickup',items:'Kotlet schabowy ×1, Żurek ×1',total:33,time:'08:14',status:'pending',customer:'Anna K.',phone:'511 100 200',addr:''},
   {id:'#0041',type:'delivery',items:'Polędwiczki ×2, Krem z dyni ×2',total:64,time:'08:05',status:'accepted',customer:'Marek W.',phone:'601 200 300',addr:'ul. Sękowskiego 4'},
@@ -2304,6 +2320,7 @@ function renderCusts(q=''){
       <td style="text-align:right;font-size:13px;font-weight:600;">${(c.spent||0)>0?(c.spent||0).toFixed(2)+' zł':'—'}</td>
       <td>
         <div style="display:flex;gap:4px;">
+          <button class="edit-btn" title="Wyślij SMS" onclick="openSmsToCustomer(${realIdx})" style="color:#3b82f6;">📱</button>
           <button class="edit-btn" title="Edytuj klienta" onclick="openEditCustModal(${realIdx})">✏️</button>
           <button class="edit-btn" title="Dodaj pieczątkę" onclick="addStamp(${realIdx})" style="color:var(--gold);">⭐</button>
           <button class="edit-btn" title="Usuń klienta" onclick="deleteCust(${realIdx})" style="color:var(--red);">🗑</button>
@@ -3034,6 +3051,32 @@ function renderCross(){
     </div>`;
   }).join('')||'<div style="color:var(--muted);padding:20px;font-size:13px;">Brak reguł — dodaj pierwszą.</div>';
 }
+// ── SMS DO KLIENTA (ręczny) ──
+let _smsCustIdx = null;
+function openSmsToCustomer(idx){
+  _smsCustIdx = idx;
+  const c = customers[idx];
+  if(!c){toast('Nie znaleziono klienta');return;}
+  document.getElementById('sms-cust-info').innerHTML=
+    `📞 <strong>${c.name}</strong> · ${c.phone}`;
+  document.getElementById('sms-cust-msg').value='';
+  document.getElementById('sms-cust-result').innerHTML='';
+  openModal('mo-sms-cust');
+}
+async function sendSmsToCustomerManual(){
+  const c = customers[_smsCustIdx];
+  if(!c||!c.phone){toast('Brak numeru telefonu');return;}
+  const msg = (document.getElementById('sms-cust-msg').value||'').trim();
+  if(!msg){toast('Wpisz treść SMS');return;}
+  const res = document.getElementById('sms-cust-result');
+  res.innerHTML='<span style="color:var(--muted);font-size:12px;">Wysyłam...</span>';
+  sendSmsRaw(c.phone, msg, r=>{
+    res.innerHTML = r.ok
+      ? '<span style="color:var(--green2);font-size:12px;">✅ SMS wysłany pomyślnie!</span>'
+      : `<span style="color:var(--red);font-size:12px;">❌ Błąd: ${r.err}</span>`;
+  });
+}
+
 function saveCross(){
   const w=document.getElementById('cross-when').value;
   const showEl=document.getElementById('cross-show');

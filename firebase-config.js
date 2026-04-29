@@ -113,12 +113,10 @@
           try {
             var arr = Array.isArray(val) ? val : Object.values(val);
             arr = arr.filter(function(c){ return c; });
-            var localArr = window.customers || [];
-            if (arr.length >= localArr.length) {
-              window.customers = arr;
-              if (typeof window.renderCusts === 'function') window.renderCusts();
-              console.log('[FB] Klienci zaktualizowani z Firebase ✓', arr.length);
-            }
+            // Zawsze aktualizuj — Firebase jest źródłem prawdy dla klientów
+            window.customers = arr;
+            if (typeof window.renderCusts === 'function') window.renderCusts();
+            console.log('[FB] Klienci zaktualizowani z Firebase ✓', arr.length);
           } catch(e) {}
         }
       });
