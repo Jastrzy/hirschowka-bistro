@@ -922,6 +922,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   <div class="sheet">
     <div class="sh-hd"><h3>Koszyk</h3><button class="sh-cl" onclick="closeOv('ov-cart')">✕</button></div>
     <div id="cart-items"></div>
+    <div id="cart-free-del-bar"></div>
     <div id="often-together"></div>
     <div class="cs-sum" id="cs-sum"></div>
     <div class="cpwrap"><div class="cplbl">Masz kupon promocyjny?</div><div class="cprow"><input class="cpin" id="coup-in" placeholder="Wpisz kod kuponu"><button class="cpbtn" onclick="applyCoupon()">Zastosuj</button></div><div id="coup-res" style="font-size:12px;margin-top:5px;"></div></div>
@@ -1414,6 +1415,24 @@ function getFreeDel(){
   const zones=getDeliveryZones();
   return zones[zones.length-1]?.free||FREE_DEL_THRESHOLD;
 }
+function renderCartFreeDelBar(){
+  const el=document.getElementById('cart-free-del-bar');
+  if(!el)return;
+  // Pokazuj pasek zawsze (przy każdym typie zamówienia dla informacji)
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  const threshold=getFreeDel();
+  if(!cart.length){el.innerHTML='';return;}
+  if(sub>=threshold){
+    el.innerHTML=`<div class="free-del-bar"><div class="free-del-done">🎉 Osiągnąłeś próg darmowej dostawy (${threshold} zł)!</div></div>`;
+  } else {
+    const pct=Math.min(100,(sub/threshold)*100);
+    const brak=(threshold-sub).toFixed(2);
+    el.innerHTML=`<div class="free-del-bar">
+      <div class="free-del-txt">Do darmowej dostawy (od ${threshold} zł) brakuje Ci <strong>${brak} zł</strong></div>
+      <div class="free-del-track"><div class="free-del-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+}
 function renderFreeDelBar(){
   const el=document.getElementById('cross-free-del-bar');
   if(!el||delType!=='dostawa'){if(el)el.innerHTML='';return;}
@@ -1512,8 +1531,13 @@ function addCrossItem(id){
   if(req.length){closeOv('ov-cross');openProduct(id);return;}
   cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});
   updateCartBadge();
-  // Odśwież pasek dostawy i sugestie po dodaniu
+  // Odśwież koszyk jeśli jest otwarty
+  if(document.getElementById('ov-cart').classList.contains('open')){
+    renderCart();
+  }
+  // Odśwież pasek dostawy i sugestie w cross-sell popup
   renderFreeDelBar();
+  renderCartFreeDelBar();
   renderCrossSuggest(item);
   toast(item.name.slice(0,28)+'… dodane ✓');
 }
@@ -1534,6 +1558,7 @@ function renderCart(){
   const inCart=cart.map(c=>c.itemId);const cCats=[...new Set(cart.map(c=>c.cat))];
   const sug=getMenu().filter(d=>d.avail&&!inCart.includes(d.id)&&!cCats.includes(d.cat)).slice(0,3);
   document.getElementById('often-together').innerHTML=sug.length?`<div class="ot-title">Często kupowane razem</div>`+sug.map(s=>`<div class="ot-row"><span class="ot-name">${s.name.length>38?s.name.slice(0,38)+'…':s.name}</span><div class="ot-r"><span class="ot-price">${s.price} zł</span><button class="ot-add" onclick="addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join(''):'';
+  renderCartFreeDelBar();
   renderCartSum();
 }
 function renderCartSum(){
@@ -1572,8 +1597,8 @@ function calcPackaging(){
   });
   return total;
 }
-function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c.qty+d);updateCartBadge();renderCart();}}
-function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart();}
+function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c.qty+d);updateCartBadge();renderCart();renderCartFreeDelBar();}}
+function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart();renderCartFreeDelBar();}
 
 // ════ DELIVERY / PAYMENT ════
 function setDel(type,el){delType=type;document.querySelectorAll('.del-chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
