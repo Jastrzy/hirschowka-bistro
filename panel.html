@@ -1325,8 +1325,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="field"><label>Gdy klient zamawia z kategorii</label>
         <select id="cross-when" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></select>
       </div>
-      <div class="field"><label>Zaproponuj produkty z kategorii</label>
-        <select id="cross-show" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></select>
+      <div class="field"><label>Zaproponuj produkty z kategorii <span style="font-size:11px;color:var(--muted);">(możesz wybrać kilka — Ctrl+klik)</span></label>
+        <select id="cross-show" multiple style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);height:120px;"></select>
       </div>
       <div class="field"><label>Komunikat dla klienta</label>
         <input id="cross-msg" value="Może dodasz do zestawu?" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
@@ -3024,19 +3024,24 @@ function fillCrossSelects(){
   if(s)s.innerHTML=opts;
 }
 function renderCross(){
-  document.getElementById('cross-list').innerHTML=crossRules.map((r,i)=>`
-  <div class="promo-card">
-    <div class="promo-icon">🔀</div>
-    <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${r.when} → ${r.show}</div><div style="font-size:12px;color:var(--muted);">"${r.msg}"</div></div>
-    <button class="edit-btn" style="color:var(--red)" onclick="delCross(${i})">🗑</button>
-  </div>`).join('')||'<div style="color:var(--muted);padding:20px;font-size:13px;">Brak reguł — dodaj pierwszą.</div>';
+  document.getElementById('cross-list').innerHTML=crossRules.map((r,i)=>{
+    const showCats=(r.show||'').split(',').map(c=>c.trim()).filter(Boolean);
+    const showLabel=showCats.length>1?showCats.join(' / '):showCats[0]||r.show;
+    return`<div class="promo-card">
+      <div class="promo-icon">🔀</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${r.when} → ${showLabel}</div><div style="font-size:12px;color:var(--muted);">"${r.msg}"</div></div>
+      <button class="edit-btn" style="color:var(--red)" onclick="delCross(${i})">🗑</button>
+    </div>`;
+  }).join('')||'<div style="color:var(--muted);padding:20px;font-size:13px;">Brak reguł — dodaj pierwszą.</div>';
 }
 function saveCross(){
   const w=document.getElementById('cross-when').value;
-  const s=document.getElementById('cross-show').value;
-  if(!w||!s){toast('Wybierz obie kategorie');return;}
-  if(crossRules.find(r=>r.when===w&&r.show===s)){toast('Taka reguła już istnieje');return;}
-  crossRules.push({when:w,show:s,msg:document.getElementById('cross-msg').value||'Może dodasz do zestawu?'});
+  const showEl=document.getElementById('cross-show');
+  const showCats=Array.from(showEl.selectedOptions).map(o=>o.value).filter(Boolean);
+  if(!w||!showCats.length){toast('Wybierz obie kategorie');return;}
+  const showStr=showCats.join(',');
+  if(crossRules.find(r=>r.when===w&&r.show===showStr)){toast('Taka reguła już istnieje');return;}
+  crossRules.push({when:w,show:showStr,msg:document.getElementById('cross-msg').value||'Może dodasz do zestawu?'});
   W('cross',crossRules);closeModal('mo-cross');renderCross();toast('Reguła dodana ✓');
 }
 function delCross(i){crossRules.splice(i,1);W('cross',crossRules);renderCross();}

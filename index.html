@@ -690,7 +690,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="hero-stats">
       <div class="hstat"><div class="num">7:00</div><div class="lbl">Otwieramy</div></div>
-      <div class="hstat"><div class="num">5.0★</div><div class="lbl">Ocena Google</div></div>
+      <div class="hstat"><div class="num">4.9★</div><div class="lbl">Ocena Google</div></div>
       <div class="hstat"><div class="num">20 min</div><div class="lbl">Czas dostawy</div></div>
     </div>
   </div>
@@ -820,7 +820,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="reviews-header reveal">
       <div class="rating-block">
-        <div class="rating-num">5.0</div>
+        <div class="rating-num">4.9</div>
         <div class="rating-info"><div class="stars">★★★★★</div><div class="count">Ocena w Google Maps</div></div>
       </div>
       <a href="https://www.google.com/maps/search/Hirschówka+Bistro+Mielec+Mickiewicza+17" target="_blank" rel="noopener" class="google-btn"><span class="g-icon">G</span> Zobacz w Google Maps →</a>
@@ -1436,26 +1436,42 @@ function renderCrossSuggest(triggerItem){
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const threshold=getFreeDel();
   const brak=threshold-sub;
-  // Opcja B — sugestie na podstawie reguł kategorii z panelu
   const rules=LS('cross')||[];
   const menu=getMenu().filter(x=>x.avail);
+  const inCart=new Set(cart.map(c=>c.itemId));
   const sug=[];
+
+  // Opcja B — reguły z panelu, obsługa wielu kategorii (przecinek)
   rules.forEach(r=>{
     if(triggerItem.cat===r.when||triggerItem.name===r.when){
-      menu.forEach(m=>{
-        if((m.cat===r.show||m.name===r.show)&&m.id!==triggerItem.id&&!sug.find(s=>s.id===m.id))
-          sug.push(m);
-      });
+      const showCats=(r.show||'').split(',').map(c=>c.trim()).filter(Boolean);
+      // Losuj kategorię z listy
+      const randomCat=showCats[Math.floor(Math.random()*showCats.length)];
+      const pool=menu.filter(m=>(m.cat===randomCat||m.name===randomCat)&&!inCart.has(m.id)&&m.id!==triggerItem.id);
+      if(pool.length){
+        // Losuj jedną pozycję z wybranej kategorii
+        const pick=pool[Math.floor(Math.random()*pool.length)];
+        if(!sug.find(s=>s.id===pick.id)) sug.push(pick);
+        // Dodaj jeszcze jedną z innej losowej kategorii jeśli jest więcej
+        const otherCats=showCats.filter(c=>c!==randomCat);
+        if(otherCats.length){
+          const randomCat2=otherCats[Math.floor(Math.random()*otherCats.length)];
+          const pool2=menu.filter(m=>(m.cat===randomCat2)&&!inCart.has(m.id)&&m.id!==triggerItem.id&&!sug.find(s=>s.id===m.id));
+          if(pool2.length) sug.push(pool2[Math.floor(Math.random()*pool2.length)]);
+        }
+      }
     }
   });
-  // Opcja D — jeśli brakuje mało do progu pokaż tanie pozycje
+
+  // Opcja D — brakuje mało do progu dostawy
   if(brak>0&&brak<=40&&delType==='dostawa'){
-    const cheap=menu.filter(m=>m.price<=brak+5&&!sug.find(s=>s.id===m.id)&&m.id!==triggerItem.id)
-      .sort((a,b)=>a.price-b.price).slice(0,3);
-    cheap.forEach(m=>{if(!sug.find(s=>s.id===m.id))sug.push(m);});
+    const cheap=menu.filter(m=>m.price<=brak+5&&!inCart.has(m.id)&&m.id!==triggerItem.id&&!sug.find(s=>s.id===m.id))
+      .sort((a,b)=>a.price-b.price).slice(0,2);
+    cheap.forEach(m=>sug.push(m));
   }
+
   el.innerHTML=sug.length?`<div class="cart-suggest">
-    <div class="cart-suggest-title">Dodaj do zestawu</div>
+    <div class="cart-suggest-title">Polecamy do zestawu</div>
     <div class="cart-suggest-row">${sug.slice(0,4).map(s=>`
       <div class="csug" onclick="addCrossItem(${s.id})">
         ${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="csug-ph">🍽</div>`}
@@ -1490,7 +1506,17 @@ function showCross(item){
   document.getElementById('cross-grid').innerHTML=sug.slice(0,4).map(s=>`<div class="ccrd" onclick="addCrossItem(${s.id})">${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="cimg">🍽</div>`}<div class="cb"><div class="cn">${s.name.length>44?s.name.slice(0,44)+'…':s.name}</div><div class="cp">${s.price} zł</div><button class="ca" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join('');
   document.getElementById('ov-cross').classList.add('open');
 }
-function addCrossItem(id){const item=getMenu().find(x=>x.id===id);if(!item)return;const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');if(req.length){closeOv('ov-cross');openProduct(id);return;}cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});updateCartBadge();toast(item.name.slice(0,28)+'… dodane ✓');}
+function addCrossItem(id){
+  const item=getMenu().find(x=>x.id===id);if(!item)return;
+  const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');
+  if(req.length){closeOv('ov-cross');openProduct(id);return;}
+  cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});
+  updateCartBadge();
+  // Odśwież pasek dostawy i sugestie po dodaniu
+  renderFreeDelBar();
+  renderCrossSuggest(item);
+  toast(item.name.slice(0,28)+'… dodane ✓');
+}
 function closeCross(){closeOv('ov-cross');toast('Dodano do koszyka ✓');}
 
 // ════ CART ════
