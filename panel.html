@@ -351,7 +351,10 @@ window.doLogin = function(){
       btn.textContent = 'Logowanie...';
       btn.disabled = true;
       window._fbAuth.signInWithEmailAndPassword(email, pwd)
-        .then(function(){ /* onAuthStateChanged zajmie się resztą */ })
+        .then(function(){
+          // Zapisz email jako backup dla zmiany hasła
+          localStorage.setItem('hb_login_email', email);
+        })
         .catch(function(e){
           _loginAttempting = false;
           btn.textContent = 'Zaloguj się →';
@@ -3123,7 +3126,10 @@ async function changePassword(){
   if(!window._fbAuth||!window._fbAuth.currentUser){show('Nie jesteś zalogowany',false);return;}
   try{
     const user=window._fbAuth.currentUser;
-    const cred=firebase.auth.EmailAuthProvider.credential(user.email,cur);
+    // Pobierz email z pola logowania lub z zalogowanego użytkownika
+    const userEmail = user.email || document.getElementById('login-email')?.value || localStorage.getItem('hb_login_email') || '';
+    if(!userEmail){show('❌ Nie można odczytać emaila — wyloguj się i zaloguj ponownie',false);return;}
+    const cred=firebase.auth.EmailAuthProvider.credential(userEmail,cur);
     await user.reauthenticateWithCredential(cred);
     await user.updatePassword(nw);
     localStorage.setItem('hb_pwd_changed_ts',Date.now().toString());
