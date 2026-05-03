@@ -3123,15 +3123,14 @@ async function changePassword(){
   const errs=validatePassword(nw);
   if(errs.length>0){show('Hasło nie spełnia wymagań: '+errs.join(', '),false);return;}
   if(nw!==cf){show('Nowe hasła się nie zgadzają',false);return;}
-  if(!window._fbAuth||!window._fbAuth.currentUser){show('Nie jesteś zalogowany',false);return;}
+  if(!window._fbAuth){show('Nie jesteś zalogowany',false);return;}
   try{
-    const user=window._fbAuth.currentUser;
-    // Pobierz email z pola logowania lub z zalogowanego użytkownika
-    const userEmail = user.email || document.getElementById('login-email')?.value || localStorage.getItem('hb_login_email') || '';
-    if(!userEmail){show('❌ Nie można odczytać emaila — wyloguj się i zaloguj ponownie',false);return;}
-    const cred=firebase.auth.EmailAuthProvider.credential(userEmail,cur);
-    await user.reauthenticateWithCredential(cred);
-    await user.updatePassword(nw);
+    // Pobierz email z localStorage (zapisany przy logowaniu)
+    const userEmail = localStorage.getItem('hb_login_email') || 'kontakt@hirschowkabistro.pl';
+    // Reauthentykuj przez ponowne zalogowanie ze starym hasłem
+    const userCred = await window._fbAuth.signInWithEmailAndPassword(userEmail, cur);
+    // Zmień hasło na nowe
+    await userCred.user.updatePassword(nw);
     localStorage.setItem('hb_pwd_changed_ts',Date.now().toString());
     document.getElementById('pwd-reminder-bar').style.display='none';
     document.getElementById('pwd-current').value='';
