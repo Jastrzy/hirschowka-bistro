@@ -2302,20 +2302,23 @@ function renderCusts(q=''){
     // Find real index in customers array (needed for edit/delete when filtered)
     const realIdx = customers.indexOf(c);
     const stampPct = Math.min(100, ((c.stamps||0)/9)*100);
+    const totalSt = c.totalStamps||c.stamps||0;
     return `<tr>
       <td><strong style="color:var(--brown);">${c.name||'—'}</strong>${c.addr?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">📍 ${c.addr}</div>`:''}</td>
       <td style="font-family:monospace;font-size:12px;">${c.phone||'—'}</td>
       <td style="font-size:12px;">${c.email||'—'}</td>
       <td style="text-align:center;">${c.sms?'<span class="badge bg-ok">✓</span>':'<span style="color:var(--muted);font-size:12px;">—</span>'}</td>
       <td style="text-align:center;">${c.emailMkt?'<span class="badge bg-ok">✓</span>':'<span style="color:var(--muted);font-size:12px;">—</span>'}</td>
-      <td style="text-align:center;font-size:13px;">${c.visits||0}</td>
+      <td style="text-align:center;font-size:13px;" title="Łącznie zamówień">${c.visits||(c.totalStamps||0)||0}</td>
       <td style="text-align:center;">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
           <span style="font-weight:700;font-size:13px;color:var(--gold);">${c.stamps||0}<span style="font-weight:400;color:var(--muted);font-size:11px;">/9</span></span>
           <div style="width:48px;height:4px;background:rgba(59,37,18,.1);border-radius:2px;overflow:hidden;">
             <div style="height:100%;width:${stampPct}%;background:var(--gold);border-radius:2px;"></div>
           </div>
+          ${totalSt>9?`<div style="font-size:9px;color:var(--muted);">łącznie: ${totalSt}</div>`:''}
         </div>
+      </td>
       </td>
       <td style="text-align:right;font-size:13px;font-weight:600;">${(c.spent||0)>0?(c.spent||0).toFixed(2)+' zł':'—'}</td>
       <td>
@@ -3557,7 +3560,7 @@ function parseRestaumaticRows(rows){
   const headers = rows[0].map(h=>String(h||'').trim());
   console.log('[REST] Nagłówki:', headers);
 
-  const iName     = detectCol(headers,['imię i nazwisko','imie i nazwisko','name','pełna nazwa','klient','imię','first name','full name','nazwa']);
+  const iName     = detectCol(headers,['imię i nazwisko','imie i nazwisko','name','pełna nazwa','klient','imię','first name','full name','nazwa','client name','nazwisko','last name','contact']);
   const iPhone    = detectCol(headers,['telefon','phone','mobile','tel','nr telefonu','numer telefonu','komórkowy']);
   const iEmail    = detectCol(headers,['email','e-mail','mail','adres e-mail','adres email']);
   const iAddr     = detectCol(headers,['adres dostawy','adres','delivery address','address','ulica','street']);
@@ -3591,8 +3594,22 @@ function parseRestaumaticRows(rows){
     }
     // Jeśli nie znaleziono kolumny kwoty — zostaw 0 (nie bierz dostawy)
 
+    // Złóż imię z dostępnych kolumn
+    let fullName = '';
+    if(iName>=0) fullName = String(r[iName]||'').trim();
+    // Jeśli brak — spróbuj znaleźć kolumny imię/nazwisko osobno
+    if(!fullName){
+      const iFirst = detectCol(headers,['imię','first name','firstname','imie']);
+      const iLast  = detectCol(headers,['nazwisko','last name','lastname','surname']);
+      const first  = iFirst>=0 ? String(r[iFirst]||'').trim() : '';
+      const last   = iLast>=0  ? String(r[iLast]||'').trim()  : '';
+      fullName = [first,last].filter(Boolean).join(' ');
+    }
+    // Fallback — użyj emaila lub numeru jako identyfikatora
+    if(!fullName && r[iEmail]) fullName = String(r[iEmail]||'').split('@')[0];
+
     parsed.push({
-      name:     iName>=0     ? String(r[iName]||'').trim()  : '',
+      name:     fullName || '',
       phone,
       email:    iEmail>=0    ? String(r[iEmail]||'').trim() : '',
       addr:     iAddr>=0     ? String(r[iAddr]||'').trim()  : '',
@@ -3845,8 +3862,9 @@ function updateMergeSection(){
     merged[key] = {
       name: r.name, phone: r.phone, email: r.email,
       addr: r.addr, sms: r.sms, emailMkt: r.emailMkt,
-      stamps: 0, rewards: 0, spent: r.spent||0,
-      visits: r.orders||0, lastVisit: '', registeredAt: new Date().toISOString().slice(0,10),
+      stamps: 0, totalStamps: 0, rewards: 0, spent: r.spent||0,
+      visits: r.orders||0,  // wizyty = historyczna liczba zamówień z Restaumatic
+      lastVisit: '', registeredAt: new Date().toISOString().slice(0,10),
       _fromRestaumatic: true, _fromEmbargo: false,
     };
   });
@@ -3857,7 +3875,11 @@ function updateMergeSection(){
     if(!key) return;
     if(merged[key]){
       // Uzupełnij dane z Embargo do istniejącego rekordu z Restaumatic
-      merged[key].stamps      = Math.max(merged[key].stamps||0, e.stamps||0);
+      // totalStamps = łączna liczba pieczątek (z Embargo)
+      // stamps = bieżący cykl 1-9
+      const embTotal = e.stamps||0;
+      merged[key].totalStamps = Math.max(merged[key].totalStamps||0, embTotal);
+      merged[key].stamps      = embTotal > 0 ? ((embTotal - 1) % 9) + 1 : 0;
       merged[key].rewards     = Math.max(merged[key].rewards||0, e.rewards||0);
       merged[key].spent       = Math.max(merged[key].spent||0, e.spent||0);
       merged[key].visits      = Math.max(merged[key].visits||0, e.visits||0);
@@ -3871,7 +3893,8 @@ function updateMergeSection(){
       merged[key] = {
         name: e.name, phone: '', email: e.email,
         addr: '', sms: false, emailMkt: false,
-        stamps: e.stamps||0, rewards: e.rewards||0,
+        stamps: e.stamps>0 ? ((e.stamps - 1) % 9) + 1 : 0,
+        totalStamps: e.stamps||0, rewards: e.rewards||0,
         spent: e.spent||0, venueSpend: e.venueSpend||0, orderSpend: e.orderSpend||0,
         visits: e.visits||0, lastVisit: e.lastVisit,
         registeredAt: e.registeredAt || new Date().toISOString().slice(0,10),
@@ -3953,6 +3976,7 @@ function doFinalImport(){
         addr:        m.addr      || ex.addr,
         sms:         m.sms       || ex.sms,
         emailMkt:    m.emailMkt  || ex.emailMkt,
+        totalStamps: Math.max(m.totalStamps||0, ex.totalStamps||0),
         stamps:      Math.max(m.stamps||0,  ex.stamps||0),
         rewards:     Math.max(m.rewards||0, ex.rewards||0),
         spent:       Math.max(m.spent||0,   ex.spent||0),
@@ -3970,6 +3994,7 @@ function doFinalImport(){
         addr:        m.addr||'',
         sms:         m.sms||false,
         emailMkt:    m.emailMkt||false,
+        totalStamps: m.totalStamps||0,
         stamps:      m.stamps||0,
         rewards:     m.rewards||0,
         spent:       m.spent||0,
