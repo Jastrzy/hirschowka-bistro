@@ -2301,22 +2301,28 @@ function renderCusts(q=''){
   document.getElementById('custs-body').innerHTML = f.map((c,fi)=>{
     // Find real index in customers array (needed for edit/delete when filtered)
     const realIdx = customers.indexOf(c);
-    const stampPct = Math.min(100, ((c.stamps||0)/9)*100);
-    const totalSt = c.totalStamps||c.stamps||0;
+    // Jeśli stamps > 9 — to są totalStamps (stare dane przed naprawką)
+    // Przelicz na bieżąco: bieżący cykl = totalStamps % 9 (0→9)
+    const rawStamps = c.stamps||0;
+    const totalSt   = c.totalStamps || (rawStamps > 9 ? rawStamps : 0);
+    const curStamps  = totalSt > 0
+      ? (totalSt % 9 === 0 ? 9 : totalSt % 9)   // np. 105%9=6, 9%9=0→9
+      : Math.min(rawStamps, 9);                  // brak totalStamps — użyj stamps max 9
+    const stampPct = Math.min(100, (curStamps/9)*100);
     return `<tr>
       <td><strong style="color:var(--brown);">${c.name||'—'}</strong>${c.addr?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">📍 ${c.addr}</div>`:''}</td>
       <td style="font-family:monospace;font-size:12px;">${c.phone||'—'}</td>
       <td style="font-size:12px;">${c.email||'—'}</td>
       <td style="text-align:center;">${c.sms?'<span class="badge bg-ok">✓</span>':'<span style="color:var(--muted);font-size:12px;">—</span>'}</td>
       <td style="text-align:center;">${c.emailMkt?'<span class="badge bg-ok">✓</span>':'<span style="color:var(--muted);font-size:12px;">—</span>'}</td>
-      <td style="text-align:center;font-size:13px;" title="Łącznie zamówień">${c.visits||(c.totalStamps||0)||0}</td>
+      <td style="text-align:center;font-size:13px;" title="Łączna liczba wizyt/zamówień">${c.visits||totalSt||0}</td>
       <td style="text-align:center;">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
-          <span style="font-weight:700;font-size:13px;color:var(--gold);">${c.stamps||0}<span style="font-weight:400;color:var(--muted);font-size:11px;">/9</span></span>
+          <span style="font-weight:700;font-size:13px;color:var(--gold);">${curStamps}<span style="font-weight:400;color:var(--muted);font-size:11px;">/9</span></span>
           <div style="width:48px;height:4px;background:rgba(59,37,18,.1);border-radius:2px;overflow:hidden;">
             <div style="height:100%;width:${stampPct}%;background:var(--gold);border-radius:2px;"></div>
           </div>
-          ${totalSt>9?`<div style="font-size:9px;color:var(--muted);">łącznie: ${totalSt}</div>`:''}
+          ${totalSt>0?`<div style="font-size:9px;color:var(--muted);">łącznie: ${totalSt}</div>`:''}
         </div>
       </td>
       </td>
