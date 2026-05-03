@@ -248,7 +248,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </head>
 <body>
 
-<!-- ═══ EKRAN LOGOWANIA ═══ -->
+<!-- ═══ EKRAN LOGOWANIA — Firebase Auth ═══ -->
 <div id="login-screen" style="
   position:fixed;inset:0;z-index:9999;
   background:linear-gradient(135deg,#2A1A0E 0%,#3B2512 50%,#2A1A0E 100%);
@@ -260,112 +260,149 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     border:1px solid rgba(255,255,255,.12);
     border-radius:20px;
     padding:48px 40px;
-    width:100%;max-width:380px;
+    width:100%;max-width:400px;
     text-align:center;
     box-shadow:0 24px 80px rgba(0,0,0,.4);
   ">
-    <!-- Logo -->
     <div style="font-size:48px;margin-bottom:8px;">☕</div>
     <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:#F9F5EE;margin-bottom:4px;">Hirschówka</div>
-    <div style="font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#C8922A;margin-bottom:36px;">Panel restauratora</div>
+    <div style="font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#C8922A;margin-bottom:32px;">Panel restauratora</div>
 
-    <!-- Formularz -->
-    <div style="margin-bottom:16px;">
-      <input
-        type="password"
-        id="login-input"
-        placeholder="Wpisz hasło..."
-        autocomplete="current-password"
-        onkeydown="if(event.key==='Enter')doLogin()"
-        style="
-          width:100%;padding:14px 18px;
-          background:rgba(255,255,255,.08);
-          border:1.5px solid rgba(255,255,255,.15);
-          border-radius:10px;
-          font-size:16px;font-family:'Inter',sans-serif;
-          color:#F9F5EE;text-align:center;
-          outline:none;box-sizing:border-box;
-          letter-spacing:3px;
-        "
-      >
+    <div id="login-error" style="color:#ef4444;font-size:13px;margin-bottom:12px;min-height:18px;"></div>
+
+    <div style="margin-bottom:12px;text-align:left;">
+      <label style="font-size:12px;color:rgba(255,255,255,.5);font-weight:600;display:block;margin-bottom:5px;">EMAIL</label>
+      <input type="email" id="login-email" value="kontakt@hirschowkabistro.pl"
+        style="width:100%;padding:13px 16px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;color:#F9F5EE;outline:none;box-sizing:border-box;">
     </div>
-    <div id="login-error" style="
-      color:#ef4444;font-size:13px;
-      margin-bottom:12px;min-height:18px;
-    "></div>
-    <button onclick="doLogin()" style="
+    <div style="margin-bottom:20px;text-align:left;">
+      <label style="font-size:12px;color:rgba(255,255,255,.5);font-weight:600;display:block;margin-bottom:5px;">HASŁO</label>
+      <div style="position:relative;">
+        <input type="password" id="login-input" placeholder="Wpisz hasło..."
+          autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()"
+          style="width:100%;padding:13px 16px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;font-size:15px;font-family:'Inter',sans-serif;color:#F9F5EE;outline:none;box-sizing:border-box;letter-spacing:2px;">
+        <button onclick="toggleLoginPwd()" id="login-eye" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:18px;">👁</button>
+      </div>
+    </div>
+
+    <button onclick="doLogin()" id="login-btn" style="
       width:100%;padding:14px;
       background:#C8922A;color:#2A1A0E;
       border:none;border-radius:10px;
       font-size:15px;font-weight:700;
       cursor:pointer;font-family:'Inter',sans-serif;
-      transition:opacity .15s;
-    " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-      Zaloguj się →
-    </button>
+    ">Zaloguj się →</button>
 
-    <div style="margin-top:24px;font-size:11px;color:rgba(255,255,255,.25);">
-      Hirschówka Bistro · Mielec
-    </div>
+    <button onclick="doForgotPassword()" style="
+      background:none;border:none;color:rgba(255,255,255,.35);
+      font-size:12px;cursor:pointer;margin-top:16px;text-decoration:underline;
+    ">Nie pamiętam hasła — resetuj emailem</button>
+
+    <div style="margin-top:20px;font-size:11px;color:rgba(255,255,255,.2);">Hirschówka Bistro · Mielec</div>
   </div>
 </div>
 
+<!-- Baner przypomnienia o zmianie hasła -->
+<div id="pwd-reminder-bar" style="display:none;background:#7c5c00;color:#fff;padding:10px 20px;position:fixed;top:0;left:0;right:0;z-index:8888;display:flex;align-items:center;gap:12px;font-size:13px;">
+  ⚠️ <strong>Minęły 3 miesiące</strong> od ostatniej zmiany hasła. Zalecamy jego zmianę.
+  <button onclick="go('ustawienia');document.getElementById('pwd-reminder-bar').style.display='none';"
+    style="background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:700;">Zmień teraz</button>
+  <button onclick="document.getElementById('pwd-reminder-bar').style.display='none';"
+    style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:18px;margin-left:auto;">✕</button>
+</div>
+
 <script>
-// ═══ LOGOWANIE — hasło z 9h sesją ═══
-(function(){
-  // Hash hasła (nie trzymamy hasła jako plain text)
-  var PASS = 'HirschOpen09';
-  var SESSION_KEY = 'hb_panel_auth';
-  var SESSION_HOURS = 9;
+// ═══ LOGOWANIE — Firebase Auth (email + hasło) ═══
+var _authReady = false;
+var _loginAttempting = false;
 
-  function checkAuth(){
-    var data = localStorage.getItem(SESSION_KEY);
-    if(!data) return false;
-    try {
-      var obj = JSON.parse(data);
-      var age = (Date.now() - obj.ts) / 3600000; // godziny
-      if(age < SESSION_HOURS && obj.ok === true) return true;
-    } catch(e) {}
-    return false;
+function toggleLoginPwd(){
+  var inp = document.getElementById('login-input');
+  var eye = document.getElementById('login-eye');
+  if(inp.type==='password'){inp.type='text';eye.textContent='🔒';}
+  else{inp.type='password';eye.textContent='👁';}
+}
+
+function doForgotPassword(){
+  var email = document.getElementById('login-email').value.trim();
+  if(!email){document.getElementById('login-error').textContent='Wpisz email';return;}
+  var waitForAuth = function(){
+    if(window._fbAuth){
+      window._fbAuth.sendPasswordResetEmail(email)
+        .then(function(){ document.getElementById('login-error').style.color='#86efac'; document.getElementById('login-error').textContent='✅ Link do resetowania hasła wysłany na '+email; })
+        .catch(function(e){ document.getElementById('login-error').style.color='#ef4444'; document.getElementById('login-error').textContent='❌ '+e.message; });
+    } else { setTimeout(waitForAuth, 300); }
+  };
+  waitForAuth();
+}
+
+window.doLogin = function(){
+  if(_loginAttempting) return;
+  var email = (document.getElementById('login-email').value||'').trim();
+  var pwd   = document.getElementById('login-input').value;
+  var err   = document.getElementById('login-error');
+  var btn   = document.getElementById('login-btn');
+  err.style.color='#ef4444';
+  if(!email||!pwd){err.textContent='❌ Podaj email i hasło';return;}
+  var waitForAuth = function(){
+    if(window._fbAuth){
+      _loginAttempting = true;
+      btn.textContent = 'Logowanie...';
+      btn.disabled = true;
+      window._fbAuth.signInWithEmailAndPassword(email, pwd)
+        .then(function(){ /* onAuthStateChanged zajmie się resztą */ })
+        .catch(function(e){
+          _loginAttempting = false;
+          btn.textContent = 'Zaloguj się →';
+          btn.disabled = false;
+          var msg = '❌ Nieprawidłowy email lub hasło';
+          if(e.code==='auth/too-many-requests') msg='❌ Za dużo prób — spróbuj za chwilę';
+          if(e.code==='auth/network-request-failed') msg='❌ Brak połączenia z internetem';
+          err.textContent = msg;
+          document.getElementById('login-input').value = '';
+          document.getElementById('login-input').focus();
+        });
+    } else { setTimeout(waitForAuth, 200); }
+  };
+  waitForAuth();
+};
+
+function showPanel(){
+  var ls = document.getElementById('login-screen');
+  if(ls) ls.style.display = 'none';
+  // Sprawdź czy minęły 3 miesiące od zmiany hasła
+  var pwdTs = localStorage.getItem('hb_pwd_changed_ts');
+  if(pwdTs){
+    var monthsAgo = (Date.now() - parseInt(pwdTs)) / (1000*60*60*24*30);
+    if(monthsAgo >= 3){
+      document.getElementById('pwd-reminder-bar').style.display = 'flex';
+    }
   }
+}
 
-  function showPanel(){
-    var ls = document.getElementById('login-screen');
-    if(ls) ls.style.display = 'none';
-  }
+window.doLogout = function(){
+  if(window._fbAuth) window._fbAuth.signOut();
+};
 
-  window.doLogin = function(){
-    var val = document.getElementById('login-input').value;
-    var err = document.getElementById('login-error');
-    if(val === PASS){
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ok:true, ts:Date.now()}));
+// onAuthStateChanged — wywołane gdy Firebase załaduje auth
+window._onAuthReady = function(auth){
+  window._fbAuth = auth;
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      _loginAttempting = false;
       showPanel();
     } else {
-      err.textContent = '❌ Nieprawidłowe hasło';
-      document.getElementById('login-input').value = '';
-      document.getElementById('login-input').focus();
-      setTimeout(function(){ err.textContent=''; }, 3000);
+      // Nie zalogowany — pokaż ekran logowania
+      var ls = document.getElementById('login-screen');
+      if(ls) ls.style.display = 'flex';
+      setTimeout(function(){
+        var inp = document.getElementById('login-input');
+        if(inp) inp.focus();
+      }, 100);
     }
-  };
-
-  // Sprawdź sesję przy ładowaniu
-  if(checkAuth()){
-    // Sesja ważna — ukryj ekran logowania
-    document.addEventListener('DOMContentLoaded', showPanel);
-    // Zabezpieczenie — ukryj też po 100ms
-    setTimeout(showPanel, 100);
-  } else {
-    // Pokaż ekran logowania i ustaw focus
-    document.addEventListener('DOMContentLoaded', function(){
-      var inp = document.getElementById('login-input');
-      if(inp) inp.focus();
-    });
-    setTimeout(function(){
-      var inp = document.getElementById('login-input');
-      if(inp) inp.focus();
-    }, 200);
-  }
-})();
+  });
+};
 </script>
 
 
@@ -404,6 +441,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="ni" onclick="go('importexport',this)"><span class="ic">↕</span><span>Import / Eksport</span></div>
     <div class="ni" onclick="go('www',this)"><span class="ic">🌐</span><span>WWW</span></div>
     <div class="ni" onclick="go('podglad',this)"><span class="ic">👁</span><span>Podgląd strony</span></div>
+    <div class="ni" onclick="doLogout()" style="margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;"><span class="ic">🚪</span><span>Wyloguj</span></div>
   </nav>
 </aside>
 
@@ -879,6 +917,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <div class="field"><label>Zestaw dnia (zł)</label><input type="number" id="pkg-set" step="0.50" placeholder="np. 2.00" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
         </div>
         <button class="btn bp bsm" onclick="savePackaging()" style="margin-top:12px;">Zapisz stawki opakowań</button>
+      </div>
+
+      <!-- Zmiana hasła -->
+      <div class="card card-pad" style="margin-bottom:14px;border-left:4px solid var(--brown);">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">🔐 Zmień hasło</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+          Wymagania: min. <strong>12 znaków</strong>, 1 duża litera, 2 cyfry, 1 znak specjalny (!@#$%^&*).
+          Zalecana zmiana co 3 miesiące.
+        </p>
+        <div id="pwd-change-msg" style="display:none;margin-bottom:12px;"></div>
+        <div class="field">
+          <label>Aktualne hasło</label>
+          <input type="password" id="pwd-current" placeholder="Wpisz aktualne hasło"
+            style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+        </div>
+        <div class="field">
+          <label>Nowe hasło</label>
+          <input type="password" id="pwd-new" placeholder="Min. 12 znaków" oninput="checkPwdStrength(this.value)"
+            style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <div id="pwd-strength" style="margin-top:6px;font-size:12px;"></div>
+        </div>
+        <div class="field">
+          <label>Powtórz nowe hasło</label>
+          <input type="password" id="pwd-confirm" placeholder="Powtórz hasło"
+            style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+        </div>
+        <button class="btn bp" onclick="changePassword()">🔐 Zmień hasło</button>
       </div>
 
       <div class="card card-pad" style="margin-bottom:14px;">
@@ -3024,6 +3089,57 @@ function saveCoupon(){
   W('coupons',coupons);closeModal('mo-coupon');renderCoupons();toast('Kupon wygenerowany: '+code);
 }
 function delCoupon(i){coupons.splice(i,1);W('coupons',coupons);renderCoupons();}
+
+// ── AUTH — zmiana hasła ──
+function validatePassword(pwd){
+  const errs=[];
+  if(pwd.length<12) errs.push('min. 12 znaków');
+  if(!/[A-Z]/.test(pwd)) errs.push('1 duża litera');
+  if((pwd.match(/[0-9]/g)||[]).length<2) errs.push('2 cyfry');
+  if(!/[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(pwd)) errs.push('1 znak specjalny');
+  return errs;
+}
+function checkPwdStrength(pwd){
+  const el=document.getElementById('pwd-strength');
+  if(!el)return;
+  const errs=validatePassword(pwd);
+  if(!pwd){el.innerHTML='';return;}
+  if(errs.length===0){
+    el.innerHTML='<span style="color:var(--green2);">✅ Hasło spełnia wszystkie wymagania</span>';
+  } else {
+    el.innerHTML='<span style="color:var(--rust);">Brakuje: '+errs.join(', ')+'</span>';
+  }
+}
+async function changePassword(){
+  const cur=document.getElementById('pwd-current')?.value||'';
+  const nw=document.getElementById('pwd-new')?.value||'';
+  const cf=document.getElementById('pwd-confirm')?.value||'';
+  const msg=document.getElementById('pwd-change-msg');
+  const show=(txt,ok)=>{msg.style.display='block';msg.style.background=ok?'rgba(45,74,47,.08)':'rgba(220,38,38,.08)';msg.style.border='1px solid '+(ok?'#86efac':'rgba(220,38,38,.2)');msg.style.borderRadius='var(--r)';msg.style.padding='10px 14px';msg.style.fontSize='13px';msg.style.color=ok?'var(--green2)':'var(--red)';msg.textContent=txt;};
+  if(!cur||!nw||!cf){show('Uzupełnij wszystkie pola',false);return;}
+  const errs=validatePassword(nw);
+  if(errs.length>0){show('Hasło nie spełnia wymagań: '+errs.join(', '),false);return;}
+  if(nw!==cf){show('Nowe hasła się nie zgadzają',false);return;}
+  if(!window._fbAuth||!window._fbAuth.currentUser){show('Nie jesteś zalogowany',false);return;}
+  try{
+    const user=window._fbAuth.currentUser;
+    const cred=firebase.auth.EmailAuthProvider.credential(user.email,cur);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(nw);
+    localStorage.setItem('hb_pwd_changed_ts',Date.now().toString());
+    document.getElementById('pwd-reminder-bar').style.display='none';
+    document.getElementById('pwd-current').value='';
+    document.getElementById('pwd-new').value='';
+    document.getElementById('pwd-confirm').value='';
+    document.getElementById('pwd-strength').innerHTML='';
+    show('✅ Hasło zmienione pomyślnie! Obowiązuje od teraz.',true);
+  }catch(e){
+    let msg2='Błąd: '+e.message;
+    if(e.code==='auth/wrong-password') msg2='❌ Aktualne hasło jest nieprawidłowe';
+    if(e.code==='auth/requires-recent-login') msg2='❌ Sesja wygasła — wyloguj się i zaloguj ponownie';
+    show(msg2,false);
+  }
+}
 
 // ── PACKAGING ──
 function savePackaging(){

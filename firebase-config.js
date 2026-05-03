@@ -35,10 +35,30 @@
 
     if (!firebase.apps.length) firebase.initializeApp(CFG);
     var db = firebase.database();
-    firebase.auth().signInAnonymously().catch(function(){});
+    var auth = firebase.auth();
 
     window._firebase = { db: db };
     window._firebaseReady = true;
+
+    // Przekaż auth do panelu (jeśli panel czeka na auth)
+    if (typeof window._onAuthReady === 'function') {
+      window._onAuthReady(auth);
+    } else {
+      // Panel załaduje się po auth — ustaw callback
+      window._fbAuth = auth;
+      auth.onAuthStateChanged(function(user){
+        if (user && typeof window._onAuthReady === 'function') {
+          window._onAuthReady(auth);
+        }
+      });
+    }
+
+    // Strona klienta i app — loguj anonimowo (brak panelu auth)
+    var path = window.location.pathname;
+    var isPanelPath = path.indexOf('panel') >= 0;
+    if (!isPanelPath) {
+      auth.signInAnonymously().catch(function(){});
+    }
 
     var path = window.location.pathname;
     var isPanel  = path.indexOf('panel') >= 0;
