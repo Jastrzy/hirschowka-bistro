@@ -54,10 +54,16 @@
     }
 
     // Strona klienta i app — loguj anonimowo (brak panelu auth)
+    // Panel NIE loguje się anonimowo — tylko email+hasło
     var path = window.location.pathname;
     var isPanelPath = path.indexOf('panel') >= 0;
     if (!isPanelPath) {
       auth.signInAnonymously().catch(function(){});
+    } else {
+      // Panel: wywołaj _onAuthReady żeby skonfigurować auth listener
+      if (typeof window._onAuthReady === 'function') {
+        window._onAuthReady(auth);
+      }
     }
 
     var path = window.location.pathname;

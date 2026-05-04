@@ -371,32 +371,62 @@ window.doLogin = function(){
   waitForAuth();
 };
 
+// Usuń starą sesję plain-text jeśli istnieje
+localStorage.removeItem('hb_panel_auth');
+
 function showPanel(){
   var ls = document.getElementById('login-screen');
   if(ls) ls.style.display = 'none';
-  // Sprawdź czy minęły 3 miesiące od zmiany hasła
-  var pwdTs = localStorage.getItem('hb_pwd_changed_ts');
-  if(pwdTs){
-    var monthsAgo = (Date.now() - parseInt(pwdTs)) / (1000*60*60*24*30);
-    if(monthsAgo >= 3){
-      document.getElementById('pwd-reminder-bar').style.display = 'flex';
+  // Sprawdź przypomnienie o haśle — timestamp z Firebase (node: pwd_changed_ts)
+  // Fallback na localStorage dla komputera który zmienił hasło
+  var checkPwdReminder = function(){
+    var bar = document.getElementById('pwd-reminder-bar');
+    if(!bar) return;
+    // Sprawdź w Firebase
+    if(window._firebase && window._firebase.db){
+      window._firebase.db.ref('pwd_changed_ts').once('value').then(function(snap){
+        var ts = snap.val();
+        if(!ts){
+          // Brak zapisu — pokaż przypomnienie żeby ustawić datę
+          return;
+        }
+        var monthsAgo = (Date.now() - parseInt(ts)) / (1000*60*60*24*30);
+        if(monthsAgo >= 3){
+          bar.style.display = 'flex';
+        }
+      }).catch(function(){
+        // Fallback na localStorage
+        var pwdTs = localStorage.getItem('hb_pwd_changed_ts');
+        if(pwdTs){
+          var monthsAgo = (Date.now() - parseInt(pwdTs)) / (1000*60*60*24*30);
+          if(monthsAgo >= 3) bar.style.display = 'flex';
+        }
+      });
     }
-  }
+  };
+  setTimeout(checkPwdReminder, 1000);
 }
 
 window.doLogout = function(){
   if(window._fbAuth) window._fbAuth.signOut();
+  localStorage.removeItem('hb_login_email');
 };
 
-// onAuthStateChanged — wywołane gdy Firebase załaduje auth
+// onAuthStateChanged — wpuszczaj TYLKO zalogowanych emailem (nie anonimowych)
 window._onAuthReady = function(auth){
   window._fbAuth = auth;
   auth.onAuthStateChanged(function(user){
-    if(user){
+    if(user && !user.isAnonymous && user.email){
+      // Zalogowany emailem — pokaż panel
       _loginAttempting = false;
+      localStorage.setItem('hb_login_email', user.email);
       showPanel();
     } else {
-      // Nie zalogowany — pokaż ekran logowania
+      // Niezalogowany lub anonimowy — pokaż ekran logowania
+      // Wyloguj anonimową sesję żeby nie blokowała
+      if(user && user.isAnonymous){
+        auth.signOut();
+      }
       var ls = document.getElementById('login-screen');
       if(ls) ls.style.display = 'flex';
       setTimeout(function(){
@@ -3131,7 +3161,12 @@ async function changePassword(){
     const userCred = await window._fbAuth.signInWithEmailAndPassword(userEmail, cur);
     // Zmień hasło na nowe
     await userCred.user.updatePassword(nw);
-    localStorage.setItem('hb_pwd_changed_ts',Date.now().toString());
+    const ts = Date.now();
+    localStorage.setItem('hb_pwd_changed_ts', ts.toString());
+    // Zapisz też do Firebase żeby działało na wszystkich urządzeniach
+    if(window._firebase && window._firebase.db){
+      window._firebase.db.ref('pwd_changed_ts').set(ts).catch(function(){});
+    }
     document.getElementById('pwd-reminder-bar').style.display='none';
     document.getElementById('pwd-current').value='';
     document.getElementById('pwd-new').value='';
