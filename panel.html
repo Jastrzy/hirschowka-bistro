@@ -304,7 +304,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </div>
 
 <!-- Baner przypomnienia o zmianie hasła -->
-<div id="pwd-reminder-bar" style="display:none;background:#7c5c00;color:#fff;padding:10px 20px;position:fixed;top:0;left:0;right:0;z-index:8888;display:flex;align-items:center;gap:12px;font-size:13px;">
+<div id="pwd-reminder-bar" style="display:none;background:#7c5c00;color:#fff;padding:10px 20px;position:fixed;top:0;left:0;right:0;z-index:8888;align-items:center;gap:12px;font-size:13px;">
   ⚠️ <strong>Minęły 3 miesiące</strong> od ostatniej zmiany hasła. Zalecamy jego zmianę.
   <button onclick="go('ustawienia');document.getElementById('pwd-reminder-bar').style.display='none';"
     style="background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:700;">Zmień teraz</button>
@@ -387,7 +387,16 @@ function showPanel(){
       window._firebase.db.ref('pwd_changed_ts').once('value').then(function(snap){
         var ts = snap.val();
         if(!ts){
-          // Brak zapisu — pokaż przypomnienie żeby ustawić datę
+          // Brak zapisu w Firebase — sprawdź localStorage
+          var localTs = localStorage.getItem('hb_pwd_changed_ts');
+          if(localTs){
+            // Mamy lokalny zapis — zsynchronizuj z Firebase
+            window._firebase.db.ref('pwd_changed_ts').set(parseInt(localTs)).catch(function(){});
+            var monthsAgo = (Date.now() - parseInt(localTs)) / (1000*60*60*24*30);
+            if(monthsAgo >= 3) bar.style.display = 'flex';
+          }
+          // Brak zapisu nigdzie — hasło nigdy nie było zmieniane, NIE pokazuj banera
+          // (użytkownik dopiero co ustawił hasło przez Firebase Console)
           return;
         }
         var monthsAgo = (Date.now() - parseInt(ts)) / (1000*60*60*24*30);
@@ -2384,12 +2393,32 @@ function saveZonesSettings(){
 // KLIENCI — pełny CRUD
 // ══════════════════════════════════════
 function renderCusts(q=''){
+  // Kopia tablicy — sortujemy wizualnie bez mutowania oryginału
+  let sorted = [...customers];
+  if(sortField){
+    sorted.sort((a,b)=>{
+      let av,bv;
+      if(sortField==='visits'){
+        av=parseFloat(a.visits)||parseFloat(a.totalStamps)||parseFloat(a.stamps)||0;
+        bv=parseFloat(b.visits)||parseFloat(b.totalStamps)||parseFloat(b.stamps)||0;
+      } else if(sortField==='stamps'){
+        const rA=a.stamps||0,rB=b.stamps||0;
+        const tA=a.totalStamps||(rA>9?rA:0),tB=b.totalStamps||(rB>9?rB:0);
+        av=tA>0?(tA%9===0?9:tA%9):Math.min(rA,9);
+        bv=tB>0?(tB%9===0?9:tB%9):Math.min(rB,9);
+      } else {
+        av=parseFloat(a[sortField])||0;
+        bv=parseFloat(b[sortField])||0;
+      }
+      return sortAsc?av-bv:bv-av;
+    });
+  }
   const f = q
-    ? customers.filter(c=>
+    ? sorted.filter(c=>
         (c.name||'').toLowerCase().includes(q.toLowerCase()) ||
         (c.phone||'').includes(q) ||
         (c.email||'').toLowerCase().includes(q.toLowerCase()))
-    : customers;
+    : sorted;
 
   const tbl = document.getElementById('custs-tbl');
   const empty = document.getElementById('custs-empty');
@@ -2460,12 +2489,8 @@ function sortCusts(field){
   const icon = document.getElementById('sort-'+field);
   if(icon) icon.textContent = sortAsc ? ' ↑' : ' ↓';
 
-  customers.sort((a,b)=>{
-    const av = parseFloat(a[field])||0;
-    const bv = parseFloat(b[field])||0;
-    return sortAsc ? av - bv : bv - av;
-  });
-  W('customers', customers);
+  // Sortowanie tylko wizualne — NIE zapisujemy do Firebase
+  // (zapis triggerowałby listener który nadpisuje tablicę niesortowanym snapshotem)
   renderCusts(document.getElementById('cust-search')?.value||'');
 }
 
