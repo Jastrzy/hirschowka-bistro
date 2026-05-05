@@ -1703,8 +1703,8 @@ let params  = S('params')  || [{name:'Pojemność kawy',vals:'Mała (200ml)\nŚr
 let crossRules = S('cross') || [{when:'Obiady',show:'Zupa dnia',msg:'Może dodasz zupę do zestawu?'}];
 let holidays = S('holidays') || [{from:'2026-08-28',to:'2026-09-01',type:'Zamknięte na cały dzień',note:'Urlop letni'}];
 // Token SMSAPI — wstępnie ustawiony
-if(!S('smsapi-token')) W('smsapi-token','dlLxA2oTsxFttF01eNW2Fq45IRRfTS3X2qvoKQS8');
 if(!S('smsapi-sender')) W('smsapi-sender','Hirschowka');
+// Token SMSAPI — wpisz w Panel → Ustawienia → SMS
 let rewards = S('rewards') || [
   {stamp:3, name:'50% zniżki na kawę lub deser ze Słodkiej Chwili', icon:'☕', discType:'percent', discVal:50, cats:'Kawy klasyczne,Kawy smakowe,Słodka Chwila'},
   {stamp:6, name:'Darmowa kawa lub deser', icon:'🎂', discType:'percent', discVal:100, cats:'Kawy klasyczne,Kawy smakowe,Słodka Chwila'},
