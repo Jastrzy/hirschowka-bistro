@@ -1967,25 +1967,50 @@ function openAcceptModal(id){
   document.getElementById('acc-phone').textContent = o.phone||'brak';
 
   // Pokaż info o statusie SMS
-  const hasToken = !!(S('smsapi-token'));
-  const smsInfo = document.getElementById('acc-sms-info');
-  if(!o.phone){
-    smsInfo.style.background = 'rgba(239,68,68,.06)';
-    smsInfo.style.border = '1px solid rgba(239,68,68,.15)';
-    smsInfo.innerHTML = '❌ Klient nie podał numeru telefonu — nie można wysłać powiadomienia.';
-    document.getElementById('acc-send-sms').checked = false;
-    document.getElementById('acc-send-sms').disabled = true;
-  } else if(!hasToken){
-    smsInfo.style.background = 'rgba(200,146,42,.06)';
-    smsInfo.style.border = '1px solid rgba(200,146,42,.2)';
-    smsInfo.innerHTML = '⚠️ <strong>SMS nie jest skonfigurowany.</strong> Zadzwoń do klienta lub wpisz token SMSAPI w <em>Strefy dostaw → SMS</em>.<br>Po przyjęciu zobaczysz numer do zadzwonienia.';
-    document.getElementById('acc-send-sms').disabled = false;
-  } else {
-    smsInfo.style.background = 'rgba(45,74,47,.06)';
-    smsInfo.style.border = '1px solid rgba(45,74,47,.2)';
-    smsInfo.innerHTML = '✅ <strong>SMS zostanie wysłany automatycznie</strong> przez SMSAPI z potwierdzeniem i czasem realizacji.';
-    document.getElementById('acc-send-sms').disabled = false;
-  }
+  // Token może być jeszcze nie zsynchronizowany z Firebase — sprawdź też bezpośrednio
+  const checkSmsStatus = function(){
+    const hasToken = !!(S('smsapi-token'));
+    const smsInfo = document.getElementById('acc-sms-info');
+    if(!smsInfo) return;
+    if(!o.phone){
+      smsInfo.style.background = 'rgba(239,68,68,.06)';
+      smsInfo.style.border = '1px solid rgba(239,68,68,.15)';
+      smsInfo.innerHTML = '❌ Klient nie podał numeru telefonu — nie można wysłać SMS.';
+      document.getElementById('acc-send-sms').checked = false;
+      document.getElementById('acc-send-sms').disabled = true;
+    } else if(!hasToken){
+      smsInfo.style.background = 'rgba(200,146,42,.06)';
+      smsInfo.style.border = '1px solid rgba(200,146,42,.2)';
+      smsInfo.innerHTML = '⚠️ Ładowanie konfiguracji SMS...';
+      document.getElementById('acc-send-sms').disabled = true;
+      // Spróbuj pobrać token z Firebase bezpośrednio
+      if(window._firebase && window._firebase.db){
+        window._firebase.db.ref('smsapi-token').once('value').then(function(snap){
+          var fbToken = snap.val();
+          if(fbToken){
+            localStorage.setItem('smsapi-token', JSON.stringify(fbToken));
+            smsInfo.style.background = 'rgba(45,74,47,.06)';
+            smsInfo.style.border = '1px solid rgba(45,74,47,.2)';
+            smsInfo.innerHTML = '✅ <strong>SMS zostanie wysłany automatycznie</strong> z potwierdzeniem i czasem realizacji.';
+            document.getElementById('acc-send-sms').disabled = false;
+            document.getElementById('acc-send-sms').checked = true;
+          } else {
+            smsInfo.innerHTML = '⚠️ <strong>Token SMSAPI nie jest skonfigurowany.</strong> Wejdź w Ustawienia → SMS i wpisz token.';
+            document.getElementById('acc-send-sms').disabled = false;
+          }
+        }).catch(function(){
+          smsInfo.innerHTML = '⚠️ Brak tokenu SMS — skonfiguruj w Ustawieniach.';
+          document.getElementById('acc-send-sms').disabled = false;
+        });
+      }
+    } else {
+      smsInfo.style.background = 'rgba(45,74,47,.06)';
+      smsInfo.style.border = '1px solid rgba(45,74,47,.2)';
+      smsInfo.innerHTML = '✅ <strong>SMS zostanie wysłany automatycznie</strong> z potwierdzeniem i czasem realizacji.';
+      document.getElementById('acc-send-sms').disabled = false;
+    }
+  };
+  checkSmsStatus();
   openModal('mo-accept-order');
 }
 function acceptOrdFinal(){
@@ -2132,10 +2157,26 @@ function saveSmsSettings(){
 // ── EMAIL POWIADOMIENIA ──
 async function sendOrderEmail(order){
   // Wyślij email na adres restauracji przez EmailJS
-  const serviceId = S('emailjs-service') || 'YOUR_SERVICE_ID';
-  const templateId = S('emailjs-template') || 'YOUR_TEMPLATE_ID';
-  const publicKey = S('emailjs-key') || '';
-  if(!publicKey || publicKey === '') {
+  // Klucze EmailJS — najpierw localStorage, potem próba z Firebase
+  let serviceId = S('emailjs-service') || '';
+  let templateId = S('emailjs-template') || '';
+  let publicKey = S('emailjs-key') || '';
+
+  // Jeśli brak w localStorage — spróbuj pobrać z Firebase
+  if((!publicKey || !serviceId || !templateId) && window._firebase && window._firebase.db){
+    try {
+      const [keySnap, svcSnap, tplSnap] = await Promise.all([
+        window._firebase.db.ref('emailjs-key').once('value'),
+        window._firebase.db.ref('emailjs-service').once('value'),
+        window._firebase.db.ref('emailjs-template').once('value'),
+      ]);
+      if(keySnap.val()) { publicKey = keySnap.val(); localStorage.setItem('emailjs-key', JSON.stringify(publicKey)); }
+      if(svcSnap.val()) { serviceId = svcSnap.val(); localStorage.setItem('emailjs-service', JSON.stringify(serviceId)); }
+      if(tplSnap.val()) { templateId = tplSnap.val(); localStorage.setItem('emailjs-template', JSON.stringify(templateId)); }
+    } catch(e) { console.warn('[Email] Błąd pobierania config z Firebase:', e); }
+  }
+
+  if(!publicKey || !serviceId || !templateId) {
     console.log('[Email] Brak konfiguracji EmailJS — pomijam');
     return;
   }

@@ -146,7 +146,7 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','customers','orders','loyalty-history','rewards'];
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','customers','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -176,6 +176,11 @@
         'coupons':     null,
         'addons':      null,
         'cross':       null,
+        'smsapi-token':  null,
+        'smsapi-sender': null,
+        'emailjs-key':   null,
+        'emailjs-service': null,
+        'emailjs-template': null,
         'params':      function() { if(window.buildMenu) window.buildMenu(); if(window.buildMenuContent) window.buildMenuContent(); },
         'packaging':   null,
         'loyalty-history': null,
