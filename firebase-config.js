@@ -89,10 +89,8 @@
 
       // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
       // (nie nadpisuj gdy obsługa właśnie edytowała menu)
-      var _menuLastWrite = 0; // timestamp ostatniego lokalnego zapisu
-      var _origSetItem = localStorage.setItem.bind(localStorage);
       // Śledź kiedy panel ostatnio zapisał menu lokalnie
-      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','customers','kitchen-day','delivery-zones'];
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross'];
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
@@ -107,7 +105,7 @@
         if (!val) return;
         // Nie nadpisuj jeśli panel zapisywał menu w ostatnich 10 sekundach
         var lastWrite = _localWriteTs['menu'] || 0;
-        if (Date.now() - lastWrite < 30000) { // 30s ochrony dla menu (zdjęcia base64 są duże)
+        if (Date.now() - lastWrite < 10000) {
           console.log('[FB] Menu: pomijam nadpisanie — lokalny zapis jest świeży');
           return;
         }
@@ -130,7 +128,7 @@
         var val = snap.val();
         if (!val) return;
         var lastWrite = _localWriteTs['customers'] || 0;
-        if (Date.now() - lastWrite < 15000) return; // świeży lokalny zapis
+        if (Date.now() - lastWrite < 5000) return; // świeży lokalny zapis
         var stored = localStorage.getItem('customers');
         var fresh = JSON.stringify(val);
         if (stored === fresh) return;
@@ -148,7 +146,7 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','customers','orders','loyalty-history','rewards'];
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','customers','orders','loyalty-history','rewards'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -177,6 +175,7 @@
         'promos':      function() { if(window.renderAdminPromos) window.renderAdminPromos(); if(window.renderAdminTicker) window.renderAdminTicker(); },
         'coupons':     null,
         'addons':      null,
+        'cross':       null,
         'params':      function() { if(window.buildMenu) window.buildMenu(); if(window.buildMenuContent) window.buildMenuContent(); },
         'packaging':   null,
         'loyalty-history': null,
