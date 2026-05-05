@@ -1060,27 +1060,10 @@ const CROSS=[
 
 // Strefy dostaw — zarządzane w panelu (delivery-zones)
 // Współrzędne restauracji: Hirschówka Bistro, ul. Mickiewicza 17, Mielec
-// Współrzędne restauracji — pobierane dynamicznie przez Geocoding API
-// Fallback: przybliżone współrzędne ul. Mickiewicza 17, Mielec
-let REST_LAT = 50.2884;
-let REST_LNG = 21.4302;
-
-// Pobierz dokładne współrzędne restauracji przez Geocoding API przy starcie
-async function initRestCoords(){
-  const apiKey = LS('geo-api-key');
-  if(!apiKey) return;
-  // Użyj adresu z panelu lub domyślnego
-  const restAddr = LS('rest-address') || 'Mickiewicza 17, Mielec, Polska';
-  try{
-    const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(restAddr)}&key=${apiKey}&language=pl&region=pl`);
-    const data = await res.json();
-    if(data.status==='OK' && data.results.length){
-      REST_LAT = data.results[0].geometry.location.lat;
-      REST_LNG = data.results[0].geometry.location.lng;
-      console.log('[Geocode] Współrzędne restauracji:', REST_LAT, REST_LNG);
-    }
-  }catch(e){ console.warn('[Geocode] Błąd pobierania współrzędnych restauracji:', e); }
-}
+// Współrzędne restauracji — ul. Mickiewicza 17, Mielec
+// Dokładne wartości z Google Maps dla tego adresu
+const REST_LAT = 50.2884;
+const REST_LNG = 21.4302;
 const DEFAULT_DELIVERY_ZONES = [
   {km:3, cost:6,  label:'Do 3 km'},
   {km:6, cost:10, label:'Do 6 km'},
@@ -1115,9 +1098,6 @@ function getMenu(){
   if(adminData&&adminData.length>0) return adminData;
   return MENU_BASE;
 }
-
-// Pobierz współrzędne restauracji przy starcie
-document.addEventListener('DOMContentLoaded', function(){ initRestCoords(); });
 
 // ════ HERO CLOCK ════
 function updateClock(){
@@ -1173,8 +1153,11 @@ function addDailyItem(type){
   const k=LS('kitchen-day');
   if(!k||!k[type]?.name)return;
   const d=k[type];
+  const fakeItem={id:0,name:d.name,cat:'Dania obiadowe',price:parseFloat(d.price)||0};
   cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
-  updateCartBadge();toast(d.name+' dodane do koszyka ✓');
+  updateCartBadge();
+  // Cross-sell i pasek dostawy jak przy zwykłych daniach
+  showCross(fakeItem);
 }
 function makeDailyCard(d,emoji,label,type){
   if(!d||!d.name)return'';
@@ -1650,9 +1633,19 @@ function checkZone(){
 }
 
 async function geocodeAndCheck(street,city,info){
-  const apiKey=LS('geo-api-key')||'';
+  // Klucz może być w localStorage (zsynchronizowany z Firebase)
+  // Czekaj max 2s na załadowanie klucza
+  let apiKey=LS('geo-api-key')||'';
+  if(!apiKey){
+    await new Promise(r=>setTimeout(r,1500));
+    apiKey=LS('geo-api-key')||'';
+  }
   const query=encodeURIComponent(`${street}, ${city}, Polska`);
   try{
+    if(!apiKey){
+      info.innerHTML='⚠️ Brak klucza Geocoding API — skonfiguruj w panelu → Strefy dostaw.';
+      window._deliveryKm=null;renderCartSum();return;
+    }
     const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}&language=pl&region=pl`);
     const data=await res.json();
     if(data.status!=='OK'||!data.results.length){
@@ -1772,7 +1765,7 @@ function placeOrder(){
 
 // ════ LOYALTY ════
 function renderLoyaltyStamps(){
-  document.getElementById('loy-stamps').innerHTML=Array.from({length:9},(_,i)=>`<div class="stamp ${i===0?'done':i===2||i===4||i===8?'reward':''}">${i===0?'✓':i===2||i===4||i===8?'🎁':i+1}</div>`).join('');
+  document.getElementById('loy-stamps').innerHTML=Array.from({length:9},(_,i)=>`<div class="stamp ${i===2||i===5||i===8?'reward':''}">${i===2||i===5||i===8?'🎁':i+1}</div>`).join('');
 }
 function fmtLoyPhone(el){let v=el.value.replace(/\D/g,'').slice(0,9);if(v.length>6)v=v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);else if(v.length>3)v=v.slice(0,3)+' '+v.slice(3);el.value=v;}
 function checkLoyalty(){
@@ -1781,7 +1774,10 @@ function checkLoyalty(){
   const c=(LS('customers')||[]).find(x=>x.phone.replace(/\s/g,'')===phone);
   const st=document.getElementById('loy-status-txt');
   if(c){st.style.color='var(--green2)';st.textContent=`Cześć ${c.name.split(' ')[0]}! Masz ${c.stamps||0}/9 pieczątek. ${(c.stamps||0)>=9?'Twoja nagroda czeka!':'Jeszcze '+(9-(c.stamps||0))+' do nagrody.'}`;}
-  else{st.style.color='var(--gold)';st.textContent='Nie znaleziono konta. Zarejestruj się przez kasę lub na hirschowkabistro.pl/karta';}
+  else{
+    st.style.color='var(--gold)';
+    st.textContent='Nie znaleziono konta o tym numerze. Zarejestruj się składając pierwsze zamówienie lub przez kasę w bistro.';
+  }
 }
 
 // ════ REVIEWS ════

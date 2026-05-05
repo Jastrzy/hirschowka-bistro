@@ -92,7 +92,7 @@
       var _menuLastWrite = 0; // timestamp ostatniego lokalnego zapisu
       var _origSetItem = localStorage.setItem.bind(localStorage);
       // Śledź kiedy panel ostatnio zapisał menu lokalnie
-      var _trackKeys = ['menu','addons','params','rewards','loyalty-history'];
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','customers','kitchen-day','delivery-zones'];
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
@@ -107,7 +107,7 @@
         if (!val) return;
         // Nie nadpisuj jeśli panel zapisywał menu w ostatnich 10 sekundach
         var lastWrite = _localWriteTs['menu'] || 0;
-        if (Date.now() - lastWrite < 10000) {
+        if (Date.now() - lastWrite < 30000) { // 30s ochrony dla menu (zdjęcia base64 są duże)
           console.log('[FB] Menu: pomijam nadpisanie — lokalny zapis jest świeży');
           return;
         }
@@ -130,7 +130,7 @@
         var val = snap.val();
         if (!val) return;
         var lastWrite = _localWriteTs['customers'] || 0;
-        if (Date.now() - lastWrite < 10000) return; // świeży lokalny zapis
+        if (Date.now() - lastWrite < 15000) return; // świeży lokalny zapis
         var stored = localStorage.getItem('customers');
         var fresh = JSON.stringify(val);
         if (stored === fresh) return;
