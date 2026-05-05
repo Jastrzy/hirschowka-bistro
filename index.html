@@ -1060,10 +1060,27 @@ const CROSS=[
 
 // Strefy dostaw — zarządzane w panelu (delivery-zones)
 // Współrzędne restauracji: Hirschówka Bistro, ul. Mickiewicza 17, Mielec
-// Współrzędne restauracji: Hirschówka Bistro, ul. Mickiewicza 17, Mielec
-// Zweryfikowane z Google Maps iframe w tym pliku: 50.2878, 21.4309
-const REST_LAT = 50.2878;
-const REST_LNG = 21.4309;
+// Współrzędne restauracji — pobierane dynamicznie przez Geocoding API
+// Fallback: przybliżone współrzędne ul. Mickiewicza 17, Mielec
+let REST_LAT = 50.2884;
+let REST_LNG = 21.4302;
+
+// Pobierz dokładne współrzędne restauracji przez Geocoding API przy starcie
+async function initRestCoords(){
+  const apiKey = LS('geo-api-key');
+  if(!apiKey) return;
+  // Użyj adresu z panelu lub domyślnego
+  const restAddr = LS('rest-address') || 'Mickiewicza 17, Mielec, Polska';
+  try{
+    const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(restAddr)}&key=${apiKey}&language=pl&region=pl`);
+    const data = await res.json();
+    if(data.status==='OK' && data.results.length){
+      REST_LAT = data.results[0].geometry.location.lat;
+      REST_LNG = data.results[0].geometry.location.lng;
+      console.log('[Geocode] Współrzędne restauracji:', REST_LAT, REST_LNG);
+    }
+  }catch(e){ console.warn('[Geocode] Błąd pobierania współrzędnych restauracji:', e); }
+}
 const DEFAULT_DELIVERY_ZONES = [
   {km:3, cost:6,  label:'Do 3 km'},
   {km:6, cost:10, label:'Do 6 km'},
@@ -1098,6 +1115,9 @@ function getMenu(){
   if(adminData&&adminData.length>0) return adminData;
   return MENU_BASE;
 }
+
+// Pobierz współrzędne restauracji przy starcie
+document.addEventListener('DOMContentLoaded', function(){ initRestCoords(); });
 
 // ════ HERO CLOCK ════
 function updateClock(){

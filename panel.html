@@ -2132,7 +2132,15 @@ async function sendOrderEmail(order){
   }
   try {
     if(typeof emailjs !== 'undefined') emailjs.init({publicKey});
-    const items = (order.items||[]).map(i=>`${i.qty||1}x ${i.name} — ${(i.unitPrice*(i.qty||1)).toFixed(2)} zł`).join('\n');
+    // items może być stringiem lub tablicą — obsłuż oba formaty
+    let items = '';
+    if(order.itemsArr && order.itemsArr.length){
+      items = order.itemsArr.map(i=>`${i.qty||1}x ${i.name} — ${((i.unitPrice||0)*(i.qty||1)).toFixed(2)} zł`).join('\n');
+    } else if(typeof order.items === 'string'){
+      items = order.items;
+    } else if(Array.isArray(order.items)){
+      items = order.items.map(i=>`${i.qty||1}x ${i.name}`).join('\n');
+    }
     await emailjs.send(serviceId, templateId, {
       order_id: order.id,
       customer_name: order.customer || 'Klient',
@@ -4335,7 +4343,15 @@ function fetchOrdersNow() {
   }
 }
 setTimeout(fetchOrdersNow, 1000);
-// Usunięto setInterval — Firebase listener (onFirebaseOrders) wystarczy do sync
+
+// Odśwież zamówienia gdy urządzenie wraca z uśpienia/tła
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden){
+    console.log('[Panel] Powrót z tła — odświeżam zamówienia');
+    _ordersLastWrite = 0; // wymuś aktualizację
+    setTimeout(fetchOrdersNow, 500);
+  }
+});
 </script>
 </body>
 </html>
