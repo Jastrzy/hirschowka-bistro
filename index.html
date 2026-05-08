@@ -1633,17 +1633,24 @@ function checkZone(){
 }
 
 async function geocodeAndCheck(street,city,info){
-  // Klucz może być w localStorage (zsynchronizowany z Firebase)
-  // Czekaj max 2s na załadowanie klucza
+  // Klucz API — najpierw localStorage, potem Firebase bezpośrednio
   let apiKey=LS('geo-api-key')||'';
+  if(!apiKey && window._firebase && window._firebase.db){
+    try{
+      const snap = await window._firebase.db.ref('geo-api-key').once('value');
+      if(snap.val()){ apiKey=snap.val(); localStorage.setItem('geo-api-key',JSON.stringify(apiKey)); }
+    }catch(e){}
+  }
+  // Ostatnia szansa — poczekaj 1s na sync Firebase
   if(!apiKey){
-    await new Promise(r=>setTimeout(r,1500));
+    await new Promise(r=>setTimeout(r,1000));
     apiKey=LS('geo-api-key')||'';
   }
   const query=encodeURIComponent(`${street}, ${city}, Polska`);
   try{
     if(!apiKey){
-      info.innerHTML='⚠️ Brak klucza Geocoding API — skonfiguruj w panelu → Strefy dostaw.';
+      // Brak klucza — pokaż strefy bez odległości (fallback)
+      info.innerHTML='📍 Adres zapisany. Koszt dostawy zostanie ustalony przez obsługę.';
       window._deliveryKm=null;renderCartSum();return;
     }
     const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}&language=pl&region=pl`);
