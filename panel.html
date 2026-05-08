@@ -2131,24 +2131,30 @@ async function sendSmsToCustomer(order, tplKey){
   sendSmsRaw(order.phone, msg, r=>{ if(!r.ok) console.warn('SMS error:', r.err); });
 }
 async function sendSmsRaw(phone, msg, cb){
-  // Pobierz token — usuń cudzysłowy JSON (localStorage przechowuje "token" z cudzysłowami)
   const rawToken = localStorage.getItem('smsapi-token');
   const rawSender = localStorage.getItem('smsapi-sender');
   let token, sender;
-  try { token = JSON.parse(rawToken); } catch(e) { token = rawToken; }
-  try { sender = JSON.parse(rawSender); } catch(e) { sender = rawSender; }
-  sender = sender || 'Hirschowka';
+  try{ token = JSON.parse(rawToken); }catch(e){ token = rawToken; }
+  try{ sender = JSON.parse(rawSender); }catch(e){ sender = rawSender; }
+  sender = (sender||'Hirschowka').trim();
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
+  // Zamień polskie znaki na ASCII (GET nie koduje ich poprawnie)
+  const cleanMsg = msg
+    .replace(/[ąĄ]/g,'a').replace(/[ćĆ]/g,'c').replace(/[ęĘ]/g,'e')
+    .replace(/[łŁ]/g,'l').replace(/[ńŃ]/g,'n').replace(/[óÓ]/g,'o')
+    .replace(/[śŚ]/g,'s').replace(/[źŹżŻ]/g,'z');
   try{
-    // Proxy Vercel /api/sms — omija CORS
-    const res = await fetch('/api/sms', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({token, to: cleanPhone, message: msg, sender})
-    });
+    // GET request — obsługiwane przez SMSAPI bez CORS
+    const url='https://api.smsapi.pl/sms.do'
+      +'?access_token='+encodeURIComponent(token)
+      +'&to='+cleanPhone
+      +'&message='+encodeURIComponent(cleanMsg)
+      +'&from='+encodeURIComponent(sender)
+      +'&format=json';
+    const res = await fetch(url);
     const data = await res.json();
-    if(cb) cb(data.ok ? {ok:true} : {ok:false, err:data.err||'Błąd proxy'});
+    if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
   } catch(e){ if(cb) cb({ok:false,err:e.message}); }
 }
 function saveSmsSettings(){
