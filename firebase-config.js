@@ -40,30 +40,27 @@
     window._firebase = { db: db };
     window._firebaseReady = true;
 
-    // Przekaż auth do panelu (jeśli panel czeka na auth)
-    if (typeof window._onAuthReady === 'function') {
-      window._onAuthReady(auth);
-    } else {
-      // Panel załaduje się po auth — ustaw callback
-      window._fbAuth = auth;
-      auth.onAuthStateChanged(function(user){
-        if (user && typeof window._onAuthReady === 'function') {
-          window._onAuthReady(auth);
-        }
-      });
-    }
-
-    // Strona klienta i app — loguj anonimowo (brak panelu auth)
-    // Panel NIE loguje się anonimowo — tylko email+hasło
     var path = window.location.pathname;
     var isPanelPath = path.indexOf('panel') >= 0;
-    if (!isPanelPath) {
-      auth.signInAnonymously().catch(function(){});
-    } else {
-      // Panel: wywołaj _onAuthReady żeby skonfigurować auth listener
+
+    if (isPanelPath) {
+      // Panel — Firebase Auth email+hasło
+      // Wywołaj _onAuthReady gdy jest gotowy
       if (typeof window._onAuthReady === 'function') {
         window._onAuthReady(auth);
+      } else {
+        // _onAuthReady nie jest jeszcze zdefiniowany — poczekaj
+        window._fbAuth = auth;
+        var _authInterval = setInterval(function(){
+          if (typeof window._onAuthReady === 'function') {
+            clearInterval(_authInterval);
+            window._onAuthReady(auth);
+          }
+        }, 50);
       }
+    } else {
+      // Strona klienta i app — loguj anonimowo
+      auth.signInAnonymously().catch(function(){});
     }
 
     var path = window.location.pathname;
