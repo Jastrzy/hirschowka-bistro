@@ -2139,22 +2139,14 @@ async function sendSmsRaw(phone, msg, cb){
   sender = (sender||'Hirschowka').trim();
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
-  // Zamień polskie znaki na ASCII (GET nie koduje ich poprawnie)
-  const cleanMsg = msg
-    .replace(/[ąĄ]/g,'a').replace(/[ćĆ]/g,'c').replace(/[ęĘ]/g,'e')
-    .replace(/[łŁ]/g,'l').replace(/[ńŃ]/g,'n').replace(/[óÓ]/g,'o')
-    .replace(/[śŚ]/g,'s').replace(/[źŹżŻ]/g,'z');
   try{
-    // GET request — obsługiwane przez SMSAPI bez CORS
-    const url='https://api.smsapi.pl/sms.do'
-      +'?access_token='+encodeURIComponent(token)
-      +'&to='+cleanPhone
-      +'&message='+encodeURIComponent(cleanMsg)
-      +'&from='+encodeURIComponent(sender)
-      +'&format=json';
-    const res = await fetch(url);
+    const res = await fetch('/api/sms', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token, to: cleanPhone, message: msg, sender})
+    });
     const data = await res.json();
-    if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
+    if(cb) cb(data.ok ? {ok:true} : {ok:false, err:data.err||'Błąd proxy'});
   } catch(e){ if(cb) cb({ok:false,err:e.message}); }
 }
 function saveSmsSettings(){
