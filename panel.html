@@ -777,7 +777,7 @@ window._onAuthReady = function(auth){
           </div>
           <div class="field">
             <label>Adres restauracji (punkt dostawy)</label>
-            <input id="rest-address" value=""
+            <input id="rest-address" value="${S('rest-address')||'Mickiewicza 17, Mielec'}"
               style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
           </div>
         </div>
@@ -789,8 +789,8 @@ window._onAuthReady = function(auth){
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">📱 Powiadomienia SMS — SMSAPI.pl</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Podaj token API z konta SMSAPI.pl. Każde przyjęcie zamówienia wyśle automatycznie SMS do klienta ze statusem i szacowanym czasem.</p>
-        <div class="field"><label>Token API SMSAPI</label><input id="smsapi-token" type="password" placeholder="Wklej swój token z smsapi.pl" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" value=""></div>
-        <div class="field"><label>Nadawca SMS (maks. 11 znaków, bez spacji)</label><input id="smsapi-sender" placeholder="Hirschowka" maxlength="11" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" value=""></div>
+        <div class="field"><label>Token API SMSAPI</label><input id="smsapi-token" type="password" placeholder="Wklej swój token z smsapi.pl" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" value="${S('smsapi-token')||''}"></div>
+        <div class="field"><label>Nadawca SMS (maks. 11 znaków, bez spacji)</label><input id="smsapi-sender" placeholder="Hirschowka" maxlength="11" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);" value="${S('smsapi-sender')||'Hirschowka'}"></div>
         <div style="background:var(--bg);border-radius:var(--r);padding:12px;margin-bottom:12px;border:1px solid var(--border);">
           <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Szablony SMS</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Użyj {id} = numer zamówienia, {czas} = czas realizacji, {imie} = imię klienta. Bez polskich znaków (SMS może je zniekształcić).</div>
@@ -1730,7 +1730,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:function(){loadPackaging();renderZones();loadEmailJsSettings();}};
   if(renders[id]) renders[id]();
 }
 
@@ -2393,15 +2393,31 @@ const REST_LNG = 21.4290;
 
 function renderZones(){
   renderZonesEditor();
-  // Wypełnij pola wartościami z localStorage
-  const geoKey = S('geo-api-key');
-  const restAddr = S('rest-address');
-  const smsToken = S('smsapi-token');
-  const smsSender = S('smsapi-sender');
-  if(geoKey && document.getElementById('geo-api-key')) document.getElementById('geo-api-key').value = geoKey;
-  if(restAddr && document.getElementById('rest-address')) document.getElementById('rest-address').value = restAddr;
-  if(smsToken && document.getElementById('smsapi-token')) document.getElementById('smsapi-token').value = smsToken;
-  if(smsSender && document.getElementById('smsapi-sender')) document.getElementById('smsapi-sender').value = smsSender;
+  // Wypełnij pola wartościami z localStorage/Firebase
+  const fillField = (id, key) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const val = S(key);
+    if(val != null) el.value = val;
+  };
+  fillField('geo-api-key', 'geo-api-key');
+  fillField('rest-address', 'rest-address');
+  fillField('smsapi-token', 'smsapi-token');
+  fillField('smsapi-sender', 'smsapi-sender');
+  ['sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected'].forEach(k=>fillField(k,k));
+}
+
+function loadEmailJsSettings(){
+  const fillField = (id, key) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const val = S(key);
+    if(val != null) el.value = val;
+  };
+  fillField('emailjs-key', 'emailjs-key');
+  fillField('emailjs-service', 'emailjs-service');
+  fillField('emailjs-template', 'emailjs-template');
+  document.getElementById('email-test-result') && (document.getElementById('email-test-result').innerHTML='');
 }
 function renderZonesEditor(){
   const el = document.getElementById('zones-editor');
