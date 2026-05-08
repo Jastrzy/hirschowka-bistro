@@ -10,13 +10,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ok:false, err:'Brak: token, to, message'});
   }
 
-  // Usuń ewentualne cudzysłowy (JSON.stringify dodaje je do stringów)
   token   = String(token).replace(/^"|"$/g, '').trim();
   to      = String(to).replace(/^"|"$/g, '').trim();
   message = String(message).replace(/^"|"$/g, '').trim();
   sender  = String(sender || 'Hirschowka').replace(/^"|"$/g, '').trim();
 
-  // Loguj dla diagnostyki (widoczne w Vercel Logs)
   console.log('[SMS] to:', to, '| sender:', sender, '| token prefix:', token.slice(0,6));
 
   try {
