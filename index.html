@@ -1633,8 +1633,10 @@ function checkZone(){
 }
 
 async function geocodeAndCheck(street,city,info){
-  // Klucz API — najpierw localStorage, potem Firebase bezpośrednio
-  let apiKey=LS('geo-api-key')||'';
+  // Klucz API — usuń cudzysłowy JSON z localStorage
+  const rawGeoKey = localStorage.getItem('geo-api-key');
+  let apiKey = '';
+  if(rawGeoKey){ try{ apiKey=JSON.parse(rawGeoKey); }catch(e){ apiKey=rawGeoKey; } }
   if(!apiKey && window._firebase && window._firebase.db){
     try{
       const snap = await window._firebase.db.ref('geo-api-key').once('value');

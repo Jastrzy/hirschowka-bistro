@@ -1730,7 +1730,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:function(){loadPackaging();renderZones();loadEmailJsSettings();}};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging};
   if(renders[id]) renders[id]();
 }
 
@@ -2131,22 +2131,24 @@ async function sendSmsToCustomer(order, tplKey){
   sendSmsRaw(order.phone, msg, r=>{ if(!r.ok) console.warn('SMS error:', r.err); });
 }
 async function sendSmsRaw(phone, msg, cb){
-  const token = S('smsapi-token');
-  const sender = S('smsapi-sender')||'Hirschowka';
+  // Pobierz token — usuń cudzysłowy JSON (localStorage przechowuje "token" z cudzysłowami)
+  const rawToken = localStorage.getItem('smsapi-token');
+  const rawSender = localStorage.getItem('smsapi-sender');
+  let token, sender;
+  try { token = JSON.parse(rawToken); } catch(e) { token = rawToken; }
+  try { sender = JSON.parse(rawSender); } catch(e) { sender = rawSender; }
+  sender = sender || 'Hirschowka';
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
   try{
-    // Bezpośrednie wywołanie SMSAPI — działało wcześniej
-    const body = new FormData();
-    body.append('access_token', token);
-    body.append('to', cleanPhone);
-    body.append('message', msg);
-    body.append('from', sender);
-    body.append('format', 'json');
-    body.append('encoding', 'utf-8');
-    const res = await fetch('https://api.smsapi.pl/sms.do', {method:'POST', body});
+    // Proxy Vercel /api/sms — omija CORS
+    const res = await fetch('/api/sms', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token, to: cleanPhone, message: msg, sender})
+    });
     const data = await res.json();
-    if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
+    if(cb) cb(data.ok ? {ok:true} : {ok:false, err:data.err||'Błąd proxy'});
   } catch(e){ if(cb) cb({ok:false,err:e.message}); }
 }
 function saveSmsSettings(){
@@ -2393,31 +2395,6 @@ const REST_LNG = 21.4290;
 
 function renderZones(){
   renderZonesEditor();
-  // Wypełnij pola wartościami z localStorage/Firebase
-  const fillField = (id, key) => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    const val = S(key);
-    if(val != null) el.value = val;
-  };
-  fillField('geo-api-key', 'geo-api-key');
-  fillField('rest-address', 'rest-address');
-  fillField('smsapi-token', 'smsapi-token');
-  fillField('smsapi-sender', 'smsapi-sender');
-  ['sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected'].forEach(k=>fillField(k,k));
-}
-
-function loadEmailJsSettings(){
-  const fillField = (id, key) => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    const val = S(key);
-    if(val != null) el.value = val;
-  };
-  fillField('emailjs-key', 'emailjs-key');
-  fillField('emailjs-service', 'emailjs-service');
-  fillField('emailjs-template', 'emailjs-template');
-  document.getElementById('email-test-result') && (document.getElementById('email-test-result').innerHTML='');
 }
 function renderZonesEditor(){
   const el = document.getElementById('zones-editor');
