@@ -1675,7 +1675,17 @@ window._onAuthReady = function(auth){
 <script>
 // ── STORAGE ──
 const S = key => { try{return JSON.parse(localStorage.getItem(key));}catch{return null;} };
-const W = (key,val) => localStorage.setItem(key,JSON.stringify(val));
+const W = (key, val) => {
+  localStorage.setItem(key, JSON.stringify(val));
+  // Natychmiastowy zapis do Firebase przy każdej zmianie
+  if(window._firebase && window._firebase.db){
+    try{
+      window._firebase.db.ref(key).set(val).catch(function(e){
+        console.warn('[FB] Błąd zapisu', key, ':', e.message);
+      });
+    } catch(e){}
+  }
+};
 
 // ── DEFAULT DATA ──
 let menuData = S('menu') || [
