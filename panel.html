@@ -4368,6 +4368,36 @@ renderOrders();
 renderQR();
 updateAlarm();
 
+// Pobierz dane z Firebase przy starcie panelu (gdy localStorage jest pusty)
+// Dotyczy: cross-sell, rewards, params, addons, coupons itp.
+(function syncFromFirebase(){
+  const keys = ['cross','rewards','params','addons','coupons','promos','packaging',
+                 'delivery-zones','geo-api-key','smsapi-token','smsapi-sender',
+                 'emailjs-key','emailjs-service','emailjs-template',
+                 'kitchen-day','daily-dish'];
+  function doSync(){
+    if(!window._firebase || !window._firebase.db){ setTimeout(doSync, 500); return; }
+    keys.forEach(function(k){
+      // Pobierz tylko jeśli brak w localStorage
+      if(!localStorage.getItem(k)){
+        window._firebase.db.ref(k).once('value').then(function(snap){
+          var val = snap.val();
+          if(val !== null){
+            localStorage.setItem(k, JSON.stringify(val));
+            console.log('[FB Init] Pobrano:', k);
+            // Odśwież odpowiedni widok
+            if(k==='cross'){ crossRules=val; if(typeof renderCross==='function') renderCross(); }
+            if(k==='rewards'){ rewards=val; if(typeof renderLoyalty==='function') renderLoyalty(); }
+            if(k==='params'){ params=val; if(typeof renderParams==='function') renderParams(); }
+            if(k==='addons'){ addons=val; if(typeof renderAddons==='function') renderAddons(); }
+          }
+        }).catch(function(){});
+      }
+    });
+  }
+  setTimeout(doSync, 1000);
+})();
+
 // Callback dla Firebase — wywoływany gdy Firebase dostanie zamówienia
 // Timestamp ostatniego lokalnego zapisu zamówień
 // Firebase nie może nadpisać zamówień przez 8 sekund po lokalnej zmianie
