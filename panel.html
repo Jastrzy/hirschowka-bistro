@@ -2141,22 +2141,23 @@ async function sendSmsToCustomer(order, tplKey){
   sendSmsRaw(order.phone, msg, r=>{ if(!r.ok) console.warn('SMS error:', r.err); });
 }
 async function sendSmsRaw(phone, msg, cb){
-  const token = S('smsapi-token');
-  const sender = S('smsapi-sender')||'Hirschowka';
+  const rawToken = localStorage.getItem('smsapi-token');
+  const rawSender = localStorage.getItem('smsapi-sender');
+  let token, sender;
+  try{ token = JSON.parse(rawToken); }catch(e){ token = rawToken; }
+  try{ sender = JSON.parse(rawSender); }catch(e){ sender = rawSender; }
+  sender = (sender||'Hirschowka').trim();
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
   try{
-    // Bezpośrednie wywołanie SMSAPI — działało wcześniej
-    const body = new FormData();
-    body.append('access_token', token);
-    body.append('to', cleanPhone);
-    body.append('message', msg);
-    body.append('from', sender);
-    body.append('format', 'json');
-    body.append('encoding', 'utf-8');
-    const res = await fetch('https://api.smsapi.pl/sms.do', {method:'POST', body});
+    // Proxy Vercel /api/sms — omija CORS
+    const res = await fetch('/api/sms', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token, to: cleanPhone, message: msg, sender})
+    });
     const data = await res.json();
-    if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
+    if(cb) cb(data.ok ? {ok:true} : {ok:false, err:data.err||'Błąd proxy'});
   } catch(e){ if(cb) cb({ok:false,err:e.message}); }
 }
 function saveSmsSettings(){
