@@ -1464,12 +1464,35 @@ function renderCrossSuggest(triggerItem){
   const sug=[];
 
   // Opcja B — reguły z panelu, obsługa wielu kategorii (przecinek)
+  // Mapuj kategorie dania dnia
+  const dailyTypeMap = {
+    '⭐ Zestaw dnia':'set', '🍲 Zupa dnia':'soup', '🍽 Danie główne':'main',
+    'Zestaw dnia':'set', 'Zupa dnia':'soup', 'Danie główne':'main'
+  };
   rules.forEach(r=>{
     if(triggerItem.cat===r.when||triggerItem.name===r.when){
       const showCats=(r.show||'').split(',').map(c=>c.trim()).filter(Boolean);
       // Losuj kategorię z listy
       const randomCat=showCats[Math.floor(Math.random()*showCats.length)];
-      const pool=menu.filter(m=>(m.cat===randomCat||m.name===randomCat)&&!inCart.has(m.id)&&m.id!==triggerItem.id);
+      // Sprawdź czy to kategoria dania dnia
+      const dailyType = dailyTypeMap[randomCat];
+      let pool;
+      if(dailyType){
+        // Pobierz pozycję z dania dnia
+        const kd = LS('kitchen-day');
+        const dd = kd && kd[dailyType];
+        pool = dd && dd.name ? [{
+          id: 'daily-'+dailyType,
+          name: dd.name,
+          price: parseFloat(dd.price)||0,
+          photo: dd.photo||'',
+          cat: randomCat,
+          _isDaily: true,
+          _dailyType: dailyType
+        }] : [];
+      } else {
+        pool=menu.filter(m=>(m.cat===randomCat||m.name===randomCat)&&!inCart.has(m.id)&&m.id!==triggerItem.id);
+      }
       if(pool.length){
         // Losuj jedną pozycję z wybranej kategorii
         const pick=pool[Math.floor(Math.random()*pool.length)];
@@ -1529,16 +1552,20 @@ function showCross(item){
   document.getElementById('ov-cross').classList.add('open');
 }
 function addCrossItem(id){
+  // Obsługa dania dnia (id zaczyna się od 'daily-')
+  if(typeof id === 'string' && id.startsWith('daily-')){
+    const dtype = id.replace('daily-','');
+    addDailyItem(dtype);
+    return;
+  }
   const item=getMenu().find(x=>x.id===id);if(!item)return;
   const req=getItemAddons(item).filter(g=>g.required&&g.type==='radio');
   if(req.length){closeOv('ov-cross');openProduct(id);return;}
   cart.push({uid:Date.now(),itemId:id,name:item.name,cat:item.cat,mods:[],unitPrice:item.price,qty:1});
   updateCartBadge();
-  // Odśwież koszyk jeśli jest otwarty
   if(document.getElementById('ov-cart').classList.contains('open')){
     renderCart();
   }
-  // Odśwież pasek dostawy i sugestie w cross-sell popup
   renderFreeDelBar();
   renderCartFreeDelBar();
   renderCrossSuggest(item);
@@ -1660,7 +1687,7 @@ async function geocodeAndCheck(street,city,info){
       window._deliveryKm=null;renderCartSum();return;
     }
     const loc=data.results[0].geometry.location;
-    const km=haversineKm(REST_LAT,REST_LNG,loc.lat,loc.lng)*1.3; // mnożnik korygujący linię prostą na odległość drogową
+    const km=haversineKm(REST_LAT,REST_LNG,loc.lat,loc.lng);
     window._deliveryKm=km;
     const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
     const zone=zones.find(z=>km<=z.km);

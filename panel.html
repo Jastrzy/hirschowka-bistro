@@ -1488,7 +1488,7 @@ window._onAuthReady = function(auth){
       <div class="field">
         <label>⏰ Na kiedy?</label>
         <select id="acc-timing-select" onchange="document.getElementById('acc-custom-time').style.display=this.value==='custom'?'block':'none'"
-          style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);position:relative;z-index:10;pointer-events:auto;">
           <option value="asap">Jak najszybciej</option>
           <option value="15">~15 minut</option>
           <option value="20">~20 minut</option>
@@ -3274,11 +3274,21 @@ function loadPackaging(){
 
 // ── CROSS ──
 function getCats(){
-  return [...new Set(menuData.filter(d=>d.cat).map(d=>d.cat))];
+  const menuCats = [...new Set(menuData.filter(d=>d.cat).map(d=>d.cat))];
+  // Dodaj pozycje dania dnia — nie są w menu ale można je proponować w cross-sell
+  const dailyCats = ['⭐ Zestaw dnia','🍲 Zupa dnia','🍽 Danie główne'];
+  return [...menuCats, ...dailyCats.filter(c=>!menuCats.includes(c))];
 }
 function fillCrossSelects(){
   const cats=getCats();
-  const opts='<option value="">— wybierz —</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const menuCats = [...new Set(menuData.filter(d=>d.cat).map(d=>d.cat))];
+  const dailyCats = ['⭐ Zestaw dnia','🍲 Zupa dnia','🍽 Danie główne'];
+  // Grupuj kategorie — menu i danie dnia osobno
+  const menuOpts = menuCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const dailyOpts = dailyCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const opts = '<option value="">— wybierz —</option>'
+    + '<optgroup label="Menu">' + menuOpts + '</optgroup>'
+    + '<optgroup label="Danie dnia">' + dailyOpts + '</optgroup>';
   const w=document.getElementById('cross-when');
   const s=document.getElementById('cross-show');
   if(w)w.innerHTML=opts;
