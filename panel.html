@@ -1675,17 +1675,7 @@ window._onAuthReady = function(auth){
 <script>
 // ── STORAGE ──
 const S = key => { try{return JSON.parse(localStorage.getItem(key));}catch{return null;} };
-const W = (key, val) => {
-  localStorage.setItem(key, JSON.stringify(val));
-  // Natychmiastowy zapis do Firebase przy każdej zmianie
-  if(window._firebase && window._firebase.db){
-    try{
-      window._firebase.db.ref(key).set(val).catch(function(e){
-        console.warn('[FB] Błąd zapisu', key, ':', e.message);
-      });
-    } catch(e){}
-  }
-};
+const W = (key,val) => localStorage.setItem(key,JSON.stringify(val));
 
 // ── DEFAULT DATA ──
 let menuData = S('menu') || [
@@ -2077,7 +2067,7 @@ function setOrdStatus(id, newStatus){
       let c=customers.find(c=>c.phone.replace(/\s/g,'')===(o.phone||'').replace(/\s/g,''));
       if(!c){c={name:o.customer||('Klient '+o.phone),phone:o.phone,email:'',sms:true,emailMkt:false,stamps:0,totalStamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)};customers.push(c);}
       const prev=c.stamps||0;c.stamps=prev>=9?1:prev+1;c.totalStamps=(c.totalStamps||0)+1;c.visits=(c.visits||0)+1;c.last=new Date().toLocaleDateString('pl-PL');
-      saveCustomers();
+      W('customers',customers);
       const hitReward=[3,6,9].includes(c.stamps);
       toast(hitReward?`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`:`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
     }
@@ -2141,23 +2131,22 @@ async function sendSmsToCustomer(order, tplKey){
   sendSmsRaw(order.phone, msg, r=>{ if(!r.ok) console.warn('SMS error:', r.err); });
 }
 async function sendSmsRaw(phone, msg, cb){
-  const rawToken = localStorage.getItem('smsapi-token');
-  const rawSender = localStorage.getItem('smsapi-sender');
-  let token, sender;
-  try{ token = JSON.parse(rawToken); }catch(e){ token = rawToken; }
-  try{ sender = JSON.parse(rawSender); }catch(e){ sender = rawSender; }
-  sender = (sender||'Hirschowka').trim();
+  const token = S('smsapi-token');
+  const sender = S('smsapi-sender')||'Hirschowka';
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
   try{
-    // Proxy Vercel /api/sms — omija CORS
-    const res = await fetch('/api/sms', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({token, to: cleanPhone, message: msg, sender})
-    });
+    // Bezpośrednie wywołanie SMSAPI — działało wcześniej
+    const body = new FormData();
+    body.append('access_token', token);
+    body.append('to', cleanPhone);
+    body.append('message', msg);
+    body.append('from', sender);
+    body.append('format', 'json');
+    body.append('encoding', 'utf-8');
+    const res = await fetch('https://api.smsapi.pl/sms.do', {method:'POST', body});
     const data = await res.json();
-    if(cb) cb(data.ok ? {ok:true} : {ok:false, err:data.err||'Błąd proxy'});
+    if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
   } catch(e){ if(cb) cb({ok:false,err:e.message}); }
 }
 function saveSmsSettings(){
@@ -2449,16 +2438,6 @@ function saveZonesSettings(){
 // ══════════════════════════════════════
 // KLIENCI — pełny CRUD
 // ══════════════════════════════════════
-
-// Zapisz klientów zawsze do localStorage I Firebase
-function saveCustomers(){
-  saveCustomers();
-  if(window._firebase && window._firebase.db){
-    window._firebase.db.ref('customers').set(customers)
-      .then(function(){ console.log('[FB] Klienci zapisani:', customers.length); })
-      .catch(function(e){ console.warn('[FB] Błąd zapisu klientów:', e.message); });
-  }
-}
 function renderCusts(q=''){
   // Kopia tablicy — sortujemy wizualnie bez mutowania oryginału
   let sorted = [...customers];
@@ -2628,7 +2607,7 @@ function saveCustModal(){
     customers.push(obj);
     toast(`✅ Klient "${name}" dodany`);
   }
-  saveCustomers();
+  W('customers', customers);
   closeModal('mo-add-cust');
   renderCusts(document.getElementById('cust-search').value||'');
 }
@@ -2642,7 +2621,7 @@ function deleteCust(idx){
   // Drugi komunikat potwierdzający
   if(!confirm(`Na pewno? Dane klienta "${c.name}" (${c.stamps||0} pieczątek, ${(c.spent||0).toFixed(2)} zł) zostaną trwale usunięte i nie będzie można ich odzyskać.`)) return;
   customers.splice(idx, 1);
-  saveCustomers();
+  W('customers', customers);
   renderCusts(document.getElementById('cust-search').value||'');
   toast(`Klient "${c.name}" usunięty`);
 }
@@ -2654,7 +2633,7 @@ function addStamp(idx){
   const prev = c.stamps||0;
   c.stamps = prev + 1;
   c.visits = (c.visits||0) + 1;
-  saveCustomers();
+  W('customers', customers);
   renderCusts(document.getElementById('cust-search').value||'');
   const msg = c.stamps >= 9
     ? `⭐ ${c.name} ma 9/9 pieczątek — NAGRODA do odebrania! 🎁`
@@ -2746,7 +2725,7 @@ function doManualMerge(){
   const removeIdx = si > pi ? si : si;
   customers.splice(removeIdx, 1);
 
-  saveCustomers();
+  W('customers', customers);
   closeModal('mo-merge-cust');
   renderCusts();
   toast(`✅ Scalono: "${s.name}" → "${p.name}"`);
@@ -2773,7 +2752,7 @@ function importCSV(input){
       customers.push({name:ni('imię i nazwisko')||'Klient',phone,email:ni('e-mail'),sms:ni('marketing telefoniczny').toLowerCase()==='tak',emailMkt:ni('marketing e-mail').toLowerCase()==='tak',stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10),importedFrom:'restaumatic'});
       imported++;
     }
-    saveCustomers();
+    W('customers',customers);
     document.getElementById('import-result').innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:12px;font-size:13px;color:var(--green);">✓ Zaimportowano <strong>${imported}</strong> nowych klientów. Duplikaty zostały pominięte.</div>`;
     toast(`Zaimportowano ${imported} klientów ✓`);
   };
@@ -3440,7 +3419,7 @@ function addStamp(){
   c.totalStamps=(c.totalStamps||0)+1;
   c.visits=(c.visits||0)+1;
   c.last=new Date().toLocaleDateString('pl-PL');
-  saveCustomers();
+  W('customers',customers);
   const hitReward=STAMP_REWARDS.includes(c.stamps);
   const msg=hitReward?`🎉 Pieczątka ${c.stamps}/9 — klient osiągnął nagrodę! Przyznaj w sekcji poniżej.`:`⭐ Pieczątka wbita ✓ — ${c.stamps}/9 (łącznie: ${c.totalStamps})`;
   document.getElementById('loy-result').innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">${msg}</div>`;
@@ -4369,34 +4348,55 @@ renderOrders();
 renderQR();
 updateAlarm();
 
-// Pobierz dane z Firebase przy starcie panelu (gdy localStorage jest pusty)
-// Dotyczy: cross-sell, rewards, params, addons, coupons itp.
+
+// ── SYNC Z FIREBASE PRZY STARCIE ──
+// Pobierz kluczowe dane z Firebase przy każdym starcie panelu
+// Nadpisuje złe wartości (kod JS jako string) poprawnymi z Firebase
 (function syncFromFirebase(){
-  const keys = ['cross','rewards','params','addons','coupons','promos','packaging',
-                 'delivery-zones','geo-api-key','smsapi-token','smsapi-sender',
-                 'emailjs-key','emailjs-service','emailjs-template',
-                 'kitchen-day','daily-dish'];
+  var alwaysSync = [
+    'smsapi-token','smsapi-sender',
+    'emailjs-key','emailjs-service','emailjs-template',
+    'geo-api-key','rest-address'
+  ];
+  var onDemand = [
+    'cross','rewards','params','addons','coupons',
+    'promos','packaging','delivery-zones','kitchen-day','daily-dish'
+  ];
+
   function doSync(){
-    if(!window._firebase || !window._firebase.db){ setTimeout(doSync, 500); return; }
-    keys.forEach(function(k){
-      // Pobierz tylko jeśli brak w localStorage
+    if(!window._firebase || !window._firebase.db){
+      setTimeout(doSync, 500); return;
+    }
+    // Zawsze nadpisuj tokeny i klucze API — mogą mieć złe wartości
+    alwaysSync.forEach(function(k){
+      window._firebase.db.ref(k).once('value').then(function(snap){
+        var val = snap.val();
+        if(val === null) return;
+        var current = localStorage.getItem(k);
+        // Nadpisz jeśli puste lub zawiera kod JS
+        if(!current || current.includes('${') || current.includes("S('sms") || current.includes("S('rest")){
+          localStorage.setItem(k, JSON.stringify(val));
+          console.log('[FB Init] Naprawiono:', k);
+        }
+      }).catch(function(){});
+    });
+    // Pobierz tylko jeśli brak w localStorage
+    onDemand.forEach(function(k){
       if(!localStorage.getItem(k)){
         window._firebase.db.ref(k).once('value').then(function(snap){
           var val = snap.val();
-          if(val !== null){
-            localStorage.setItem(k, JSON.stringify(val));
-            console.log('[FB Init] Pobrano:', k);
-            // Odśwież odpowiedni widok
-            if(k==='cross'){ crossRules=val; if(typeof renderCross==='function') renderCross(); }
-            if(k==='rewards'){ rewards=val; if(typeof renderLoyalty==='function') renderLoyalty(); }
-            if(k==='params'){ params=val; if(typeof renderParams==='function') renderParams(); }
-            if(k==='addons'){ addons=val; if(typeof renderAddons==='function') renderAddons(); }
-          }
+          if(val === null) return;
+          localStorage.setItem(k, JSON.stringify(val));
+          console.log('[FB Init] Pobrano:', k);
+          if(k==='cross'){ crossRules=val; if(typeof renderCross==='function') renderCross(); }
+          if(k==='rewards'){ rewards=val; if(typeof renderLoyalty==='function') renderLoyalty(); }
+          if(k==='params'){ params=val; if(typeof renderParams==='function') renderParams(); }
+          if(k==='addons'){ addons=val; if(typeof renderAddons==='function') renderAddons(); }
         }).catch(function(){});
       }
     });
   }
-  setTimeout(doSync, 1000);
+  setTimeout(doSync, 800);
 })();
 
 // Callback dla Firebase — wywoływany gdy Firebase dostanie zamówienia
