@@ -1153,10 +1153,12 @@ function addDailyItem(type){
   const k=LS('kitchen-day');
   if(!k||!k[type]?.name)return;
   const d=k[type];
-  const fakeItem={id:0,name:d.name,cat:'Dania obiadowe',price:parseFloat(d.price)||0};
-  cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
+  // Mapuj typ dania dnia na kategorię używaną w regułach cross-sell
+  const catMap={set:'⭐ Zestaw dnia', soup:'🍲 Zupa dnia', main:'🍽 Danie główne'};
+  const cat = catMap[type]||'Dania obiadowe';
+  const fakeItem={id:0,name:d.name,cat,price:parseFloat(d.price)||0};
+  cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat,mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
   updateCartBadge();
-  // Cross-sell i pasek dostawy jak przy zwykłych daniach
   showCross(fakeItem);
 }
 function makeDailyCard(d,emoji,label,type){
