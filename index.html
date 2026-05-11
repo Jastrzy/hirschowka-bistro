@@ -476,24 +476,24 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .cart-suggest{padding:12px 22px 0;}
 .cart-suggest-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
 .cart-suggest-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
-.csug{flex:0 0 140px;background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;}
-.csug img{width:100%;height:60px;object-fit:cover;display:block;}
-.csug-ph{width:100%;height:60px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.csug{flex:0 0 160px;background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;box-shadow:0 1px 4px rgba(59,37,18,.06);}
+.csug img{width:100%;height:110px;object-fit:cover;display:block;}
+.csug-ph{width:100%;height:110px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:32px;}
 .csug-body{padding:6px 8px;}
 .csug-name{font-size:11px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:3px;}
 .csug-price{font-size:11px;color:var(--gold);font-weight:700;}
 .csug-add{width:100%;background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);padding:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;}
 .cross-sub{font-size:11px;font-weight:700;color:var(--muted);padding:12px 22px 6px;text-transform:uppercase;letter-spacing:.5px;}
 .cross-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 22px 16px;}
-.ccrd{background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:border-color .15s;}
-.ccrd:hover{border-color:var(--gold);}
-.ccrd .cimg{width:100%;height:80px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:30px;}
-.ccrd img{width:100%;height:80px;object-fit:cover;display:block;}
+.ccrd{background:var(--cream);border:1px solid rgba(59,37,18,.1);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all .15s;box-shadow:0 1px 4px rgba(59,37,18,.06);}
+.ccrd:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(59,37,18,.12);transform:translateY(-1px);}
+.ccrd .cimg{width:100%;height:120px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:36px;}
+.ccrd img{width:100%;height:120px;object-fit:cover;display:block;}
 .ccrd .cb{padding:10px 12px;}
 .ccrd .cn{font-size:12px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:4px;}
 .ccrd .cp{font-size:13px;font-weight:700;color:var(--gold);}
-.ccrd .ca{width:100%;background:var(--cream2);border:1px solid rgba(59,37,18,.1);color:var(--brown);border-radius:var(--r);padding:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:6px;transition:all .15s;}
-.ccrd .ca:hover{background:var(--brown);color:var(--cream);}
+.ccrd .ca{width:100%;background:var(--brown);border:none;color:var(--cream);border-radius:var(--r);padding:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:6px;transition:opacity .15s;}
+.ccrd .ca:hover{opacity:.85;}
 .cross-cont{margin:0 22px 16px;background:transparent;border:1.5px solid rgba(59,37,18,.12);color:var(--muted);border-radius:var(--r);padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:center;display:block;width:calc(100% - 44px);transition:background .15s;}
 .cross-cont:hover{background:var(--cream);}
 
@@ -916,7 +916,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- ═══ OVERLAYS ═══ -->
 <div class="ov" id="ov-product"><div class="sheet fi"><div class="sh-hd"><h3 id="sp-title"></h3><button class="sh-cl" onclick="closeOv('ov-product')">✕</button></div><div id="sp-desc" style="padding:10px 22px;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(59,37,18,.08);display:none;"></div><div id="sp-sizes"></div><div id="sp-addons"></div><div class="qty-row"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)">+</button></div><button class="addmain" onclick="doAdd()">Dodaj — <span id="sp-tot"></span></button></div></div></div>
 
-<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><div class="cross-sub">Polecamy do tego</div><div class="cross-grid" id="cross-grid"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy</button></div></div>
+<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy →</button></div></div>
 
 <div class="ov" id="ov-cart">
   <div class="sheet">
@@ -1532,23 +1532,7 @@ function renderCrossSuggest(triggerItem){
 function showCross(item){
   renderFreeDelBar();
   renderCrossSuggest(item);
-  // Cross-grid — z reguł panelu (małe karty)
-  const rules=LS('cross')||[];
-  const inCart=cart.map(c=>c.itemId);
-  let sug=[];
-  rules.forEach(r=>{
-    if(item.cat===r.when||item.name===r.when){
-      getMenu().filter(x=>x.avail).forEach(m=>{
-        if((m.cat===r.show||m.name===r.show)&&!inCart.includes(m.id)&&!sug.find(s=>s.id===m.id))
-          sug.push(m);
-      });
-    }
-  });
-  // Fallback — inna kategoria
-  if(!sug.length){
-    sug=getMenu().filter(d=>d.cat!==item.cat&&d.avail&&!inCart.includes(d.id)).slice(0,4);
-  }
-  document.getElementById('cross-grid').innerHTML=sug.slice(0,4).map(s=>`<div class="ccrd" onclick="addCrossItem(${s.id})">${s.photo?`<img src="${s.photo}" alt="${s.name}">`:`<div class="cimg">🍽</div>`}<div class="cb"><div class="cn">${s.name.length>44?s.name.slice(0,44)+'…':s.name}</div><div class="cp">${s.price} zł</div><button class="ca" onclick="event.stopPropagation();addCrossItem(${s.id})">+ Dodaj</button></div></div>`).join('');
+  // Otwórz popup
   document.getElementById('ov-cross').classList.add('open');
 }
 function addCrossItem(id){
