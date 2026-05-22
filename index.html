@@ -78,7 +78,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   min-height:92vh;display:grid;grid-template-columns:1fr 340px;
   align-items:center;gap:0;padding:88px 48px 60px;
   position:relative;overflow:hidden;
-  background:linear-gradient(135deg,#1A0E00 0%,#2A1A0E 60%,#1A0E00 100%);
+  background:linear-gradient(135deg,#0D2208 0%,#1B3A0F 60%,#0D2208 100%);
 }
 .hero-bg{
   position:absolute;inset:0;
@@ -207,7 +207,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .dpp-tag{background:var(--green);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:var(--r);}
 
 /* ════ KUCHNIA DNIA ════ */
-.kitchen-section{padding:64px 48px;background:var(--brown);}
+.kitchen-section{padding:64px 48px;background:#1B3A0F;}
 .kitchen-inner{max-width:1100px;margin:0 auto;}
 .kitchen-header{text-align:center;margin-bottom:36px;}
 .kitchen-header .section-tag{color:var(--gold);}
@@ -250,7 +250,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .addr-pill:hover{background:var(--cream3);}
 
 /* ════ PROMO CARDS ════ */
-.promos-section{padding:28px 48px;background:var(--brown);border-top:1px solid rgba(200,146,42,.15);}
+.promos-section{padding:28px 48px;background:#1B3A0F;border-top:1px solid rgba(123,200,90,.15);}
 .promos-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .promo-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r2);padding:24px 20px;position:relative;overflow:hidden;transition:background .2s;}
 .promo-card:hover{background:rgba(255,255,255,.09);}
@@ -289,7 +289,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .ib-out{background:rgba(184,76,43,.1);color:var(--rust);}
 .iname{font-size:14px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:3px;}
 .idesc{font-size:12px;color:var(--muted);line-height:1.4;}
-.iphoto{width:72px;height:72px;border-radius:var(--r2);object-fit:cover;flex-shrink:0;}
+.iphoto{width:120px;height:90px;border-radius:0;object-fit:cover;flex-shrink:0;}
 .iprice{font-size:15px;font-weight:700;color:var(--gold);white-space:nowrap;}
 .ipfrom{font-size:11px;color:var(--muted2);margin-right:2px;}
 .iadd{
@@ -304,7 +304,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .ivar:hover{background:var(--brown2);}
 
 /* ════ LOYALTY ════ */
-.loyalty-section{padding:72px 48px;background:#2A1A0E;}
+.loyalty-section{padding:72px 48px;background:#1B3A0F;}
 .loyalty-inner-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;max-width:1100px;margin:0 auto;}
 .loyalty-section .section-title{color:#F9F5EE;}
 .loyalty-section .section-tag{color:var(--gold);}
@@ -770,9 +770,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
       <!-- Śniadania -->
       <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-niadania');if(el)el.click();},600);"
-        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
+        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:0;overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#D4A96A;">
+        <div style="height:280px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#D4A96A;">
           <img src="breakfast.jpg" alt="Śniadania" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.6) 0%,transparent 60%);"></div>
           <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">01 / Śniadania</span>
@@ -789,9 +789,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
       <!-- Bajgle -->
       <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-bajgle');if(el)el.click();},600);"
-        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
+        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:0;overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#6B4423;">
+        <div style="height:280px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#6B4423;">
           <img src="bagel.jpg" alt="Bajgle" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.6) 0%,transparent 60%);"></div>
           <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">02 / Bajgle</span>
@@ -808,9 +808,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
       <!-- Napary Premium -->
       <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-napary-premium');if(el)el.click();},600);"
-        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
+        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:0;overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#2D5A1B;">
+        <div style="height:280px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#2D5A1B;">
           <img src="napary.jpg" alt="Napary Premium" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(27,58,15,.7) 0%,transparent 60%);"></div>
           <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">03 / Napary Premium</span>
@@ -860,7 +860,8 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 <!-- PROMOS -->
 <div class="promos-section">
-  <div class="promos-inner" id="promos-inner">
+  <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--green3);margin-bottom:14px;">✦ Promocje</div>
+    <div class="promos-inner" id="promos-inner">
     <div class="promo-card"><div class="promo-badge">Codziennie</div><h3>Śniadanie z kawą</h3><p>Jajecznica, tost, masło + espresso lub herbata. Idealny start dnia.</p><span class="promo-price">15 zł</span><span class="promo-price-old">19 zł</span></div>
     <div class="promo-card"><div class="promo-badge">Pon–Pt</div><h3>Obiad dnia + zupa</h3><p>Zmieniające się codziennie danie z domową zupą. Tradycyjne przepisy.</p><span class="promo-price">22 zł</span><span class="promo-price-old">28 zł</span></div>
     <div class="promo-card"><div class="promo-badge">Online</div><h3>Darmowy dowóz</h3><p>Przy zamówieniu online od 40 zł dowozimy bezpłatnie na terenie Mielca.</p><span class="promo-price">0 zł</span><span class="promo-price-old">dostawa</span></div>
@@ -887,12 +888,12 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   <div class="loyalty-inner">
     <div class="reveal">
       <div class="section-tag" style="justify-content:flex-start;display:inline-flex;">Program</div>
-      <h2 style="font-family:var(--serif);font-size:clamp(30px,3.5vw,44px);font-weight:700;color:var(--brown);line-height:1.1;margin-bottom:14px;margin-top:10px;">Zbieraj pieczątki,<br>odbieraj nagrody</h2>
-      <p style="font-size:15px;color:var(--muted);line-height:1.7;font-weight:300;margin-bottom:28px;">Pieczątka za każdą wizytę od 19 zł. Po 9 wizytach — darmowy obiad. Nagrody też na 3. i 5. pieczątce!</p>
+      <h2 style="font-family:var(--serif);font-size:clamp(30px,3.5vw,44px);font-weight:700;color:#F9F5EE;line-height:1.1;margin-bottom:14px;margin-top:10px;">Zbieraj pieczątki,<br>odbieraj nagrody</h2>
+      <p style="font-size:15px;color:rgba(249,245,238,0.75);line-height:1.7;font-weight:300;margin-bottom:28px;">Pieczątka za każdą wizytę od 19 zł. Po 9 wizytach — darmowy obiad. Nagrody też na 3. i 6. pieczątce!</p>
       <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:28px;">
-        <div class="daily-feat"><span class="feat-dot"></span>3 pieczątki → 50% zniżki na kawę lub deser</div>
-        <div class="daily-feat"><span class="feat-dot"></span>5 pieczątek → darmowy deser</div>
-        <div class="daily-feat"><span class="feat-dot"></span>9 pieczątek → darmowy obiad</div>
+        <div class="daily-feat" style="color:rgba(249,245,238,0.9)"><span class="feat-dot"></span>3 pieczątki → 50% zniżki na kawę lub deser</div>
+        <div class="daily-feat" style="color:rgba(249,245,238,0.9)"><span class="feat-dot"></span>6 pieczątek → darmowa kawa lub deser</div>
+        <div class="daily-feat" style="color:rgba(249,245,238,0.9)"><span class="feat-dot"></span>9 pieczątek → 50% zniżki na bajgiel lub danie obiadowe</div>
       </div>
       <a href="#loyalty-section" class="btn-primary" style="display:inline-flex;" onclick="document.getElementById('loyalty-section').scrollIntoView({behavior:'smooth'});setTimeout(()=>document.getElementById('loy-phone').focus(),600);return false;">Sprawdź swoją kartę →</a>
     </div>
