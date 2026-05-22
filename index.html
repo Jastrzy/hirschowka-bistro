@@ -769,7 +769,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
 
       <!-- Śniadania -->
-      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const tabs=document.querySelectorAll('.cat-tab');tabs.forEach(t=>{if(t.textContent.includes('niadani'))t.click();});},600);"
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-niadania');if(el)el.click();},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
         <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#D4A96A;">
@@ -788,11 +788,11 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       </a>
 
       <!-- Bajgle -->
-      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const tabs=document.querySelectorAll('.cat-tab');tabs.forEach(t=>{if(t.textContent.includes('ajgle'))t.click();});},600);"
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-bajgle');if(el)el.click();},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
         <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#6B4423;">
-          <img src="https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600&q=80" alt="Bajgle" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+          <img src="bajgiel_farmera_IA.jpg" alt="Bajgle" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.6) 0%,transparent 60%);"></div>
           <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">02 / Bajgle</span>
         </div>
@@ -807,7 +807,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       </a>
 
       <!-- Napary Premium -->
-      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const tabs=document.querySelectorAll('.cat-tab');tabs.forEach(t=>{if(t.textContent.includes('apary'))t.click();});},600);"
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-napary-premium');if(el)el.click();},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
         <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#2D5A1B;">
