@@ -733,7 +733,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 <!-- ZDJĘCIE BISTRO — pełna szerokość -->
 <div style="width:100%;height:280px;overflow:hidden;position:relative;background:#2A1A0E;">
-  <img src="zewnątrz2.jpg" alt="Hirschówka Bistro Mielec — widok z zewnątrz" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;" onerror="this.style.display='none'">
+  <img src="zewn%C4%85trz2.jpg" alt="Hirschówka Bistro Mielec — widok z zewnątrz" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;" onerror="this.style.display='none'">
   <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(26,14,0,.4) 0%,transparent 50%,rgba(26,14,0,.4) 100%);"></div>
 </div>
 
@@ -768,11 +768,13 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
 
       <!-- Śniadania -->
-      <a href="#menu" onclick="setTimeout(()=>{const el=document.querySelector('[data-cat=\'Śniadania\']');if(el)el.click();},300);return false;"
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const tabs=document.querySelectorAll('.cat-tab');tabs.forEach(t=>{if(t.textContent.includes('niadani'))t.click();});},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:180px;background:linear-gradient(160deg,#D4A96A,#8B5E2A);position:relative;display:flex;align-items:flex-end;padding:12px;">
-          <span style="background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">01 / Śniadania</span>
+        <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#D4A96A;">
+          <img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=600&q=80" alt="Śniadania" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.6) 0%,transparent 60%);"></div>
+          <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">01 / Śniadania</span>
         </div>
         <div style="padding:18px;">
           <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Śniadania <em style="color:var(--gold)">od 7:00</em></h3>
@@ -785,11 +787,13 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       </a>
 
       <!-- Bajgle -->
-      <a href="#menu" onclick="setTimeout(()=>{const el=document.querySelector('[data-cat=\'Bajgle\']');if(el)el.click();},300);return false;"
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const tabs=document.querySelectorAll('.cat-tab');tabs.forEach(t=>{if(t.textContent.includes('ajgle'))t.click();});},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:180px;background:linear-gradient(160deg,#6B4423,#3B2512);position:relative;display:flex;align-items:flex-end;padding:12px;">
-          <span style="background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">02 / Bajgle</span>
+        <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#6B4423;">
+          <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&q=80" alt="Bajgle" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.6) 0%,transparent 60%);"></div>
+          <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">02 / Bajgle</span>
         </div>
         <div style="padding:18px;">
           <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Bajgle z <em style="color:var(--gold)">chrupiącą skórką</em></h3>
@@ -802,11 +806,13 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       </a>
 
       <!-- Napary Premium -->
-      <a href="#menu" onclick="setTimeout(()=>{const el=document.querySelector('[data-cat=\'Napary Premium\']');if(el)el.click();},300);return false;"
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const tabs=document.querySelectorAll('.cat-tab');tabs.forEach(t=>{if(t.textContent.includes('apary'))t.click();});},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:180px;background:linear-gradient(160deg,#2D5A1B,#1B3A0F);position:relative;display:flex;align-items:flex-end;padding:12px;">
-          <span style="background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">03 / Napary Premium</span>
+        <div style="height:180px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#2D5A1B;">
+          <img src="https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=600&q=80" alt="Napary Premium" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(27,58,15,.7) 0%,transparent 60%);"></div>
+          <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">03 / Napary Premium</span>
         </div>
         <div style="padding:18px;">
           <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Napary <em style="color:var(--gold)">premium</em></h3>
