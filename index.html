@@ -14,25 +14,25 @@
 <link rel="canonical" href="https://hirschowkabistro.pl/">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Hirschówka Bistro","address":{"@type":"PostalAddress","streetAddress":"Mickiewicza 17","addressLocality":"Mielec","postalCode":"39-300","addressCountry":"PL"},"telephone":"+48511707232","url":"https://hirschowkabistro.pl","servesCuisine":["Polish","Breakfast","Coffee"],"priceRange":"$$","openingHours":["Mo-Fr 07:00-16:00"]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════
    DESIGN TOKENS — warm bistro palette
 ════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --cream:#F9F5EE; --cream2:#F2EBD9; --cream3:#EDE0C8;
+  --cream:#F9F5EE; --cream2:#F0EBE1; --cream3:#EDE0C8;
   --brown:#3B2512; --brown2:#6B3F1E; --brown3:#5C3920;
-  --gold:#C8922A; --gold2:#E8A83A; --gold3:#A87420;
+  --gold:#C8921A; --gold2:#D4A42A; --gold3:#A87420;
   --rust:#B84C2B; --rust2:#963E22;
-  --green:#2D4A2F; --green2:#3D6040;
-  --text:#2A1A0E; --muted:#7A5C3E; --muted2:#A08060;
-  --white:#FEFCF8; --off-white:#F5F0E8;
+  --green:#1B3A0F; --green2:#2D5A1B; --green3:#7BC85A;
+  --text:#2A1A0E; --muted:#6B4423; --muted2:#9B7B5A;
+  --white:#FFFFFF; --off-white:#F9F5EE;
   --serif:'Playfair Display',Georgia,serif;
-  --sans:'Lato',sans-serif;
-  --r:6px; --r2:12px; --r3:20px;
-  --shadow:0 2px 12px rgba(59,37,18,.1);
-  --shadow-lg:0 8px 40px rgba(59,37,18,.15);
+  --sans:'Inter',sans-serif;
+  --r:6px; --r2:10px; --r3:16px;
+  --shadow:0 2px 12px rgba(59,37,18,.08);
+  --shadow-lg:0 8px 40px rgba(59,37,18,.12);
 }
 html{scroll-behavior:smooth;background:var(--cream);}
 body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-x:hidden;}
@@ -41,29 +41,32 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .nav{
   position:fixed;top:0;left:0;right:0;z-index:200;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 48px;height:100px;
-  background:rgba(249,245,238,.97);backdrop-filter:blur(10px);
-  border-bottom:1px solid rgba(59,37,18,.08);
+  padding:0 40px;height:72px;
+  background:rgba(249,245,238,.98);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(59,37,18,.1);
   transition:box-shadow .3s;
 }
-.nav.scrolled{box-shadow:0 2px 24px rgba(59,37,18,.12);}
-.nav-logo{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);text-decoration:none;letter-spacing:-.3px;display:flex;align-items:center;gap:12px;}
+.nav.scrolled{box-shadow:0 2px 20px rgba(59,37,18,.1);}
+.nav-logo{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--brown);text-decoration:none;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.nav-logo img{width:40px;height:40px;border-radius:50%;object-fit:contain;}
 .nav-logo span{color:var(--gold);}
-.nav-links{display:flex;gap:32px;list-style:none;align-items:center;}
-.nav-links a{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-links{display:flex;gap:28px;list-style:none;align-items:center;}
+.nav-links a{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;}
 .nav-links a:hover{color:var(--brown);}
-.nav-cta{background:var(--rust);color:var(--white)!important;padding:9px 22px;border-radius:var(--r);transition:background .2s!important;}
+.nav-cta{background:var(--brown);color:var(--cream)!important;padding:9px 20px;border-radius:var(--r);transition:background .2s!important;font-size:11px!important;font-weight:700!important;letter-spacing:.5px!important;}
 .nav-cta:hover{background:var(--brown2)!important;}
+.nav-app-btn{background:var(--green2);color:var(--cream)!important;padding:9px 16px;border-radius:var(--r);font-size:11px!important;font-weight:600!important;transition:background .2s!important;}
+.nav-app-btn:hover{background:var(--green)!important;}
 .nav-cart{
   display:flex;align-items:center;gap:7px;
-  background:var(--brown);color:var(--cream);
-  border:none;border-radius:var(--r);padding:9px 20px;
+  background:var(--gold);color:var(--brown);
+  border:none;border-radius:var(--r);padding:9px 18px;
   font-size:12px;font-weight:700;letter-spacing:.5px;
   cursor:pointer;font-family:var(--sans);transition:background .2s;
 }
-.nav-cart:hover{background:var(--brown2);}
+.nav-cart:hover{background:var(--gold2);}
 .cart-badge{
-  background:var(--gold);color:var(--brown);border-radius:50%;
+  background:var(--brown);color:var(--cream);border-radius:50%;
   width:20px;height:20px;display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:900;
 }
@@ -72,127 +75,113 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 /* ════ HERO ════ */
 .hero{
-  min-height:100vh;display:grid;grid-template-columns:1fr 340px;
-  align-items:center;gap:0;padding:108px 48px 60px;
+  min-height:92vh;display:grid;grid-template-columns:1fr 340px;
+  align-items:center;gap:0;padding:88px 48px 60px;
   position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#1A0E00 0%,#2A1A0E 60%,#1A0E00 100%);
 }
 .hero-bg{
   position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 80% at 85% 40%,rgba(200,146,42,.07) 0%,transparent 70%),
-    radial-gradient(ellipse 40% 60% at 10% 80%,rgba(184,76,43,.05) 0%,transparent 60%);
+  background:radial-gradient(ellipse 60% 80% at 80% 40%,rgba(200,146,42,.08) 0%,transparent 70%);
 }
 .hero-pattern{
   position:absolute;inset:0;
-  background-image:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(59,37,18,.012) 40px,rgba(59,37,18,.012) 41px);
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 60px,rgba(200,146,42,.015) 60px,rgba(200,146,42,.015) 61px);
 }
-.hero-content{position:relative;z-index:2;max-width:580px;}
+.hero-content{position:relative;z-index:2;max-width:560px;}
 .hero-tag{
   display:inline-flex;align-items:center;gap:8px;
-  font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
-  color:var(--gold);margin-bottom:20px;
+  font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(249,245,238,.6);margin-bottom:20px;
 }
-.hero-tag .live-dot{width:8px;height:8px;border-radius:50%;background:var(--green2);animation:blink 1.4s ease infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+.hero-tag .live-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:blink 1.4s ease infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 .hero h1{
-  font-family:var(--serif);font-size:clamp(44px,5.5vw,72px);font-weight:900;
-  color:var(--brown);line-height:1.05;margin-bottom:16px;letter-spacing:-.5px;
+  font-family:var(--serif);font-size:clamp(36px,4.5vw,60px);font-weight:600;
+  color:#F9F5EE;line-height:1.15;margin-bottom:16px;letter-spacing:-.3px;
 }
-.hero h1 em{font-style:italic;color:var(--rust);}
+.hero h1 em{font-style:italic;color:var(--gold);}
 .hero-sub{
-  font-size:17px;color:var(--muted);line-height:1.7;
-  font-weight:300;margin-bottom:12px;max-width:480px;
+  font-size:15px;color:rgba(249,245,238,.65);line-height:1.75;
+  font-weight:300;margin-bottom:12px;max-width:440px;
 }
 .hero-clock-row{
   display:flex;align-items:center;gap:10px;
-  font-size:13px;color:var(--muted);margin-bottom:32px;
-  font-weight:400;
+  font-size:13px;color:rgba(249,245,238,.5);margin-bottom:32px;
 }
-.hero-clock-row .clock-val{font-weight:700;color:var(--brown);}
+.hero-clock-row .clock-val{font-weight:600;color:rgba(249,245,238,.9);}
 .hero-clock-row .open-chip{
-  background:rgba(45,74,47,.1);color:var(--green);
-  border:1px solid rgba(45,74,47,.2);border-radius:99px;
-  padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.5px;
+  background:rgba(74,222,128,.1);color:#4ade80;
+  border:1px solid rgba(74,222,128,.25);border-radius:99px;
+  padding:3px 10px;font-size:11px;font-weight:600;letter-spacing:.5px;
 }
-.hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:40px;}
+.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:36px;}
 .btn-primary{
   display:inline-flex;align-items:center;gap:8px;
-  background:var(--brown);color:var(--cream);
+  background:var(--gold);color:#1A0E00;
   border:none;border-radius:var(--r);
-  padding:15px 32px;font-size:13px;font-weight:700;letter-spacing:.5px;
-  text-transform:uppercase;cursor:pointer;font-family:var(--sans);
+  padding:13px 28px;font-size:13px;font-weight:700;letter-spacing:.3px;
+  cursor:pointer;font-family:var(--sans);
   transition:background .2s,transform .15s;text-decoration:none;
 }
-.btn-primary:hover{background:var(--brown2);transform:translateY(-1px);}
+.btn-primary:hover{background:var(--gold2);transform:translateY(-1px);}
 .btn-ghost{
-  font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-  color:var(--muted);text-decoration:none;border-bottom:1px solid currentColor;
-  padding-bottom:2px;transition:color .2s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);
+  font-size:13px;font-weight:500;
+  color:rgba(249,245,238,.6);text-decoration:none;
+  border-bottom:1px solid rgba(249,245,238,.25);
+  padding-bottom:2px;transition:all .2s;cursor:pointer;
+  background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);
 }
-.btn-ghost:hover{color:var(--brown);}
-.hero-stats{display:flex;gap:28px;}
-.hstat .num{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--brown);}
-.hstat .lbl{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+.btn-ghost:hover{color:#F9F5EE;border-color:rgba(249,245,238,.6);}
+.hero-stats{display:flex;gap:28px;padding-top:24px;border-top:1px solid rgba(249,245,238,.1);}
+.hstat .num{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--gold);font-style:italic;}
+.hstat .lbl{font-size:10px;color:rgba(249,245,238,.4);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
 
 /* HERO CARD (right side) */
 .hero-card{
   position:relative;z-index:2;
-  background:var(--white);border-radius:var(--r3);
-  padding:32px 28px;box-shadow:var(--shadow-lg);
-  border:1px solid rgba(59,37,18,.07);
+  background:rgba(255,255,255,.06);border-radius:var(--r3);
+  padding:28px 24px;
+  border:1px solid rgba(200,146,42,.15);
 }
-.hero-card-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
-.hero-card-open{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green2);margin-bottom:16px;display:flex;align-items:center;gap:6px;}
+.hero-card-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.hero-card-open{font-size:11px;font-weight:600;letter-spacing:.5px;color:#4ade80;margin-bottom:16px;display:flex;align-items:center;gap:6px;}
 .hero-card-open::before{content:'●';font-size:8px;}
 .hours-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
 .hours-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-.hours-row .day{color:var(--muted);}.hours-row .time{font-weight:700;color:var(--brown);}
-.hours-row.today .day,.hours-row.today .time{color:var(--rust);font-weight:700;}
-.hero-card-divider{height:1px;background:rgba(59,37,18,.08);margin:16px 0;}
-.hero-card-contact{font-size:13px;color:var(--muted);line-height:1.8;}
-.hero-card-contact a{color:var(--brown);font-weight:700;text-decoration:none;}
-.hero-card-addr{font-size:12px;color:var(--muted2);margin-top:6px;}
+.hours-row .day{color:rgba(249,245,238,.5);}.hours-row .time{font-weight:600;color:rgba(249,245,238,.9);}
+.hours-row.today .day{color:var(--gold);font-weight:600;}
+.hours-row.today .time{color:var(--gold);font-weight:700;}
+.hero-card-divider{height:1px;background:rgba(249,245,238,.08);margin:16px 0;}
+.hero-card-contact{font-size:13px;color:rgba(249,245,238,.55);line-height:1.8;}
+.hero-card-contact a{color:rgba(249,245,238,.85);font-weight:600;text-decoration:none;}
+.hero-card-addr{font-size:12px;color:rgba(249,245,238,.4);margin-top:6px;}
 
 /* ════ TICKER ════ */
-.ticker-bar{background:var(--rust);overflow:hidden;padding:0;}
-.ticker-inner{display:flex;animation:ticker 7s linear infinite;white-space:nowrap;}
-.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:12px 40px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);text-decoration:none;cursor:pointer;transition:opacity .15s;}
-.ticker-item:hover{opacity:.8;}
-.ticker-dot{color:var(--gold2);font-size:18px;}
+.ticker-bar{background:#1B3A0F;overflow:hidden;padding:0;border-top:1px solid rgba(123,200,90,.15);}
+.ticker-inner{display:flex;animation:ticker 22s linear infinite;white-space:nowrap;}
+.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:11px 36px;font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#7BC85A;text-decoration:none;cursor:pointer;transition:opacity .15s;}
+.ticker-item:hover{opacity:.75;}
+.ticker-dot{color:rgba(123,200,90,.6);font-size:14px;}
 @keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
 
-/* ════ PŁYWAJĄCE JEDZENIE ════ */
-.food-float{
-  position:absolute;font-size:96px;opacity:0;
-  animation:foodFloat linear infinite;
-  pointer-events:none;z-index:1;user-select:none;
-  filter:drop-shadow(0 4px 8px rgba(59,37,18,.15));
-}
-@keyframes foodFloat{
-  0%  {opacity:0;transform:translateY(0) rotate(0deg) scale(.8);}
-  10% {opacity:.7;}
-  90% {opacity:.7;}
-  100%{opacity:0;transform:translateY(-120vh) rotate(25deg) scale(1.1);}
-}
-.food-float:nth-child(1){left:5%;animation-duration:14s;animation-delay:0s;font-size:84px;}
-.food-float:nth-child(2){left:15%;animation-duration:18s;animation-delay:2s;font-size:108px;}
-.food-float:nth-child(3){left:25%;animation-duration:12s;animation-delay:4s;font-size:72px;}
-.food-float:nth-child(4){left:38%;animation-duration:16s;animation-delay:1s;font-size:90px;}
-.food-float:nth-child(5){left:52%;animation-duration:20s;animation-delay:3s;font-size:102px;}
-.food-float:nth-child(6){left:65%;animation-duration:13s;animation-delay:6s;font-size:78px;}
-.food-float:nth-child(7){left:75%;animation-duration:17s;animation-delay:0.5s;font-size:114px;}
-.food-float:nth-child(8){left:85%;animation-duration:15s;animation-delay:5s;font-size:84px;}
-.food-float:nth-child(9){left:92%;animation-duration:19s;animation-delay:2.5s;font-size:66px;}
-.food-float:nth-child(10){left:10%;animation-duration:22s;animation-delay:7s;font-size:96px;}
+/* ════ PŁYWAJĄCE JEDZENIE — wyłączone ════ */
+.food-float{display:none;}
 
 
 .section-header{text-align:center;margin-bottom:48px;}
-.section-tag{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);display:inline-flex;align-items:center;gap:12px;margin-bottom:14px;}
-.section-tag::before,.section-tag::after{content:'';display:block;width:40px;height:1px;background:var(--gold);}
-.section-title{font-family:var(--serif);font-size:clamp(34px,4vw,50px);font-weight:700;color:var(--brown);line-height:1.1;}
+.section-tag{font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);display:inline-flex;align-items:center;gap:12px;margin-bottom:12px;}
+.section-tag::before,.section-tag::after{content:'';display:block;width:36px;height:0.5px;background:var(--gold);opacity:0.7;}
+.section-title{font-family:var(--serif);font-size:clamp(28px,3.5vw,44px);font-weight:600;color:var(--brown);line-height:1.15;}
 
 /* ════ DAILY DISH ════ */
-.daily-section{padding:80px 48px;background:var(--cream2);}
+.daily-section{padding:72px 48px;background:var(--cream2);}
+.daily-inner-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:1100px;margin:0 auto;}
+.daily-hero-img{border-radius:var(--r3);overflow:hidden;position:relative;min-height:320px;background:var(--brown);display:flex;align-items:flex-end;padding:20px;}
+.daily-hero-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.daily-hero-badge{position:absolute;top:16px;left:16px;background:var(--gold);color:#1A0E00;padding:6px 14px;border-radius:var(--r);font-size:11px;font-weight:700;letter-spacing:.5px;z-index:2;}
+.daily-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.6) 0%,transparent 60%);z-index:1;}
+.daily-cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
 .daily-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;}
 .daily-text .daily-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rust);margin-bottom:10px;}
 .daily-text h2{font-family:var(--serif);font-size:clamp(32px,3.5vw,46px);font-weight:700;color:var(--brown);line-height:1.1;margin-bottom:16px;}
@@ -261,7 +250,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .addr-pill:hover{background:var(--cream3);}
 
 /* ════ PROMO CARDS ════ */
-.promos-section{padding:32px 48px;background:var(--brown);}
+.promos-section{padding:28px 48px;background:var(--brown);border-top:1px solid rgba(200,146,42,.15);}
 .promos-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .promo-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r2);padding:24px 20px;position:relative;overflow:hidden;transition:background .2s;}
 .promo-card:hover{background:rgba(255,255,255,.09);}
@@ -315,7 +304,11 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .ivar:hover{background:var(--brown2);}
 
 /* ════ LOYALTY ════ */
-.loyalty-section{padding:80px 48px;background:var(--cream2);}
+.loyalty-section{padding:72px 48px;background:#2A1A0E;}
+.loyalty-inner-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;max-width:1100px;margin:0 auto;}
+.loyalty-section .section-title{color:#F9F5EE;}
+.loyalty-section .section-tag{color:var(--gold);}
+.loyalty-section .section-tag::before,.loyalty-section .section-tag::after{background:var(--gold);}
 .loyalty-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
 .loy-stamps-wrap{background:var(--white);border-radius:var(--r3);padding:32px;box-shadow:var(--shadow);}
 .loy-stamps-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0 20px;}
@@ -340,7 +333,14 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 }
 
 /* ════ REVIEWS ════ */
-.reviews-section{padding:80px 48px;background:var(--white);}
+.reviews-section{padding:72px 48px;background:var(--cream);}
+.reviews-top-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px;}
+.reviews-rating-block{text-align:right;}
+.reviews-rating-big{font-family:var(--serif);font-size:52px;color:var(--gold);font-style:italic;line-height:1;}
+.reviews-stars-row{color:var(--gold);font-size:14px;margin:4px 0;}
+.reviews-sub{font-size:11px;color:var(--muted2);}
+.reviews-gmaps{display:inline-flex;align-items:center;gap:6px;border:0.5px solid rgba(59,37,18,.2);border-radius:var(--r);padding:7px 14px;font-size:11px;color:var(--brown);font-weight:500;text-decoration:none;margin-top:8px;}
+.reviews-gmaps:hover{background:var(--cream2);}
 .reviews-inner{max-width:1100px;margin:0 auto;}
 .reviews-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px;}
 .rating-block{display:flex;align-items:center;gap:16px;}
@@ -365,7 +365,17 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .rev-text{font-size:13px;color:var(--muted);line-height:1.6;}
 
 /* ════ NEWSLETTER ════ */
-.newsletter-section{padding:80px 48px;background:var(--brown);}
+.newsletter-section{padding:64px 48px;background:var(--cream);}
+.newsletter-inner{max-width:860px;margin:0 auto;background:var(--white);border:0.5px solid rgba(59,37,18,.1);border-radius:var(--r3);padding:40px;display:grid;grid-template-columns:1fr 280px;gap:36px;align-items:center;}
+.newsletter-inner .nl-tabs{display:flex;gap:8px;margin-bottom:12px;}
+.newsletter-inner .nl-tab{padding:8px 16px;border-radius:var(--r);border:1px solid rgba(59,37,18,.15);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);color:var(--muted);}
+.newsletter-inner .nl-tab.on{background:var(--brown);color:var(--cream);border-color:var(--brown);}
+.newsletter-inner .nl-form-row{display:flex;flex-direction:column;gap:8px;}
+.newsletter-inner .nl-input{padding:10px 14px;border:1px solid rgba(59,37,18,.15);border-radius:var(--r);font-size:13px;font-family:var(--sans);background:var(--cream);color:var(--brown);}
+.newsletter-inner .nl-btn{background:var(--gold);color:#1A0E00;border:none;border-radius:var(--r);padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+.newsletter-inner .nl-consent{font-size:11px;color:var(--muted2);line-height:1.6;margin-top:8px;}
+.newsletter-inner .nl-consent a{color:var(--gold);}
+.newsletter-inner .nl-consent input{margin-right:6px;}
 .newsletter-inner{max-width:700px;margin:0 auto;text-align:center;}
 .newsletter-inner .section-tag{color:var(--gold2);}
 .newsletter-inner .section-tag::before,.newsletter-inner .section-tag::after{background:var(--gold2);}
@@ -420,12 +430,17 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .map-wrap iframe{width:100%;height:340px;border:none;display:block;}
 
 /* ════ FOOTER ════ */
-.footer{background:var(--brown);padding:40px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.footer{background:#2A1A0E;padding:48px 48px 28px;}
+.footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;max-width:1100px;margin:0 auto 32px;}
+.footer-col h4{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.footer-col p,.footer-col a{font-size:12px;color:rgba(249,245,238,.55);line-height:1.9;display:block;text-decoration:none;}
+.footer-col a:hover{color:var(--gold);}
+.footer-logo-img{width:100px;filter:brightness(0) invert(1);opacity:.7;margin-bottom:14px;}
 .footer-logo{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--cream);}.footer-logo span{color:var(--gold);}
 .footer-links{display:flex;gap:24px;flex-wrap:wrap;}
-.footer-links a{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(249,245,238,.35);text-decoration:none;transition:color .2s;}
+.footer-links a{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(249,245,238,.3);text-decoration:none;transition:color .2s;}
 .footer-links a:hover{color:var(--gold);}
-.footer-copy{font-size:12px;color:rgba(249,245,238,.25);width:100%;text-align:center;padding-top:20px;border-top:1px solid rgba(249,245,238,.06);}
+.footer-copy{font-size:11px;color:rgba(249,245,238,.25);text-align:center;padding-top:20px;border-top:1px solid rgba(249,245,238,.07);max-width:1100px;margin:0 auto;}
 
 /* ════ SHEETS / OVERLAYS ════ */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
@@ -581,7 +596,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   .hero-card{display:none;}
   .hero h1{font-size:38px;}
 
-  .daily-section,.loyalty-section,.contact-section{padding:56px 20px;}
+  .daily-section,.loyalty-section,.contact-section,.newsletter-section{padding:48px 20px;}
+  .footer-grid{grid-template-columns:1fr!important;}
+  .newsletter-inner{grid-template-columns:1fr!important;}
   .daily-inner,.loyalty-inner,.contact-inner{grid-template-columns:1fr;gap:40px;}
 
   .kitchen-section{padding:48px 20px;}
@@ -634,23 +651,15 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <meta name="apple-mobile-web-app-title" content="Hirschówka">
 <link rel="apple-touch-icon" href="logo-round.png">
 <meta name="theme-color" content="#3B2512">
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-B1SXD1CXVS"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-B1SXD1CXVS');
-</script>
 </head>
 <body>
 
 <!-- ═══ NAV ═══ -->
 <nav class="nav" id="nav">
   <a href="#" class="nav-logo">
-    <img src="logo-round.png" alt="Hirschówka Bistro" onerror="this.src='https://i.ibb.co/j9BQtnYt/logo-Hirsch-wka-okr-g-e.png'" style="height:88px;width:88px;object-fit:contain;border-radius:50%;display:block;">
+  <a href="/" class="nav-logo">
+    <img src="logo-round.png" alt="Hirschówka Bistro" style="height:44px;width:44px;object-fit:contain;border-radius:50%;display:block;" onerror="this.style.display='none'">
     <span>Hirsch<span style="color:var(--gold);">ówka</span> Bistro</span>
-  </a>
   <ul class="nav-links" id="nav-links">
     <li><a href="#menu">Menu</a></li>
     <li><a href="#daily-section">Danie dnia</a></li>
@@ -721,6 +730,13 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   </div>
 </section>
 
+
+<!-- ZDJĘCIE BISTRO — pełna szerokość -->
+<div style="width:100%;height:280px;overflow:hidden;position:relative;background:#2A1A0E;">
+  <img src="zewnątrz2.jpg" alt="Hirschówka Bistro Mielec — widok z zewnątrz" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;" onerror="this.style.display='none'">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(26,14,0,.4) 0%,transparent 50%,rgba(26,14,0,.4) 100%);"></div>
+</div>
+
 <!-- TICKER — edytuj w panelu admina → Promocje → +Dodaj promocję -->
 <div class="ticker-bar">
   <div class="ticker-inner" id="ticker-inner">
@@ -738,6 +754,74 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 </div>
 
 <!-- ═══ DANIE DNIA ═══ -->
+
+<!-- ═══ TRZY KATEGORIE ═══ -->
+<section style="padding:64px 48px;background:var(--cream);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-bottom:44px;">
+      <div>
+        <div class="section-tag" style="justify-content:flex-start">Co kochamy robić</div>
+        <h2 class="section-title">Trzy rzeczy, na których nam <em style="font-style:italic;color:var(--gold)">naprawdę</em> zależy.</h2>
+      </div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.8;padding-top:8px;">Każdego ranka robimy mniej, ale lepiej. Kupujemy lokalnie, pieczemy sami i nie ścinamy zakrętów.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+      <!-- Śniadania -->
+      <a href="#menu" onclick="setTimeout(()=>{const el=document.querySelector('[data-cat=\'Śniadania\']');if(el)el.click();},300);return false;"
+        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
+        onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
+        <div style="height:180px;background:linear-gradient(160deg,#D4A96A,#8B5E2A);position:relative;display:flex;align-items:flex-end;padding:12px;">
+          <span style="background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">01 / Śniadania</span>
+        </div>
+        <div style="padding:18px;">
+          <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Śniadania <em style="color:var(--gold)">od 7:00</em></h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:14px;">Jajecznica, omlety, kanapki — wszystko robione na bieżąco, nigdy z podgrzewacza.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--serif);font-size:17px;color:var(--gold)"><span style="font-size:11px;color:var(--muted2);font-family:var(--sans)">od </span>15 zł</span>
+            <span style="font-size:12px;color:var(--gold);font-weight:600;">→ przejdź do menu</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Bajgle -->
+      <a href="#menu" onclick="setTimeout(()=>{const el=document.querySelector('[data-cat=\'Bajgle\']');if(el)el.click();},300);return false;"
+        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
+        onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
+        <div style="height:180px;background:linear-gradient(160deg,#6B4423,#3B2512);position:relative;display:flex;align-items:flex-end;padding:12px;">
+          <span style="background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">02 / Bajgle</span>
+        </div>
+        <div style="padding:18px;">
+          <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Bajgle z <em style="color:var(--gold)">chrupiącą skórką</em></h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:14px;">Najpierw gotujemy, potem pieczemy — jak kazała tradycja. Pieczone partiami od 7:00.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--serif);font-size:17px;color:var(--gold)"><span style="font-size:11px;color:var(--muted2);font-family:var(--sans)">od </span>22 zł</span>
+            <span style="font-size:12px;color:var(--gold);font-weight:600;">→ przejdź do menu</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Napary Premium -->
+      <a href="#menu" onclick="setTimeout(()=>{const el=document.querySelector('[data-cat=\'Napary Premium\']');if(el)el.click();},300);return false;"
+        style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:var(--r3);overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
+        onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
+        <div style="height:180px;background:linear-gradient(160deg,#2D5A1B,#1B3A0F);position:relative;display:flex;align-items:flex-end;padding:12px;">
+          <span style="background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">03 / Napary Premium</span>
+        </div>
+        <div style="padding:18px;">
+          <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Napary <em style="color:var(--gold)">premium</em></h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:14px;">Starannie dobrane herbaty i napary ziołowe — idealne do każdej pory dnia.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--serif);font-size:17px;color:var(--gold)"><span style="font-size:11px;color:var(--muted2);font-family:var(--sans)">od </span>9 zł</span>
+            <span style="font-size:12px;color:var(--gold);font-weight:600;">→ przejdź do menu</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
 <section class="daily-section" id="daily-section">
   <div class="daily-inner">
     <div class="daily-text reveal">
@@ -821,17 +905,18 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 <!-- ═══ OPINIE ═══ -->
 <section class="reviews-section" id="reviews">
-  <div class="reviews-inner">
-    <div class="section-header">
-      <div class="section-tag">Co mówią klienci</div>
-      <h2 class="section-title">Opinie Google</h2>
-    </div>
-    <div class="reviews-header reveal">
-      <div class="rating-block">
-        <div class="rating-num">4.9</div>
-        <div class="rating-info"><div class="stars">★★★★★</div><div class="count">Ocena w Google Maps</div></div>
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="reviews-top-row">
+      <div>
+        <div class="section-tag">Opinie klientów</div>
+        <h2 class="section-title">Co mówią o nas goście.<br><em style="font-style:italic;color:var(--gold)">Mielczanie wracają. Codziennie.</em></h2>
       </div>
-      <a href="https://www.google.com/maps/search/Hirschówka+Bistro+Mielec+Mickiewicza+17" target="_blank" rel="noopener" class="google-btn"><span class="g-icon">G</span> Zobacz w Google Maps →</a>
+      <div class="reviews-rating-block">
+        <div class="reviews-rating-big">4.9</div>
+        <div class="reviews-stars-row">★★★★★</div>
+        <div class="reviews-sub">Ocena w Google Maps</div>
+        <a href="https://maps.google.com/?q=Hirsch%C3%B3wka+Bistro+Mielec" target="_blank" class="reviews-gmaps">G Zobacz w Google Maps →</a>
+      </div>
     </div>
     <div class="reviews-grid" id="reviews-grid"></div>
   </div>
@@ -840,23 +925,27 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- ═══ NEWSLETTER ═══ -->
 <section class="newsletter-section">
   <div class="newsletter-inner">
-    <div class="section-tag">Bądź na bieżąco</div>
-    <h2>Promocje prosto<br>na Twój telefon</h2>
-    <p>Cotygodniowe oferty, nowe dania i specjalne okazje — zapisz się i nie przegap żadnej promocji.</p>
-    <div class="nl-tabs">
-      <button class="nl-tab on" id="nl-sms" onclick="switchNL('sms')">📱 SMS</button>
-      <button class="nl-tab" id="nl-email" onclick="switchNL('email')">✉️ E-mail</button>
+    <div>
+      <div class="section-tag" style="justify-content:flex-start">Promocje i nowości</div>
+      <h2 style="font-family:var(--serif);font-size:clamp(22px,2.5vw,32px);font-weight:600;color:var(--brown);line-height:1.3;margin-bottom:10px;">Bądź pierwszy, gdy mamy<br><em style="color:var(--gold);font-style:italic">coś specjalnego.</em></h2>
+      <p style="font-size:14px;color:var(--muted);line-height:1.7;max-width:400px;">Wpisz numer telefonu lub email — dostaniesz SMS lub wiadomość gdy pojawi się danie dnia lub specjalna oferta.</p>
     </div>
-    <div class="nl-form-row">
-      <input class="nl-input" type="tel" id="nl-phone" placeholder="Numer telefonu (np. 511 707 232)" style="display:block;">
-      <input class="nl-input" type="email" id="nl-emailinp" placeholder="Adres e-mail" style="display:none;">
-      <button class="nl-btn" onclick="subscribeNL()">Zapisz się!</button>
+    <div>
+      <div class="nl-tabs">
+        <button class="nl-tab on" id="nl-sms" onclick="switchNL('sms')">📱 SMS</button>
+        <button class="nl-tab" id="nl-email" onclick="switchNL('email')">✉️ E-mail</button>
+      </div>
+      <div class="nl-form-row">
+        <input class="nl-input" type="tel" id="nl-phone" placeholder="Numer telefonu (np. 511 707 232)" style="display:block;">
+        <input class="nl-input" type="email" id="nl-emailinp" placeholder="Adres e-mail" style="display:none;">
+        <button class="nl-btn" onclick="subscribeNL()">Zapisz się →</button>
+      </div>
+      <div class="nl-consent">
+        <input type="checkbox" id="nl-consent">
+        <label for="nl-consent">Wyrażam zgodę na otrzymywanie informacji marketingowych. <a href="polityka-prywatnosci.html">Polityka prywatności</a></label>
+      </div>
+      <div id="nl-result"></div>
     </div>
-    <div class="nl-consent">
-      <input type="checkbox" id="nl-consent">
-      <label for="nl-consent">Wyrażam zgodę na otrzymywanie informacji marketingowych. Mogę wycofać zgodę w dowolnym momencie. <a href="#">Polityka prywatności</a></label>
-    </div>
-    <div id="nl-result"></div>
   </div>
 </section>
 
@@ -898,27 +987,40 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 
 <!-- FOOTER -->
 <footer class="footer">
-  <!-- Logo prostokątne -->
-  <div style="text-align:center;margin-bottom:24px;">
-    <img src="logo-rect.png" alt="Hirschówka Bistro" onerror="this.src='https://i.ibb.co/gMdK04wt/logo-Hirsch-wka.png'" style="max-height:120px;max-width:360px;object-fit:contain;">
+  <div class="footer-grid">
+    <div>
+      <img src="logo-rect.png" alt="Hirschówka Bistro" class="footer-logo-img" onerror="this.style.display='none'">
+      <div class="footer-col">
+        <h4>Dane firmy</h4>
+        <p>Fresh Marcin Jastrzębski</p>
+        <p>NIP: 5422587208</p>
+        <p>ul. Mickiewicza 17, 39-300 Mielec</p>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Kontakt</h4>
+      <a href="tel:+48511707232">📞 511 707 232</a>
+      <a href="mailto:kontakt@hirschowkabistro.pl">✉ kontakt@hirschowkabistro.pl</a>
+      <a href="https://maps.google.com/?q=Mickiewicza+17,+Mielec" target="_blank">📍 ul. Mickiewicza 17, 39-300 Mielec →</a>
+      <h4 style="margin-top:16px">Godziny otwarcia</h4>
+      <p>Pon – Pt: 7:00 – 17:00</p>
+      <p>Sobota: 8:00 – 14:00</p>
+      <p style="color:rgba(249,245,238,.3)">Niedziela: nieczynne</p>
+    </div>
+    <div class="footer-col">
+      <h4>Nawigacja</h4>
+      <a href="#menu">Menu</a>
+      <a href="#daily-section">Danie dnia</a>
+      <a href="#loyalty-section">Lojalność</a>
+      <a href="#contact-section">Kontakt</a>
+      <h4 style="margin-top:16px">Dokumenty</h4>
+      <a href="polityka-prywatnosci.html">Polityka prywatności</a>
+      <a href="regulamin.html">Regulamin zamówień</a>
+    </div>
   </div>
-
-  <nav class="footer-links">
-    <a href="#menu">Menu</a>
-    <a href="#daily-section">Danie dnia</a>
-    <a href="#loyalty-section">Karta lojalnościowa</a>
-    <a href="#contact-section">Kontakt</a>
-    <a href="tel:511707232">511 707 232</a>
-    <a href="regulamin.html" style="color:var(--gold2);">Regulamin płatności</a>
-  </nav>
-
-  <!-- Dane firmy wymagane przez Przelewy24 -->
-  <div style="margin:20px auto;max-width:600px;font-size:12px;color:rgba(255,255,255,.45);line-height:1.8;text-align:center;border-top:1px solid rgba(255,255,255,.1);padding-top:20px;">
-    <strong style="color:rgba(255,255,255,.65);">Fresh Marcin Jastrzębski</strong> · ul. Mickiewicza 17, 39-300 Mielec · NIP: 542-258-72-08<br>
-    Tel: <a href="tel:511707232" style="color:rgba(255,255,255,.45);">511 707 232</a> · E-mail: <a href="mailto:kontakt@hirschowkabistro.pl" style="color:rgba(255,255,255,.45);">kontakt@hirschowkabistro.pl</a>
+  <div class="footer-copy">
+    © 2025 Fresh Marcin Jastrzębski · Wszelkie prawa zastrzeżone · NIP: 5422587208
   </div>
-
-  <div class="footer-copy">© 2025 Hirschówka Bistro · Wszelkie prawa zastrzeżone</div>
 </footer>
 
 <!-- ═══ OVERLAYS ═══ -->
