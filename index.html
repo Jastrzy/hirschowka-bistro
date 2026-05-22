@@ -275,23 +275,23 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .menu-grid{display:flex;flex-direction:column;gap:0;}
 
 .irow{
-  display:flex;align-items:center;padding:14px 0;
-  border-bottom:1px solid rgba(59,37,18,.06);gap:14px;
-  cursor:pointer;transition:background .12s;border-radius:var(--r);
+  display:flex;align-items:center;padding:16px 12px;
+  border-bottom:1px solid rgba(59,37,18,.07);gap:20px;
+  cursor:pointer;transition:all .15s;border-radius:var(--r2);
+  background:var(--white);margin-bottom:8px;
 }
-.irow:hover{background:var(--cream);}
-.irow:hover{padding:14px 8px;}
+.irow:hover{background:var(--cream);box-shadow:0 2px 12px rgba(59,37,18,.08);transform:translateY(-1px);}
 .irow.unavail{opacity:.35;pointer-events:none;}
 .irow-info{flex:1;min-width:0;}
-.ibadges{display:flex;gap:4px;margin-bottom:3px;}
+.ibadges{display:flex;gap:4px;margin-bottom:4px;}
 .ib{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:2px;}
 .ib-new{background:rgba(45,74,47,.1);color:var(--green2);}
 .ib-out{background:rgba(184,76,43,.1);color:var(--rust);}
-.iname{font-size:14px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:3px;}
-.idesc{font-size:12px;color:var(--muted);line-height:1.4;}
-.iphoto{width:120px;height:90px;border-radius:0;object-fit:cover;flex-shrink:0;}
-.iprice{font-size:15px;font-weight:700;color:var(--gold);white-space:nowrap;}
-.ipfrom{font-size:11px;color:var(--muted2);margin-right:2px;}
+.iname{font-size:16px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:5px;}
+.idesc{font-size:13px;color:var(--muted);line-height:1.5;}
+.iphoto{width:160px;height:160px;border-radius:var(--r2);object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(59,37,18,.1);}
+.iprice{font-size:18px;font-weight:700;color:var(--gold);white-space:nowrap;font-family:var(--serif);font-style:italic;}
+.ipfrom{font-size:11px;color:var(--muted2);margin-right:2px;font-family:var(--sans);font-style:normal;}
 .iadd{
   background:var(--brown);color:var(--cream);border:none;border-radius:var(--r);
   padding:9px 16px;font-size:12px;font-weight:700;letter-spacing:.3px;
