@@ -147,12 +147,33 @@
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
+      // Klucze których NIE wolno nadpisać pustą wartością w Firebase
+      var _protectedKeys = ['customers','menu','addons','params','cross','rewards','loyalty-history'];
+      // Minimalna liczba elementów wymagana do zapisu dla kluczy tablicowych
+      var _minItems = {'customers': 1, 'menu': 1};
+
       setInterval(function() {
         cfg_keys.forEach(function(k) {
           var now = localStorage.getItem(k);
           if (now !== null && now !== last[k]) {
+            // Ochrona — nie nadpisuj Firebase pustą/małą tablicą
+            if (_protectedKeys.indexOf(k) >= 0) {
+              try {
+                var parsed = JSON.parse(now);
+                var minCount = _minItems[k] || 0;
+                // Jeśli to tablica — sprawdź czy ma wystarczająco elementów
+                if (Array.isArray(parsed) && parsed.length < minCount) {
+                  console.warn('[FB] Blokada sync: ' + k + ' ma ' + parsed.length + ' elementów — za mało, pomijam');
+                  return;
+                }
+                // Jeśli pusta tablica lub null — sprawdź ile jest w Firebase
+                if (!parsed || (Array.isArray(parsed) && parsed.length === 0)) {
+                  console.warn('[FB] Blokada sync: ' + k + ' jest pusty — nie nadpisuję Firebase');
+                  return;
+                }
+              } catch(e) { return; }
+            }
             last[k] = now;
-            // Oznacz jako lokalny zapis
             _localWriteTs[k] = Date.now();
             try { db.ref(k).set(JSON.parse(now)).catch(function(){}); } catch(e) {}
           }
