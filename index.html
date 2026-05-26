@@ -641,6 +641,43 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .fi{animation:fu .35s ease both;}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
 .reveal.visible{opacity:1;transform:translateY(0);}
+
+/* ════ COOKIES BANNER ════ */
+#cookie-banner{
+  position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:#2A1A0E;color:#F9F5EE;
+  padding:20px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:24px;flex-wrap:wrap;
+  border-top:2px solid rgba(200,146,42,.3);
+  box-shadow:0 -4px 32px rgba(0,0,0,.3);
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+}
+#cookie-banner.visible{transform:translateY(0);}
+.cookie-text{flex:1;min-width:260px;}
+.cookie-text p{font-size:13px;color:rgba(249,245,238,.8);line-height:1.6;margin:0;}
+.cookie-text a{color:var(--gold);text-decoration:underline;}
+.cookie-btns{display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+.cookie-btn-accept{
+  background:var(--gold);color:#1A0E00;border:none;
+  border-radius:6px;padding:10px 22px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);
+  white-space:nowrap;
+}
+.cookie-btn-reject{
+  background:transparent;color:rgba(249,245,238,.6);
+  border:1px solid rgba(249,245,238,.2);
+  border-radius:6px;padding:10px 18px;
+  font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);
+  white-space:nowrap;transition:all .15s;
+}
+.cookie-btn-reject:hover{color:#F9F5EE;border-color:rgba(249,245,238,.5);}
+@media(max-width:600px){
+  #cookie-banner{padding:16px 20px;}
+  .cookie-btns{width:100%;}
+  .cookie-btn-accept,.cookie-btn-reject{flex:1;text-align:center;}
+}
 </style>
 <script src="firebase-config.js"></script>
 <!-- PWA -->
@@ -2001,5 +2038,78 @@ window.addEventListener('focus',()=>{
   renderAdminTicker();
 });
 </script>
+
+<!-- ═══ COOKIES BANNER ═══ -->
+<div id="cookie-banner" role="dialog" aria-label="Zgoda na cookies">
+  <div class="cookie-text">
+    <p>
+      🍪 Używamy plików cookies. Niezbędne cookies zapewniają działanie strony i koszyka.
+      Analityczne cookies (Google Analytics) pomagają nam ulepszać serwis — tylko za Twoją zgodą.
+      <a href="polityka-prywatnosci.html">Polityka prywatności</a>
+    </p>
+  </div>
+  <div class="cookie-btns">
+    <button class="cookie-btn-reject" onclick="rejectCookies()">Tylko niezbędne</button>
+    <button class="cookie-btn-accept" onclick="acceptCookies()">Akceptuję wszystkie</button>
+  </div>
+</div>
+
+<script>
+// ═══ COOKIES CONSENT ═══
+(function(){
+  var COOKIE_KEY = 'hb_cookie_consent';
+
+  // Załaduj GA tylko gdy jest zgoda
+  function loadGA(){
+    if(window._gaLoaded) return;
+    window._gaLoaded = true;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-B1SXD1CXVS';
+    document.head.appendChild(s);
+    s.onload = function(){
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', 'G-B1SXD1CXVS');
+    };
+  }
+
+  function hideBanner(){
+    var b = document.getElementById('cookie-banner');
+    if(b){ b.classList.remove('visible'); setTimeout(function(){ b.style.display='none'; }, 400); }
+  }
+
+  window.acceptCookies = function(){
+    localStorage.setItem(COOKIE_KEY, 'accepted');
+    hideBanner();
+    loadGA();
+  };
+
+  window.rejectCookies = function(){
+    localStorage.setItem(COOKIE_KEY, 'rejected');
+    hideBanner();
+    // GA nie jest ładowane
+  };
+
+  // Sprawdź przy starcie
+  document.addEventListener('DOMContentLoaded', function(){
+    var consent = localStorage.getItem(COOKIE_KEY);
+    if(consent === 'accepted'){
+      loadGA();
+    } else if(consent === 'rejected'){
+      // nic nie ładuj
+    } else {
+      // Brak wyboru — pokaż baner po chwili
+      setTimeout(function(){
+        var b = document.getElementById('cookie-banner');
+        if(b) b.classList.add('visible');
+      }, 800);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
