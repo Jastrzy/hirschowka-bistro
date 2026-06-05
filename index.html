@@ -1136,7 +1136,8 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       </div>
     </div>
     <div class="sblk">
-      <div class="crow"><input type="checkbox" id="c-terms"><label for="c-terms">* Potwierdzam zapoznanie się z <a href="#">Regulaminem</a> oraz <a href="#">Polityką prywatności</a>.</label></div>
+      <div class="crow"><input type="checkbox" id="c-terms"><label for="c-terms">* Akceptuję <a href="regulamin.html" target="_blank">Regulamin sprzedaży</a> i potwierdzam zapoznanie się z jego treścią.</label></div>
+      <div class="crow"><input type="checkbox" id="c-privacy"><label for="c-privacy">* Zapoznałem/am się z <a href="polityka-prywatnosci.html" target="_blank">Polityką prywatności</a>.</label></div>
       <div class="crow"><input type="checkbox" id="c-mkt"><label for="c-mkt">(opcjonalnie) Zgoda na marketing e-mail / SMS.</label></div>
       <button class="order-btn" onclick="placeOrder()">Do kasy — <span id="checkout-total">0,00 zł</span></button>
     </div>
@@ -1874,7 +1875,8 @@ function applyCoupon(){
 // ════ ORDER ════
 function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
-  if(!document.getElementById('c-terms').checked){toast('Zaakceptuj regulamin');return;}
+  if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
+  if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
   const firstName=(document.getElementById('c-name')?.value||'').trim();
   const surname=(document.getElementById('c-surname')?.value||'').trim();
   const name=surname?`${firstName} ${surname}`.trim():firstName;
