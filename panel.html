@@ -581,7 +581,7 @@ window._onAuthReady = function(auth){
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <input type="search" id="cust-search" placeholder="Szukaj po nazwie, telefonie, e-mailu..." style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;min-width:220px;" oninput="renderCusts(this.value)">
           <button class="btn bo bsm" onclick="openMergeCustModal()" title="Scal dwóch klientów ręcznie">🔗 Scal</button>
-          <button class="btn bo bsm" onclick="exportCSV()">⬇ CSV</button>
+          <button class="btn bo bsm" onclick="exportCustomersJSON()">⬇ JSON</button>
           <button class="btn bp bsm" onclick="openAddCustModal()">+ Dodaj klienta</button>
         </div>
       </div>
@@ -1110,12 +1110,25 @@ window._onAuthReady = function(auth){
       <!-- EKSPORT -->
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">Eksport danych</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Pobierz aktualną bazę klientów lub menu w formacie CSV.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Pobierz dane w formacie JSON.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn bp bsm" onclick="exportCSV()">⬇ Klienci (CSV)</button>
-          <button class="btn bo bsm" onclick="exportMenuCSV()">⬇ Menu (CSV)</button>
+          <button class="btn bp bsm" onclick="exportCustomersJSON()">⬇ Klienci (JSON)</button>
+          <button class="btn bo bsm" onclick="exportMenuJSON()">⬇ Menu (JSON)</button>
           <button class="btn bo bsm" onclick="exportFullBackup()">⬇ Pełny backup (JSON)</button>
         </div>
+      </div>
+
+      <!-- IMPORT BACKUP JSON -->
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">Wgraj backup JSON</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Przywróć dane z wcześniej pobranego pliku backup (pełny backup lub sam plik klientów/menu).</p>
+        <div class="import-zone" onclick="document.getElementById('json-backup-upload').click()" style="margin-bottom:0;">
+          <input type="file" id="json-backup-upload" accept=".json" style="display:none;" onchange="handleJSONBackup(this)">
+          <div style="font-size:28px;margin-bottom:8px;">📂</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Kliknij aby wgrać plik .json</div>
+          <div style="font-size:12px;color:var(--muted);">Obsługuje: pełny backup, sam plik klientów lub menu</div>
+        </div>
+        <div id="json-backup-result" style="margin-top:10px;"></div>
       </div>
     </div>
 
@@ -4380,6 +4393,75 @@ function resetImport(){
   toast('Zresetowano — możesz wgrać nowe pliki');
 }
 
+function exportCustomersJSON(){
+  const data = S('customers') || [];
+  if(!data.length){toast('Brak klientów do eksportu');return;}
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hirschowka-klienci-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Eksport klientów pobrany ✓');
+}
+function exportMenuJSON(){
+  const data = S('menu') || [];
+  if(!data.length){toast('Brak menu do eksportu');return;}
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hirschowka-menu-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Eksport menu pobrany ✓');
+}
+function handleJSONBackup(input){
+  const file = input.files[0];
+  if(!file){return;}
+  const res = document.getElementById('json-backup-result');
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      const imported = [];
+      // Pełny backup
+      if(data.customers !== undefined){
+        if(data.customers && data.customers.length){
+          W('customers', data.customers);
+          customers = data.customers;
+          imported.push(`klientów: ${data.customers.length}`);
+        }
+      } else if(Array.isArray(data) && data[0]?.phone !== undefined){
+        // Sam plik klientów (tablica)
+        W('customers', data);
+        customers = data;
+        imported.push(`klientów: ${data.length}`);
+      }
+      if(data.menu !== undefined){
+        if(data.menu && data.menu.length){
+          W('menu', data.menu);
+          window.menuData = data.menu;
+          imported.push(`dań w menu: ${data.menu.length}`);
+        }
+      } else if(Array.isArray(data) && data[0]?.name !== undefined && data[0]?.price !== undefined){
+        // Sam plik menu (tablica)
+        W('menu', data);
+        window.menuData = data;
+        imported.push(`dań w menu: ${data.length}`);
+      }
+      if(!imported.length){
+        res.innerHTML=`<div style="background:var(--red-bg);border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ Nie rozpoznano formatu pliku.</div>`;
+        return;
+      }
+      res.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Wgrano: ${imported.join(', ')}</div>`;
+      toast('Backup wgrany ✓');
+      if(typeof renderCusts==='function') renderCusts();
+      if(typeof renderMenu==='function') renderMenu();
+    }catch(err){
+      res.innerHTML=`<div style="background:var(--red-bg);border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ Błąd odczytu pliku: ${err.message}</div>`;
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
 function exportFullBackup(){
   const data={customers:S('customers')||[],menu:S('menu')||[],orders:S('orders')||[],addons:S('addons')||[],promos:S('promos')||[],coupons:S('coupons')||[],zones:S('zones')||[],exportDate:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
