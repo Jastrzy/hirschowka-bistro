@@ -1803,17 +1803,18 @@ function checkZone(){
 
 async function geocodeAndCheck(street,city,info){
   // Klucz API — najpierw localStorage, potem Firebase bezpośrednio
-  let apiKey=LS('geo-api-key')||'';
+  function cleanApiKey(k){ return (k||'').toString().replace(/^"+|"+$/g,'').trim(); }
+  let apiKey=cleanApiKey(LS('geo-api-key')||'');
   if(!apiKey && window._firebase && window._firebase.db){
     try{
       const snap = await window._firebase.db.ref('geo-api-key').once('value');
-      if(snap.val()){ apiKey=snap.val(); localStorage.setItem('geo-api-key',JSON.stringify(apiKey)); }
+      if(snap.val()){ apiKey=cleanApiKey(snap.val()); localStorage.setItem('geo-api-key',JSON.stringify(apiKey)); }
     }catch(e){}
   }
   // Ostatnia szansa — poczekaj 1s na sync Firebase
   if(!apiKey){
     await new Promise(r=>setTimeout(r,1000));
-    apiKey=LS('geo-api-key')||'';
+    apiKey=cleanApiKey(LS('geo-api-key')||'');
   }
   const query=encodeURIComponent(`${street}, ${city}, Polska`);
   try{

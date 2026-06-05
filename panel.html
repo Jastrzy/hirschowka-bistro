@@ -730,7 +730,7 @@ window._onAuthReady = function(auth){
           <div class="field"><label>Numer telefonu</label><input type="tel" id="loy-phone" placeholder="511 707 232"></div>
           <div class="field"><label>Kwota zamówienia (zł)</label><input type="number" id="loy-amount" placeholder="np. 25"></div>
         </div>
-        <button class="btn bp" onclick="addStamp()">Wbij pieczątkę ✓</button>
+        <button class="btn bp" onclick="addStampByPhone()">Wbij pieczątkę ✓</button>
         <div id="loy-result" style="margin-top:12px;"></div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
@@ -1690,6 +1690,7 @@ let menuData = S('menu') || [
   {id:9,cat:'Wypieki',name:'Szarlotka z lodami',desc:'Ciepła, wanilia, cynamon',price:11,avail:true,photo:''},
 ];
 let customers = S('customers') || [];
+function saveCustomers(){ W('customers', customers); }
 let orders = S('orders') || [
   {id:'#0042',type:'pickup',items:'Kotlet schabowy ×1, Żurek ×1',total:33,time:'08:14',status:'pending',customer:'Anna K.',phone:'511 100 200',addr:''},
   {id:'#0041',type:'delivery',items:'Polędwiczki ×2, Krem z dyni ×2',total:64,time:'08:05',status:'accepted',customer:'Marek W.',phone:'601 200 300',addr:'ul. Sękowskiego 4'},
@@ -3429,8 +3430,7 @@ function renderLoyalty(){
       <span style="font-size:11px;color:${h.used?'var(--muted)':'var(--green2)'};">${h.used?'Użyty':'Aktywny'}</span>
     </div>`).join(''):'<div style="font-size:13px;color:var(--muted);padding:12px 0;">Brak historii nagród</div>';
 }
-function addStamp(){
-  const phone=document.getElementById('loy-phone').value.trim();
+function addStampByPhone(){
   const amount=parseFloat(document.getElementById('loy-amount').value)||0;
   if(!phone){toast('Podaj numer telefonu');return;}
   if(amount<19){document.getElementById('loy-result').innerHTML=`<div style="background:var(--red-bg);border-radius:8px;padding:10px;font-size:13px;color:var(--red);">Kwota musi wynosić min. 19 zł</div>`;return;}
