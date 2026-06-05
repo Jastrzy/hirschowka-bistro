@@ -940,7 +940,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Wpisz numer telefonu aby zobaczyć swoje nagrody</div>
       <div class="loy-stamps-grid" id="loy-stamps"></div>
       <div class="loy-cta-row">
-        <input class="loy-input" type="tel" id="loy-phone" placeholder="Numer telefonu" oninput="fmtLoyPhone(this)">
+        <input class="loy-input" type="text" id="loy-phone" placeholder="Nr telefonu lub e-mail" oninput="fmtLoyPhone(this)">
         <button class="loy-btn" onclick="checkLoyalty()">Sprawdź →</button>
       </div>
       <div id="loy-status-txt" style="font-size:13px;color:var(--muted);margin-top:8px;min-height:18px;"></div>
@@ -1136,8 +1136,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       </div>
     </div>
     <div class="sblk">
-      <div class="crow"><input type="checkbox" id="c-terms"><label for="c-terms">* Akceptuję <a href="regulamin.html" target="_blank">Regulamin sprzedaży</a> i potwierdzam zapoznanie się z jego treścią.</label></div>
-      <div class="crow"><input type="checkbox" id="c-privacy"><label for="c-privacy">* Zapoznałem/am się z <a href="polityka-prywatnosci.html" target="_blank">Polityką prywatności</a>.</label></div>
+      <div class="crow"><input type="checkbox" id="c-terms"><label for="c-terms">* Potwierdzam zapoznanie się z <a href="#">Regulaminem</a> oraz <a href="#">Polityką prywatności</a>.</label></div>
       <div class="crow"><input type="checkbox" id="c-mkt"><label for="c-mkt">(opcjonalnie) Zgoda na marketing e-mail / SMS.</label></div>
       <button class="order-btn" onclick="placeOrder()">Do kasy — <span id="checkout-total">0,00 zł</span></button>
     </div>
@@ -1803,18 +1802,17 @@ function checkZone(){
 
 async function geocodeAndCheck(street,city,info){
   // Klucz API — najpierw localStorage, potem Firebase bezpośrednio
-  function cleanApiKey(k){ return (k||'').toString().replace(/^"+|"+$/g,'').trim(); }
-  let apiKey=cleanApiKey(LS('geo-api-key')||'');
+  let apiKey=LS('geo-api-key')||'';
   if(!apiKey && window._firebase && window._firebase.db){
     try{
       const snap = await window._firebase.db.ref('geo-api-key').once('value');
-      if(snap.val()){ apiKey=cleanApiKey(snap.val()); localStorage.setItem('geo-api-key',JSON.stringify(apiKey)); }
+      if(snap.val()){ apiKey=snap.val(); localStorage.setItem('geo-api-key',JSON.stringify(apiKey)); }
     }catch(e){}
   }
   // Ostatnia szansa — poczekaj 1s na sync Firebase
   if(!apiKey){
     await new Promise(r=>setTimeout(r,1000));
-    apiKey=cleanApiKey(LS('geo-api-key')||'');
+    apiKey=LS('geo-api-key')||'';
   }
   const query=encodeURIComponent(`${street}, ${city}, Polska`);
   try{
@@ -1876,8 +1874,7 @@ function applyCoupon(){
 // ════ ORDER ════
 function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
-  if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
-  if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
+  if(!document.getElementById('c-terms').checked){toast('Zaakceptuj regulamin');return;}
   const firstName=(document.getElementById('c-name')?.value||'').trim();
   const surname=(document.getElementById('c-surname')?.value||'').trim();
   const name=surname?`${firstName} ${surname}`.trim():firstName;
@@ -1947,14 +1944,20 @@ function renderLoyaltyStamps(){
 }
 function fmtLoyPhone(el){let v=el.value.replace(/\D/g,'').slice(0,9);if(v.length>6)v=v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);else if(v.length>3)v=v.slice(0,3)+' '+v.slice(3);el.value=v;}
 function checkLoyalty(){
-  const phone=document.getElementById('loy-phone').value.trim().replace(/\s/g,'');
-  if(phone.length<9){toast('Wpisz pełny numer telefonu');return;}
-  const c=(LS('customers')||[]).find(x=>x.phone.replace(/\s/g,'')===phone);
+  const query=document.getElementById('loy-phone').value.trim().replace(/\s/g,'');
+  if(!query){toast('Wpisz numer telefonu lub e-mail');return;}
+  const isEmail=query.includes('@');
+  if(!isEmail && query.length<9){toast('Wpisz pełny numer telefonu (9 cyfr)');return;}
+  const c=(LS('customers')||[]).find(x=>
+    isEmail
+      ? (x.email||'').toLowerCase()===query.toLowerCase()
+      : x.phone.replace(/\s/g,'')===query
+  );
   const st=document.getElementById('loy-status-txt');
   if(c){st.style.color='var(--green2)';st.textContent=`Cześć ${c.name.split(' ')[0]}! Masz ${c.stamps||0}/9 pieczątek. ${(c.stamps||0)>=9?'Twoja nagroda czeka!':'Jeszcze '+(9-(c.stamps||0))+' do nagrody.'}`;}
   else{
     st.style.color='var(--gold)';
-    st.textContent='Nie znaleziono konta o tym numerze. Zarejestruj się składając pierwsze zamówienie lub przez kasę w bistro.';
+    st.textContent='Nie znaleziono konta. Zarejestruj się składając pierwsze zamówienie lub poproś o rejestrację przy kasie.';
   }
 }
 

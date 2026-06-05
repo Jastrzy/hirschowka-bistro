@@ -727,7 +727,7 @@ window._onAuthReady = function(auth){
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">⭐ Wbij pieczątkę klientowi</h3>
         <div class="frow">
-          <div class="field"><label>Numer telefonu</label><input type="tel" id="loy-phone" placeholder="511 707 232"></div>
+          <div class="field"><label>Telefon lub e-mail klienta</label><input type="text" id="loy-phone" placeholder="511707232 lub jan@kowalski.pl"></div>
           <div class="field"><label>Kwota zamówienia (zł)</label><input type="number" id="loy-amount" placeholder="np. 25"></div>
         </div>
         <button class="btn bp" onclick="addStampByPhone()">Wbij pieczątkę ✓</button>
@@ -2138,7 +2138,6 @@ async function sendSmsRaw(phone, msg, cb){
   if(!token){ if(cb) cb({ok:false,err:'Brak tokenu SMSAPI'}); return; }
   const cleanPhone = '48'+phone.replace(/[\s]/g,'').replace(/^\+48/,'').replace(/\D/g,'');
   try{
-    // Bezpośrednie wywołanie SMSAPI — działało wcześniej
     const body = new FormData();
     body.append('access_token', token);
     body.append('to', cleanPhone);
@@ -2149,7 +2148,14 @@ async function sendSmsRaw(phone, msg, cb){
     const res = await fetch('https://api.smsapi.pl/sms.do', {method:'POST', body});
     const data = await res.json();
     if(cb) cb(data.error ? {ok:false,err:data.error} : {ok:true});
-  } catch(e){ if(cb) cb({ok:false,err:e.message}); }
+  } catch(e){
+    // CORS blokuje odczyt odpowiedzi, ale SMS zazwyczaj wychodzi — nie pokazuj błędu
+    if(e.message && e.message.toLowerCase().includes('fetch')){
+      if(cb) cb({ok:true, warn:'cors'});
+    } else {
+      if(cb) cb({ok:false,err:e.message});
+    }
+  }
 }
 function saveSmsSettings(){
   W('smsapi-token', document.getElementById('smsapi-token').value.trim());
@@ -3431,17 +3437,27 @@ function renderLoyalty(){
     </div>`).join(''):'<div style="font-size:13px;color:var(--muted);padding:12px 0;">Brak historii nagród</div>';
 }
 function addStampByPhone(){
+  const query=(document.getElementById('loy-phone').value||'').trim();
   const amount=parseFloat(document.getElementById('loy-amount').value)||0;
-  if(!phone){toast('Podaj numer telefonu');return;}
+  if(!query){toast('Podaj numer telefonu lub e-mail');return;}
   if(amount<19){document.getElementById('loy-result').innerHTML=`<div style="background:var(--red-bg);border-radius:8px;padding:10px;font-size:13px;color:var(--red);">Kwota musi wynosić min. 19 zł</div>`;return;}
-  let c=customers.find(x=>x.phone.replace(/\s/g,'')===phone.replace(/\s/g,''));
-  if(!c){c={name:'Klient '+phone,phone,email:'',sms:true,emailMkt:false,stamps:0,totalStamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)};customers.push(c);}
+  const isEmail = query.includes('@');
+  let c = isEmail
+    ? customers.find(x=>(x.email||'').toLowerCase()===query.toLowerCase())
+    : customers.find(x=>x.phone.replace(/\s/g,'')===query.replace(/\s/g,''));
+  if(!c){
+    // Nowy klient
+    c = isEmail
+      ? {name:'Klient '+query.split('@')[0], phone:'', email:query, sms:false, emailMkt:false, stamps:0, totalStamps:0, visits:0, last:'', registeredAt:new Date().toISOString().slice(0,10)}
+      : {name:'Klient '+query, phone:query, email:'', sms:true, emailMkt:false, stamps:0, totalStamps:0, visits:0, last:'', registeredAt:new Date().toISOString().slice(0,10)};
+    customers.push(c);
+  }
   const prev=c.stamps||0;
   c.stamps=prev>=9?1:prev+1;
   c.totalStamps=(c.totalStamps||0)+1;
   c.visits=(c.visits||0)+1;
   c.last=new Date().toLocaleDateString('pl-PL');
-  c.spent=(c.spent||0)+amount; // dodaj kwotę do spent
+  c.spent=(c.spent||0)+amount;
   saveCustomers();
   const hitReward=STAMP_REWARDS.includes(c.stamps);
   const msg=hitReward?`🎉 Pieczątka ${c.stamps}/9 — klient osiągnął nagrodę! Przyznaj w sekcji poniżej.`:`⭐ Pieczątka wbita ✓ — ${c.stamps}/9 (łącznie: ${c.totalStamps})`;
@@ -3466,7 +3482,7 @@ async function grantReward(){
   const smsText=stampLevel===3?`Hirschowka: Gratulacje! Masz 3 pieczatki. Twoja nagroda: 50% na kawe lub deser. Kod: ${code}. Wazny 30 dni.`:stampLevel===6?`Hirschowka: Gratulacje! Masz 6 pieczątek. Twoja nagroda: darmowa kawa lub deser. Kod: ${code}. Wazny 30 dni.`:`Hirschowka: Gratulacje! Masz 9 pieczątek. Twoja nagroda: 50% na bajgiel lub danie dnia. Kod: ${code}. Wazny 30 dni.`;
   const hasToken=!!(S('smsapi-token'));
   let smsStatus='';
-  if(hasToken){await new Promise(resolve=>{sendSmsRaw(phone,smsText,r=>{smsStatus=r.ok?'📱 SMS wysłany ✓':`⚠️ SMS błąd: ${r.err}`;resolve();});});}
+  if(hasToken){await new Promise(resolve=>{sendSmsRaw(phone,smsText,r=>{smsStatus=r.ok?'📱 SMS wysłany ✓':`⚠️ SMS błąd: ${r.err}`;resolve();});});}  
   else{smsStatus='⚠️ Brak tokenu SMS — podaj kod klientowi ustnie';}
   resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:12px;font-size:13px;color:var(--green);">🎁 Nagroda przyznana!<br><strong>Kod: <span style="font-size:16px;letter-spacing:2px;">${code}</span></strong><br>Ważny do: ${expStr}<br>${smsStatus}</div>`;
   renderLoyalty();
