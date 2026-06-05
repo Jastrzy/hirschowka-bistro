@@ -125,16 +125,15 @@
         var val = snap.val();
         if (!val) return;
         var lastWrite = _localWriteTs['customers'] || 0;
-        if (Date.now() - lastWrite < 5000) return; // świeży lokalny zapis
+        if (Date.now() - lastWrite < 30000) return; // świeży lokalny zapis (30s ochrona)
         var stored = localStorage.getItem('customers');
-        var fresh = JSON.stringify(val);
+        var fresh = JSON.stringify(val); // val = obiekt z kluczami Firebase
         if (stored === fresh) return;
         localStorage.setItem('customers', fresh);
         if (window._panelMenuReady) {
           try {
             var arr = Array.isArray(val) ? val : Object.values(val);
             arr = arr.filter(function(c){ return c; });
-            // Zawsze aktualizuj — Firebase jest źródłem prawdy dla klientów
             window.customers = arr;
             if (typeof window.renderCusts === 'function') window.renderCusts();
             console.log('[FB] Klienci zaktualizowani z Firebase ✓', arr.length);
@@ -143,7 +142,8 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','customers','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
+      // UWAGA: 'customers' celowo pominięte — zapisywane bezpośrednio przez .update() w addStampByPhone
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
