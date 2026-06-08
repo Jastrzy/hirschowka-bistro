@@ -120,17 +120,31 @@
         }
       });
 
-      // Customers real-time → aktualizuj panel gdy zaimportowano na innym urządzeniu
+      // Customers real-time → zawsze aktualizuj z Firebase (źródło prawdy)
       db.ref('customers').on('value', function(snap) {
         var val = snap.val();
         if (!val) return;
+        // Nie nadpisuj jeśli panel właśnie zapisywał klientów (np. przez addStampByPhone)
         var lastWrite = _localWriteTs['customers'] || 0;
-        if (Date.now() - lastWrite < 30000) return; // świeży lokalny zapis (30s ochrona)
+        if (Date.now() - lastWrite < 5000) return;
         var stored = localStorage.getItem('customers');
-        var fresh = JSON.stringify(val); // val = obiekt z kluczami Firebase
-        if (stored === fresh) return;
+        var fresh = JSON.stringify(val);
+        if (stored === fresh) {
+          // Dane są już w localStorage — ale może UI jeszcze nie wyrenderował
+          // Spróbuj wyrenderować jeśli panel jest gotowy
+          if (window._panelMenuReady && typeof window.renderCusts === 'function') {
+            var arr = Array.isArray(val) ? val : Object.values(val);
+            arr = arr.filter(function(c){ return c; });
+            if (!window.customers || window.customers.length === 0) {
+              window.customers = arr;
+              window.renderCusts();
+            }
+          }
+          return;
+        }
         localStorage.setItem('customers', fresh);
-        if (window._panelMenuReady) {
+        // Wyrenderuj natychmiast jeśli panel gotowy, lub poczekaj aż będzie
+        function doRender() {
           try {
             var arr = Array.isArray(val) ? val : Object.values(val);
             arr = arr.filter(function(c){ return c; });
@@ -138,6 +152,19 @@
             if (typeof window.renderCusts === 'function') window.renderCusts();
             console.log('[FB] Klienci zaktualizowani z Firebase ✓', arr.length);
           } catch(e) {}
+        }
+        if (window._panelMenuReady) {
+          doRender();
+        } else {
+          // Panel jeszcze się ładuje — poczekaj
+          var _retries = 0;
+          var _wait = setInterval(function() {
+            _retries++;
+            if (window._panelMenuReady || _retries > 40) {
+              clearInterval(_wait);
+              doRender();
+            }
+          }, 250);
         }
       });
 
