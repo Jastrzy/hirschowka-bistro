@@ -124,39 +124,28 @@
       db.ref('customers').on('value', function(snap) {
         var val = snap.val();
         if (!val) return;
-        // Nie nadpisuj jeśli panel właśnie zapisywał klientów (np. przez addStampByPhone)
+        // Nie nadpisuj jeśli panel właśnie zapisywał (np. addStampByPhone) — 5s ochrona
         var lastWrite = _localWriteTs['customers'] || 0;
         if (Date.now() - lastWrite < 5000) return;
+        // Zawsze konwertuj na tablicę — Firebase zwraca obiekt z kluczami
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(c){ return c; });
+        var fresh = JSON.stringify(arr);
         var stored = localStorage.getItem('customers');
-        var fresh = JSON.stringify(val);
-        if (stored === fresh) {
-          // Dane są już w localStorage — ale może UI jeszcze nie wyrenderował
-          // Spróbuj wyrenderować jeśli panel jest gotowy
-          if (window._panelMenuReady && typeof window.renderCusts === 'function') {
-            var arr = Array.isArray(val) ? val : Object.values(val);
-            arr = arr.filter(function(c){ return c; });
-            if (!window.customers || window.customers.length === 0) {
-              window.customers = arr;
-              window.renderCusts();
-            }
-          }
-          return;
+        if (stored !== fresh) {
+          localStorage.setItem('customers', fresh);
         }
-        localStorage.setItem('customers', fresh);
-        // Wyrenderuj natychmiast jeśli panel gotowy, lub poczekaj aż będzie
+        // Wyrenderuj — jeśli panel gotowy od razu, jeśli nie — czekaj
         function doRender() {
           try {
-            var arr = Array.isArray(val) ? val : Object.values(val);
-            arr = arr.filter(function(c){ return c; });
             window.customers = arr;
             if (typeof window.renderCusts === 'function') window.renderCusts();
             console.log('[FB] Klienci zaktualizowani z Firebase ✓', arr.length);
-          } catch(e) {}
+          } catch(e) { console.warn('[FB] renderCusts error', e); }
         }
         if (window._panelMenuReady) {
           doRender();
         } else {
-          // Panel jeszcze się ładuje — poczekaj
           var _retries = 0;
           var _wait = setInterval(function() {
             _retries++;
