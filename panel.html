@@ -471,6 +471,7 @@ window._onAuthReady = function(auth){
     <div class="ni" onclick="go('crosssell',this)"><span class="ic">🔀</span><span>Cross-selling</span></div>
     <div class="ni" onclick="go('marketing',this)"><span class="ic">📣</span><span>Marketing auto.</span></div>
     <div class="ni" onclick="go('smsmkt',this)"><span class="ic">📱</span><span>Kampanie SMS</span></div>
+    <div class="ni" onclick="go('newsletter',this)"><span class="ic">✉️</span><span>Newsletter</span></div>
     <div class="ni" onclick="go('qr',this)"><span class="ic">◼</span><span>Kody QR</span></div>
     <div class="ni" onclick="go('lojalnosc',this)"><span class="ic">⭐</span><span>Lojalność</span></div>
 
@@ -1209,6 +1210,27 @@ window._onAuthReady = function(auth){
       </div>
     </div>
 
+    <!-- NEWSLETTER -->
+    <div class="page" id="page-newsletter">
+      <div class="sect-hdr"><h2>Newsletter</h2></div>
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span id="nl-panel-count" style="font-size:14px;font-weight:700;"></span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">subskrypcji</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn bo bsm" onclick="nlPanelFilter('all')" id="nlf-all">Wszyscy</button>
+            <button class="btn bo bsm" onclick="nlPanelFilter('email')" id="nlf-email">✉️ E-mail</button>
+            <button class="btn bo bsm" onclick="nlPanelFilter('phone')" id="nlf-phone">📱 SMS</button>
+            <button class="btn bo bsm" onclick="nlPanelExport()">⬇ Eksportuj JSON</button>
+          </div>
+        </div>
+        <div id="nl-panel-list" style="border:1px solid var(--border2);border-radius:8px;overflow:hidden;"></div>
+        <div id="nl-panel-empty" style="display:none;padding:32px;text-align:center;font-size:13px;color:var(--muted);">Brak subskrypcji.</div>
+      </div>
+    </div>
+
     <!-- WWW -->
     <div class="page" id="page-www">
       <div class="sect-hdr"><h2>Ustawienia strony WWW</h2></div>
@@ -1810,7 +1832,7 @@ const DAYS = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','N
 let schedule = S('schedule') || DAYS.map((d,i)=>({day:d,from:i<5?'07:00':'08:00',to:i<5?'17:00':i===5?'14:00':'',closed:i===6}));
 
 // ── NAVIGATION ──
-const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',kupony:'Kupony rabatowe',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',qr:'Kody QR',lojalnosc:'Program lojalnościowy',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
+const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',kupony:'Kupony rabatowe',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',newsletter:'Newsletter',qr:'Kody QR',lojalnosc:'Program lojalnościowy',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
 
 // curMenuCat starts at first category in data
 let curMenuCat = menuData[0]?.cat || 'Śniadania i lunche';
@@ -1821,7 +1843,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad};
   if(renders[id]) renders[id]();
 }
 
@@ -4690,6 +4712,103 @@ function smsMktReset(){
   var btn=document.getElementById('smsmkt-send-btn');btn.disabled=true;btn.style.opacity='.5';
   smsMktCountChars();
 }
+// ══════════════════════════════════════
+// NEWSLETTER PANEL
+// ══════════════════════════════════════
+var _nlData = [];
+var _nlFilter = 'all';
+
+function nlPanelLoad(){
+  if(!window._firebase || !window._firebase.db) return;
+  window._firebase.db.ref('newsletter').on('value', function(snap){
+    var val = snap.val();
+    _nlData = [];
+    if(val){
+      Object.entries(val).forEach(function([k,v]){
+        if(v) _nlData.push(Object.assign({_key:k}, v));
+      });
+      // Sortuj od najnowszych
+      _nlData.sort(function(a,b){ return (b.date||'') > (a.date||'') ? 1 : -1; });
+    }
+    nlPanelRender();
+  });
+}
+
+function nlPanelFilter(f){
+  _nlFilter = f;
+  ['all','email','phone'].forEach(function(x){
+    var btn = document.getElementById('nlf-'+x);
+    if(btn) btn.className = 'btn bsm ' + (x===f ? 'bp' : 'bo');
+  });
+  nlPanelRender();
+}
+
+function nlPanelRender(){
+  var list = _nlFilter==='all' ? _nlData : _nlData.filter(function(x){ return x.type===_nlFilter; });
+  var el = document.getElementById('nl-panel-list');
+  var empty = document.getElementById('nl-panel-empty');
+  var count = document.getElementById('nl-panel-count');
+  if(!el) return;
+  count.textContent = _nlData.length;
+  if(!list.length){
+    el.style.display='none'; empty.style.display='block'; return;
+  }
+  el.style.display='block'; empty.style.display='none';
+  el.innerHTML = list.map(function(s){
+    var date = s.date ? new Date(s.date).toLocaleDateString('pl-PL') : '—';
+    var icon = s.type==='email' ? '✉️' : '📱';
+    var val = s.value||'';
+    // Sprawdź czy już jest w bazie klientów
+    var inDb = customers.some(function(c){
+      return s.type==='email'
+        ? (c.email||'').toLowerCase()===val.toLowerCase()
+        : (c.phone||'').replace(/\s/g,'')===val.replace(/\s/g,'');
+    });
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border2);font-size:13px;">'
+      +'<span style="font-size:16px;">'+icon+'</span>'
+      +'<div style="flex:1;">'
+      +'<span style="font-weight:600;">'+val+'</span>'
+      +'<span style="color:var(--muted);font-size:11px;margin-left:10px;">'+date+'</span>'
+      +'</div>'
+      +(inDb
+        ? '<span style="font-size:11px;color:var(--green);background:var(--green-bg);padding:2px 8px;border-radius:10px;">✓ w bazie</span>'
+        : '<button class="btn bp bsm" onclick="nlAddToCustomers(\''+s._key+'\')" style="font-size:11px;padding:4px 10px;">+ Dodaj do klientów</button>'
+      )
+      +'</div>';
+  }).join('');
+}
+
+async function nlAddToCustomers(key){
+  var s = _nlData.find(function(x){ return x._key===key; });
+  if(!s) return;
+  var newCust = {
+    name: s.type==='email' ? 'Klient '+(s.value||'').split('@')[0] : 'Klient '+(s.value||''),
+    phone: s.type==='phone' ? (s.value||'') : '',
+    email: s.type==='email' ? (s.value||'') : '',
+    sms: s.type==='phone',
+    emailMkt: s.type==='email',
+    stamps:0, totalStamps:0, visits:0, spent:0,
+    last:'', registeredAt: new Date().toISOString().slice(0,10)
+  };
+  try{
+    await window._firebase.db.ref('customers').push(newCust);
+    toast('✅ Dodano do bazy klientów');
+    nlPanelRender();
+  }catch(e){
+    toast('❌ Błąd: '+e.message);
+  }
+}
+
+function nlPanelExport(){
+  if(!_nlData.length){ toast('Brak danych do eksportu'); return; }
+  var blob = new Blob([JSON.stringify(_nlData,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hirschowka-newsletter-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Eksport pobrany ✓');
+}
+
 function exportFullBackup(){
   const data={customers:S('customers')||[],menu:S('menu')||[],orders:S('orders')||[],addons:S('addons')||[],promos:S('promos')||[],coupons:S('coupons')||[],zones:S('zones')||[],exportDate:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
