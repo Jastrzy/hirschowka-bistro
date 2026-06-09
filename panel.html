@@ -2717,18 +2717,32 @@ async function deleteCust(idx){
   if(!confirm(`Usunąć klienta "${c.name}"?`)) return;
   if(!confirm(`Na pewno? Dane klienta "${c.name}" (${c.stamps||0} pieczątek, ${(c.spent||0).toFixed(2)} zł) zostaną trwale usunięte.`)) return;
 
-  // Usuń z Firebase — znajdź klucz po telefonie lub emailu
+  // Usuń z Firebase — szukaj po emailu LUB telefonie LUB nazwie+dacie rejestracji
   if(window._firebase && window._firebase.db){
     try{
       const snap = await window._firebase.db.ref('customers').once('value');
       const val = snap.val();
       if(val){
         const entries = Object.entries(val);
-        const found = entries.find(([k,x])=> x && (
-          (c.phone && x.phone && x.phone.replace(/\s/g,'')===c.phone.replace(/\s/g,'')) ||
-          (c.email && x.email && x.email.toLowerCase()===c.email.toLowerCase())
-        ));
-        if(found) await window._firebase.db.ref('customers/'+found[0]).remove();
+        const cleanPhone = (c.phone||'').replace(/[\s\-—]/g,'');
+        const cleanEmail = (c.email||'').toLowerCase().trim();
+        const found = entries.find(([k,x])=>{
+          if(!x) return false;
+          // Dopasuj po emailu
+          if(cleanEmail && (x.email||'').toLowerCase().trim()===cleanEmail) return true;
+          // Dopasuj po telefonie
+          if(cleanPhone && cleanPhone.length>3 && (x.phone||'').replace(/[\s\-—]/g,'')===cleanPhone) return true;
+          // Fallback: nazwa + data rejestracji
+          if(c.name && x.name===c.name && c.registeredAt && x.registeredAt===c.registeredAt) return true;
+          return false;
+        });
+        console.log('[deleteCust] szukam:', {cleanPhone, cleanEmail, name: c.name}, '→ klucz:', found?found[0]:'NIE ZNALEZIONO');
+        if(found){
+          await window._firebase.db.ref('customers/'+found[0]).remove();
+          console.log('[deleteCust] usunięto z Firebase ✓', found[0]);
+        } else {
+          console.warn('[deleteCust] nie znaleziono w Firebase — usuwam tylko lokalnie');
+        }
       }
     }catch(e){ console.warn('[deleteCust] Firebase error', e); }
   }

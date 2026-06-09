@@ -2015,46 +2015,49 @@ async function subscribeNL(){
   const r = document.getElementById('nl-result');
   if(!val){toast('Podaj numer telefonu lub e-mail');return;}
 
-  // Sprawdź czy już istnieje w Firebase
-  let existing = null, existingKey = null;
-  if(window._firebase && window._firebase.db){
-    try{
-      const snap = await window._firebase.db.ref('customers').once('value');
-      const fbVal = snap.val();
-      if(fbVal){
-        const entries = Object.entries(fbVal);
-        const found = isEmail
-          ? entries.find(([k,x])=> x && (x.email||'').toLowerCase()===val.toLowerCase())
-          : entries.find(([k,x])=> x && (x.phone||'').replace(/\s/g,'')===val);
-        if(found){ existingKey=found[0]; existing=found[1]; }
-      }
-    }catch(e){}
+  r.style.color='var(--muted)'; r.textContent='Zapisuję…';
+
+  if(!window._firebase || !window._firebase.db){
+    r.style.color='var(--red2)'; r.textContent='❌ Brak połączenia z bazą danych. Spróbuj ponownie.';
+    console.warn('[subscribeNL] Firebase niedostępny');
+    return;
   }
 
-  if(existing){
-    // Aktualizuj zgodę marketingową
-    if(isEmail) existing.emailMkt=true; else existing.sms=true;
-    if(window._firebase && window._firebase.db){
-      try{ await window._firebase.db.ref('customers/'+existingKey).update(existing); }catch(e){}
+  try{
+    const snap = await window._firebase.db.ref('customers').once('value');
+    const fbVal = snap.val();
+    let existingKey = null, existing = null;
+    if(fbVal){
+      const entries = Object.entries(fbVal);
+      const found = isEmail
+        ? entries.find(([k,x])=> x && (x.email||'').toLowerCase().trim()===val.toLowerCase().trim())
+        : entries.find(([k,x])=> x && (x.phone||'').replace(/\s/g,'')===val);
+      if(found){ existingKey=found[0]; existing=found[1]; }
     }
-    r.style.color='var(--gold2)';
-    r.textContent='✅ Zaktualizowano zgodę! Promocje będą trafiać do Ciebie.';
-  } else {
-    // Nowy klient
-    const newCust = {
-      name: isEmail ? 'Klient '+val.split('@')[0] : 'Klient '+val,
-      phone: isEmail ? '' : val,
-      email: isEmail ? val : '',
-      sms: !isEmail,
-      emailMkt: isEmail,
-      stamps: 0, totalStamps: 0, visits: 0, spent: 0,
-      last: '', registeredAt: new Date().toISOString().slice(0,10)
-    };
-    if(window._firebase && window._firebase.db){
-      try{ await window._firebase.db.ref('customers').push(newCust); }catch(e){}
+    console.log('[subscribeNL]', isEmail?'email':'phone', val, '→', existing?'istniejący klient':'nowy');
+
+    if(existing){
+      if(isEmail) existing.emailMkt=true; else existing.sms=true;
+      await window._firebase.db.ref('customers/'+existingKey).update(existing);
+      r.style.color='var(--gold2)';
+      r.textContent='✅ Zaktualizowano zgodę! Promocje będą trafiać do Ciebie.';
+    } else {
+      const newCust = {
+        name: isEmail ? 'Klient '+val.split('@')[0] : 'Klient '+val,
+        phone: isEmail ? '' : val,
+        email: isEmail ? val : '',
+        sms: !isEmail,
+        emailMkt: isEmail,
+        stamps:0, totalStamps:0, visits:0, spent:0,
+        last:'', registeredAt: new Date().toISOString().slice(0,10)
+      };
+      await window._firebase.db.ref('customers').push(newCust);
+      r.style.color='var(--gold2)';
+      r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
     }
-    r.style.color='var(--gold2)';
-    r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
+  }catch(e){
+    console.error('[subscribeNL] błąd:', e);
+    r.style.color='var(--red2)'; r.textContent='❌ Błąd zapisu: '+e.message;
   }
   document.getElementById('nl-phone').value='';
   document.getElementById('nl-emailinp').value='';
