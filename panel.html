@@ -470,6 +470,7 @@ window._onAuthReady = function(auth){
     <div class="ni" onclick="go('kupony',this)"><span class="ic">🎟</span><span>Kupony</span></div>
     <div class="ni" onclick="go('crosssell',this)"><span class="ic">🔀</span><span>Cross-selling</span></div>
     <div class="ni" onclick="go('marketing',this)"><span class="ic">📣</span><span>Marketing auto.</span></div>
+    <div class="ni" onclick="go('smsmkt',this)"><span class="ic">📱</span><span>Kampanie SMS</span></div>
     <div class="ni" onclick="go('qr',this)"><span class="ic">◼</span><span>Kody QR</span></div>
     <div class="ni" onclick="go('lojalnosc',this)"><span class="ic">⭐</span><span>Lojalność</span></div>
 
@@ -581,7 +582,7 @@ window._onAuthReady = function(auth){
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <input type="search" id="cust-search" placeholder="Szukaj po nazwie, telefonie, e-mailu..." style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;min-width:220px;" oninput="renderCusts(this.value)">
           <button class="btn bo bsm" onclick="openMergeCustModal()" title="Scal dwóch klientów ręcznie">🔗 Scal</button>
-          <button class="btn bo bsm" onclick="exportCSV()">⬇ CSV</button>
+          <button class="btn bo bsm" onclick="exportCustomersJSON()">⬇ JSON</button>
           <button class="btn bp bsm" onclick="openAddCustModal()">+ Dodaj klienta</button>
         </div>
       </div>
@@ -1110,15 +1111,103 @@ window._onAuthReady = function(auth){
       <!-- EKSPORT -->
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">Eksport danych</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Pobierz aktualną bazę klientów lub menu w formacie CSV.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Pobierz dane w formacie JSON.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn bp bsm" onclick="exportCSV()">⬇ Klienci (CSV)</button>
-          <button class="btn bo bsm" onclick="exportMenuCSV()">⬇ Menu (CSV)</button>
+          <button class="btn bp bsm" onclick="exportCustomersJSON()">⬇ Klienci (JSON)</button>
+          <button class="btn bo bsm" onclick="exportMenuJSON()">⬇ Menu (JSON)</button>
           <button class="btn bo bsm" onclick="exportFullBackup()">⬇ Pełny backup (JSON)</button>
         </div>
       </div>
+
+      <!-- IMPORT BACKUP JSON -->
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">Wgraj backup JSON</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Przywróć dane z wcześniej pobranego pliku backup (pełny backup lub sam plik klientów/menu).</p>
+        <div class="import-zone" onclick="document.getElementById('json-backup-upload').click()" style="margin-bottom:0;">
+          <input type="file" id="json-backup-upload" accept=".json" style="display:none;" onchange="handleJSONBackup(this)">
+          <div style="font-size:28px;margin-bottom:8px;">📂</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Kliknij aby wgrać plik .json</div>
+          <div style="font-size:12px;color:var(--muted);">Obsługuje: pełny backup, sam plik klientów lub menu</div>
+        </div>
+        <div id="json-backup-result" style="margin-top:10px;"></div>
+      </div>
     </div>
 
+
+    <!-- SMS MARKETING -->
+    <div class="page" id="page-smsmkt">
+      <div class="sect-hdr"><h2>Kampanie SMS</h2></div>
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">1. Wybierz odbiorców</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn bo bsm" onclick="smsMktFilter('inactive')">⏰ Nieaktywni</button>
+          <button class="btn bo bsm" onclick="smsMktFilter('stamps')">⭐ Pieczątki</button>
+          <button class="btn bo bsm" onclick="smsMktFilter('all')">👥 Wszyscy</button>
+          <button class="btn bo bsm" onclick="smsMktFilter('manual')">☑ Ręczny wybór</button>
+        </div>
+        <div id="smsmkt-filter-inactive" style="display:none;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <label style="font-size:13px;font-weight:600;">Nie byli od co najmniej:</label>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <select id="smsmkt-inactive-days" style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+              <option value="7">1 tydzień (7 dni)</option>
+              <option value="14">2 tygodnie</option>
+              <option value="30" selected>1 miesiąc (30 dni)</option>
+              <option value="60">2 miesiące</option>
+              <option value="90">3 miesiące</option>
+              <option value="180">6 miesięcy</option>
+            </select>
+            <button class="btn bp bsm" onclick="smsMktApplyFilter()">Zastosuj filtr</button>
+          </div>
+        </div>
+        <div id="smsmkt-filter-stamps" style="display:none;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <label style="font-size:13px;font-weight:600;">Klienci z liczbą pieczątek:</label>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+            <select id="smsmkt-stamps-op" style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+              <option value="gte">co najmniej</option>
+              <option value="eq">dokładnie</option>
+              <option value="lte">najwyżej</option>
+            </select>
+            <input type="number" id="smsmkt-stamps-val" min="1" max="9" value="8" style="width:60px;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+            <span style="font-size:13px;">pieczątek</span>
+            <button class="btn bp bsm" onclick="smsMktApplyFilter()">Zastosuj filtr</button>
+          </div>
+        </div>
+        <div id="smsmkt-recipients-box" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span id="smsmkt-count-label" style="font-size:13px;font-weight:600;color:var(--text);"></span>
+            <button class="btn bo bsm" onclick="smsMktSelectAll()" id="smsmkt-selall-btn" style="display:none;">Zaznacz wszystkich</button>
+          </div>
+          <div id="smsmkt-list" style="max-height:260px;overflow-y:auto;border:1px solid var(--border2);border-radius:8px;"></div>
+        </div>
+      </div>
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">2. Treść wiadomości</h3>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Gotowe szablony</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn bo bsm" onclick="smsMktTpl('win_back')">😴 Win-back</button>
+            <button class="btn bo bsm" onclick="smsMktTpl('promo')">🎉 Promocja</button>
+            <button class="btn bo bsm" onclick="smsMktTpl('stamp_close')">⭐ Blisko nagrody</button>
+            <button class="btn bo bsm" onclick="smsMktTpl('stamp_ready')">🎁 Masz nagrodę</button>
+            <button class="btn bo bsm" onclick="smsMktTpl('new_dish')">🍽 Nowe danie</button>
+          </div>
+        </div>
+        <textarea id="smsmkt-msg" rows="4" placeholder="Wpisz treść SMS lub wybierz szablon powyżej..." style="width:100%;padding:10px;border:1.5px solid var(--border2);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;box-sizing:border-box;" oninput="smsMktCountChars()"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <span id="smsmkt-chars" style="font-size:12px;color:var(--muted);">0 / 160 znaków · 1 SMS</span>
+          <span style="font-size:12px;color:var(--muted);">Możesz użyć: <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">{imie}</code></span>
+        </div>
+      </div>
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">3. Wyślij kampanię</h3>
+        <div id="smsmkt-summary" style="font-size:13px;color:var(--muted);margin-bottom:14px;">Wybierz odbiorców i wpisz treść aby zobaczyć podsumowanie.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn bp" onclick="smsMktSend()" id="smsmkt-send-btn" disabled style="opacity:.5;">📱 Wyślij kampanię</button>
+          <button class="btn bo bsm" onclick="smsMktReset()">✕ Resetuj</button>
+        </div>
+        <div id="smsmkt-result" style="margin-top:14px;"></div>
+      </div>
+    </div>
 
     <!-- WWW -->
     <div class="page" id="page-www">
@@ -1721,7 +1810,7 @@ const DAYS = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','N
 let schedule = S('schedule') || DAYS.map((d,i)=>({day:d,from:i<5?'07:00':'08:00',to:i<5?'17:00':i===5?'14:00':'',closed:i===6}));
 
 // ── NAVIGATION ──
-const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',kupony:'Kupony rabatowe',crosssell:'Cross-selling',marketing:'Marketing automatyczny',qr:'Kody QR',lojalnosc:'Program lojalnościowy',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
+const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',kupony:'Kupony rabatowe',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',qr:'Kody QR',lojalnosc:'Program lojalnościowy',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
 
 // curMenuCat starts at first category in data
 let curMenuCat = menuData[0]?.cat || 'Śniadania i lunche';
@@ -4381,6 +4470,197 @@ function resetImport(){
   toast('Zresetowano — możesz wgrać nowe pliki');
 }
 
+function exportCustomersJSON(){
+  const data=_toArr(S('customers'));
+  if(!data.length){toast('Brak klientów do eksportu');return;}
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='hirschowka-klienci-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  toast('Eksport klientów pobrany ✓');
+}
+function exportMenuJSON(){
+  const data=S('menu')||[];
+  if(!data.length){toast('Brak menu do eksportu');return;}
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='hirschowka-menu-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  toast('Eksport menu pobrany ✓');
+}
+function handleJSONBackup(input){
+  const file=input.files[0]; if(!file) return;
+  const res=document.getElementById('json-backup-result');
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      const imported=[];
+      if(data.customers!==undefined){
+        if(data.customers&&data.customers.length){W('customers',data.customers);customers=data.customers;imported.push('klientów: '+data.customers.length);}
+      } else if(Array.isArray(data)&&data[0]?.phone!==undefined){
+        W('customers',data);customers=data;imported.push('klientów: '+data.length);
+      }
+      if(data.menu!==undefined){
+        if(data.menu&&data.menu.length){W('menu',data.menu);window.menuData=data.menu;imported.push('dań: '+data.menu.length);}
+      } else if(Array.isArray(data)&&data[0]?.name!==undefined&&data[0]?.price!==undefined){
+        W('menu',data);window.menuData=data;imported.push('dań: '+data.length);
+      }
+      if(!imported.length){res.innerHTML='<div style="background:var(--red-bg);border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ Nie rozpoznano formatu pliku.</div>';return;}
+      res.innerHTML='<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Wgrano: '+imported.join(', ')+'</div>';
+      toast('Backup wgrany ✓');
+      if(typeof renderCusts==='function') renderCusts();
+      if(typeof renderMenu==='function') renderMenu();
+    }catch(err){res.innerHTML='<div style="background:var(--red-bg);border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ Błąd: '+err.message+'</div>';}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════
+// KAMPANIE SMS
+// ══════════════════════════════════════
+var _smsMktMode=null, _smsMktSelected=[];
+const SMS_TEMPLATES={
+  win_back:   'Tęsknimy za Tobą, {imie}! 🍽 Zapraszamy do Hirschówki Bistro — sprawdź nasze menu: hirschowkabistro.pl',
+  promo:      'Hej {imie}! Mamy dla Ciebie wyjątkową promocję w Hirschówce Bistro 🎉 Zajrzyj: hirschowkabistro.pl',
+  stamp_close:'Hej {imie}! Brakuje Ci już tylko 1 pieczątki do nagrody w Hirschówce Bistro 🎁 Wpadnij do nas!',
+  stamp_ready:'Gratulacje {imie}! 🎉 Masz nagrodę do odebrania w Hirschówce Bistro. Powiedz przy kasie!',
+  new_dish:   'Nowość w Hirschówce Bistro! 🍽 Sprawdź nowe danie na hirschowkabistro.pl — zamów z dostawą!'
+};
+function smsMktFilter(mode){
+  _smsMktMode=mode; _smsMktSelected=[];
+  ['inactive','stamps'].forEach(function(f){document.getElementById('smsmkt-filter-'+f).style.display='none';});
+  document.getElementById('smsmkt-recipients-box').style.display='none';
+  if(mode==='inactive') document.getElementById('smsmkt-filter-inactive').style.display='block';
+  else if(mode==='stamps') document.getElementById('smsmkt-filter-stamps').style.display='block';
+  else smsMktApplyFilter();
+}
+function smsMktApplyFilter(){
+  var custs=_toArr(S('customers')).filter(function(c){return c&&c.phone;});
+  var filtered=[], today=new Date();
+  if(_smsMktMode==='all'){
+    filtered=custs;
+  } else if(_smsMktMode==='inactive'){
+    var days=parseInt(document.getElementById('smsmkt-inactive-days').value)||30;
+    filtered=custs.filter(function(c){
+      if(!c.last) return true;
+      var d, parts;
+      if(c.last.includes('.')){parts=c.last.split('.');d=new Date(parts[2],parts[1]-1,parts[0]);}
+      else d=new Date(c.last);
+      if(isNaN(d)) return true;
+      return (today-d)/(1000*60*60*24)>=days;
+    });
+  } else if(_smsMktMode==='stamps'){
+    var op=document.getElementById('smsmkt-stamps-op').value;
+    var val=parseInt(document.getElementById('smsmkt-stamps-val').value)||1;
+    filtered=custs.filter(function(c){
+      var s=c.stamps||0;
+      return op==='gte'?s>=val:op==='eq'?s===val:s<=val;
+    });
+  } else if(_smsMktMode==='manual'){
+    filtered=custs;
+  }
+  smsMktRenderList(filtered);
+}
+function smsMktRenderList(list){
+  var box=document.getElementById('smsmkt-recipients-box');
+  var listEl=document.getElementById('smsmkt-list');
+  box.style.display='block';
+  var isManual=_smsMktMode==='manual';
+  if(!list.length){
+    listEl.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--muted);">Brak klientów spełniających kryteria.</div>';
+    document.getElementById('smsmkt-count-label').textContent='0 odbiorców';
+    document.getElementById('smsmkt-selall-btn').style.display='none';
+    _smsMktSelected=[]; smsMktUpdateSummary(); return;
+  }
+  if(!isManual) _smsMktSelected=list.map(function(_,i){return i;});
+  document.getElementById('smsmkt-selall-btn').style.display=isManual?'inline-block':'none';
+  listEl.innerHTML=list.map(function(c,i){
+    var checked=!isManual||_smsMktSelected.indexOf(i)>=0;
+    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border2);cursor:pointer;font-size:13px;">'
+      +'<input type="checkbox" data-idx="'+i+'" '+(checked?'checked':'')
+      +' onchange="smsMktToggle('+i+',this.checked)" style="width:15px;height:15px;cursor:pointer;">'
+      +'<div style="flex:1;"><span style="font-weight:600;">'+c.name+'</span>'
+      +'<span style="color:var(--muted);margin-left:8px;">'+c.phone+'</span></div>'
+      +'<div style="font-size:11px;color:var(--muted);">⭐'+(c.stamps||0)+'/9 · '+(c.last||'—')+'</div>'
+      +'</label>';
+  }).join('');
+  listEl._smsMktList=list;
+  document.getElementById('smsmkt-count-label').textContent='Znaleziono: '+list.length+' klientów z telefonem';
+  smsMktUpdateSummary();
+}
+function smsMktToggle(idx,checked){
+  if(checked){if(_smsMktSelected.indexOf(idx)<0)_smsMktSelected.push(idx);}
+  else _smsMktSelected=_smsMktSelected.filter(function(i){return i!==idx;});
+  smsMktUpdateSummary();
+}
+function smsMktSelectAll(){
+  var list=document.getElementById('smsmkt-list')._smsMktList||[];
+  _smsMktSelected=list.map(function(_,i){return i;});
+  document.getElementById('smsmkt-list').querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=true;});
+  smsMktUpdateSummary();
+}
+function smsMktTpl(key){
+  document.getElementById('smsmkt-msg').value=SMS_TEMPLATES[key]||'';
+  smsMktCountChars();
+}
+function smsMktCountChars(){
+  var len=(document.getElementById('smsmkt-msg').value||'').length;
+  var n=len<=160?1:Math.ceil(len/153);
+  document.getElementById('smsmkt-chars').textContent=len+' / 160 znaków · '+n+' SMS'+(n>1?'y':'');
+  smsMktUpdateSummary();
+}
+function smsMktUpdateSummary(){
+  var n=_smsMktSelected.length;
+  var msg=(document.getElementById('smsmkt-msg').value||'').trim();
+  var btn=document.getElementById('smsmkt-send-btn');
+  var sum=document.getElementById('smsmkt-summary');
+  if(!n||!msg){sum.textContent='Wybierz odbiorców i wpisz treść aby zobaczyć podsumowanie.';sum.style.color='var(--muted)';btn.disabled=true;btn.style.opacity='.5';return;}
+  var smsN=msg.length<=160?1:Math.ceil(msg.length/153);
+  var total=n*smsN;
+  sum.innerHTML='📱 Odbiorców: <strong>'+n+'</strong> · SMS/osoba: <strong>'+smsN+'</strong> · Łącznie: <strong>'+total+'</strong> · Koszt: <strong>~'+(total*0.09).toFixed(2)+' zł</strong>';
+  sum.style.color='var(--text)';btn.disabled=false;btn.style.opacity='1';
+}
+async function smsMktSend(){
+  var list=document.getElementById('smsmkt-list')._smsMktList||[];
+  var msg=(document.getElementById('smsmkt-msg').value||'').trim();
+  var result=document.getElementById('smsmkt-result');
+  if(!_smsMktSelected.length||!msg){toast('Wybierz odbiorców i wpisz treść');return;}
+  if(!S('smsapi-token')){toast('Brak tokenu SMSAPI — skonfiguruj w Ustawieniach');return;}
+  var btn=document.getElementById('smsmkt-send-btn');
+  btn.disabled=true;btn.textContent='Wysyłam…';
+  var recipients=_smsMktSelected.map(function(i){return list[i];}).filter(Boolean);
+  var ok=0,fail=0,errors=[];
+  result.innerHTML='<div style="font-size:13px;color:var(--muted);">Wysyłam <span id="smsmkt-progress">0</span>/'+recipients.length+'…</div>';
+  for(var i=0;i<recipients.length;i++){
+    var c=recipients[i];
+    var personalMsg=msg.replace(/\{imie\}/gi,(c.name||'').split(' ')[0]||'');
+    await new Promise(function(resolve){
+      sendSmsRaw(c.phone,personalMsg,function(r){
+        if(r.ok)ok++;else{fail++;errors.push(c.name+': '+(r.err||'błąd'));}
+        var el=document.getElementById('smsmkt-progress');
+        if(el)el.textContent=ok+fail;
+        resolve();
+      });
+    });
+    await new Promise(function(r){setTimeout(r,150);});
+  }
+  result.innerHTML=ok>0
+    ?'<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:12px;font-size:13px;color:var(--green);">✅ Wysłano: <strong>'+ok+'</strong> SMS'+(fail>0?' · ❌ Błędy: <strong>'+fail+'</strong>':'')+'</div>'
+    :'<div style="background:var(--red-bg);border-radius:8px;padding:12px;font-size:13px;color:var(--red);">❌ Nie udało się wysłać żadnego SMS.</div>';
+  if(errors.length) result.innerHTML+='<div style="margin-top:6px;font-size:11px;color:var(--muted);">'+errors.slice(0,5).join(' · ')+'</div>';
+  btn.textContent='📱 Wyślij kampanię';btn.disabled=false;
+  toast('Kampania: '+ok+' wysłano, '+fail+' błędów');
+}
+function smsMktReset(){
+  _smsMktMode=null;_smsMktSelected=[];
+  ['inactive','stamps'].forEach(function(f){document.getElementById('smsmkt-filter-'+f).style.display='none';});
+  document.getElementById('smsmkt-recipients-box').style.display='none';
+  document.getElementById('smsmkt-msg').value='';
+  document.getElementById('smsmkt-result').innerHTML='';
+  document.getElementById('smsmkt-summary').textContent='Wybierz odbiorców i wpisz treść aby zobaczyć podsumowanie.';
+  var btn=document.getElementById('smsmkt-send-btn');btn.disabled=true;btn.style.opacity='.5';
+  smsMktCountChars();
+}
 function exportFullBackup(){
   const data={customers:S('customers')||[],menu:S('menu')||[],orders:S('orders')||[],addons:S('addons')||[],promos:S('promos')||[],coupons:S('coupons')||[],zones:S('zones')||[],exportDate:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
