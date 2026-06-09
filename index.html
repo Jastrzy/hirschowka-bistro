@@ -2018,49 +2018,41 @@ async function subscribeNL(){
   r.style.color='var(--muted)'; r.textContent='Zapisuję…';
 
   if(!window._firebase || !window._firebase.db){
-    r.style.color='var(--red2)'; r.textContent='❌ Brak połączenia z bazą danych. Spróbuj ponownie.';
-    console.warn('[subscribeNL] Firebase niedostępny');
+    r.style.color='var(--red2)'; r.textContent='❌ Brak połączenia. Spróbuj ponownie.';
+    return;
+  }
+
+  // Poczekaj na auth (max 5s)
+  try{
+    const fbAuth = firebase.auth();
+    if(!fbAuth.currentUser){
+      await new Promise((resolve, reject)=>{
+        const unsub = fbAuth.onAuthStateChanged(user=>{ if(user){ unsub(); resolve(); }});
+        fbAuth.signInAnonymously().catch(()=>{});
+        setTimeout(()=>{ unsub(); reject(new Error('timeout')); }, 5000);
+      });
+    }
+  }catch(e){
+    r.style.color='var(--red2)'; r.textContent='❌ Problem z połączeniem. Odśwież stronę i spróbuj ponownie.';
     return;
   }
 
   try{
-    const snap = await window._firebase.db.ref('customers').once('value');
-    const fbVal = snap.val();
-    let existingKey = null, existing = null;
-    if(fbVal){
-      const entries = Object.entries(fbVal);
-      const found = isEmail
-        ? entries.find(([k,x])=> x && (x.email||'').toLowerCase().trim()===val.toLowerCase().trim())
-        : entries.find(([k,x])=> x && (x.phone||'').replace(/\s/g,'')===val);
-      if(found){ existingKey=found[0]; existing=found[1]; }
-    }
-    console.log('[subscribeNL]', isEmail?'email':'phone', val, '→', existing?'istniejący klient':'nowy');
-
-    if(existing){
-      if(isEmail) existing.emailMkt=true; else existing.sms=true;
-      await window._firebase.db.ref('customers/'+existingKey).update(existing);
-      r.style.color='var(--gold2)';
-      r.textContent='✅ Zaktualizowano zgodę! Promocje będą trafiać do Ciebie.';
-    } else {
-      const newCust = {
-        name: isEmail ? 'Klient '+val.split('@')[0] : 'Klient '+val,
-        phone: isEmail ? '' : val,
-        email: isEmail ? val : '',
-        sms: !isEmail,
-        emailMkt: isEmail,
-        stamps:0, totalStamps:0, visits:0, spent:0,
-        last:'', registeredAt: new Date().toISOString().slice(0,10)
-      };
-      await window._firebase.db.ref('customers').push(newCust);
-      r.style.color='var(--gold2)';
-      r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
-    }
+    // Zapisz do /newsletter — osobny węzeł, nie wymaga czytania /customers
+    await window._firebase.db.ref('newsletter').push({
+      type: isEmail ? 'email' : 'phone',
+      value: val,
+      consent: true,
+      date: new Date().toISOString()
+    });
+    r.style.color='var(--gold2)';
+    r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
+    document.getElementById('nl-phone').value='';
+    document.getElementById('nl-emailinp').value='';
   }catch(e){
     console.error('[subscribeNL] błąd:', e);
     r.style.color='var(--red2)'; r.textContent='❌ Błąd zapisu: '+e.message;
   }
-  document.getElementById('nl-phone').value='';
-  document.getElementById('nl-emailinp').value='';
 }
 
 // ════ PWA INSTALL ════
