@@ -2006,13 +2006,58 @@ function renderReviews(){
 
 // ════ NEWSLETTER ════
 function switchNL(type){document.querySelectorAll('.nl-tab').forEach(t=>t.classList.remove('on'));document.getElementById('nl-'+type).classList.add('on');document.getElementById('nl-phone').style.display=type==='sms'?'block':'none';document.getElementById('nl-emailinp').style.display=type==='email'?'block':'none';}
-function subscribeNL(){
+async function subscribeNL(){
   if(!document.getElementById('nl-consent').checked){toast('Zaznacz zgodę marketingową');return;}
-  const val=document.getElementById('nl-phone').value.trim()||document.getElementById('nl-emailinp').value.trim();
+  const isEmail = document.getElementById('nl-email').classList.contains('on');
+  const phone = document.getElementById('nl-phone').value.trim().replace(/\s/g,'');
+  const email = document.getElementById('nl-emailinp').value.trim();
+  const val = isEmail ? email : phone;
+  const r = document.getElementById('nl-result');
   if(!val){toast('Podaj numer telefonu lub e-mail');return;}
-  const subs=LS('newsletter_subs')||[];subs.push({val,date:new Date().toISOString()});localStorage.setItem('newsletter_subs',JSON.stringify(subs));
-  const r=document.getElementById('nl-result');r.style.color='var(--gold2)';r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
-  document.getElementById('nl-phone').value='';document.getElementById('nl-emailinp').value='';
+
+  // Sprawdź czy już istnieje w Firebase
+  let existing = null, existingKey = null;
+  if(window._firebase && window._firebase.db){
+    try{
+      const snap = await window._firebase.db.ref('customers').once('value');
+      const fbVal = snap.val();
+      if(fbVal){
+        const entries = Object.entries(fbVal);
+        const found = isEmail
+          ? entries.find(([k,x])=> x && (x.email||'').toLowerCase()===val.toLowerCase())
+          : entries.find(([k,x])=> x && (x.phone||'').replace(/\s/g,'')===val);
+        if(found){ existingKey=found[0]; existing=found[1]; }
+      }
+    }catch(e){}
+  }
+
+  if(existing){
+    // Aktualizuj zgodę marketingową
+    if(isEmail) existing.emailMkt=true; else existing.sms=true;
+    if(window._firebase && window._firebase.db){
+      try{ await window._firebase.db.ref('customers/'+existingKey).update(existing); }catch(e){}
+    }
+    r.style.color='var(--gold2)';
+    r.textContent='✅ Zaktualizowano zgodę! Promocje będą trafiać do Ciebie.';
+  } else {
+    // Nowy klient
+    const newCust = {
+      name: isEmail ? 'Klient '+val.split('@')[0] : 'Klient '+val,
+      phone: isEmail ? '' : val,
+      email: isEmail ? val : '',
+      sms: !isEmail,
+      emailMkt: isEmail,
+      stamps: 0, totalStamps: 0, visits: 0, spent: 0,
+      last: '', registeredAt: new Date().toISOString().slice(0,10)
+    };
+    if(window._firebase && window._firebase.db){
+      try{ await window._firebase.db.ref('customers').push(newCust); }catch(e){}
+    }
+    r.style.color='var(--gold2)';
+    r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
+  }
+  document.getElementById('nl-phone').value='';
+  document.getElementById('nl-emailinp').value='';
 }
 
 // ════ PWA INSTALL ════
