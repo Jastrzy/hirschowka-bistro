@@ -3,31 +3,47 @@
 
 const crypto = require('crypto');
 
-const SANDBOX  = process.env.P24_SANDBOX !== 'false';
-const BASE_URL = SANDBOX
+const SANDBOX     = process.env.P24_SANDBOX !== 'false';
+const BASE_URL    = SANDBOX
   ? 'https://sandbox.przelewy24.pl'
   : 'https://secure.przelewy24.pl';
 
-const MERCHANT_ID = parseInt(process.env.P24_MERCHANT_ID, 10);
-const POS_ID      = parseInt(process.env.P24_POS_ID || process.env.P24_MERCHANT_ID, 10);
+// Wszystkie wartości jako stringi — P24 jest wrażliwy na typy
+const MERCHANT_ID = process.env.P24_MERCHANT_ID;   // '400164'
+const POS_ID      = process.env.P24_POS_ID || process.env.P24_MERCHANT_ID;
 const CRC         = process.env.P24_CRC;
-const API_KEY     = process.env.P24_API_KEY; // klucz do raportów
+const API_KEY     = process.env.P24_API_KEY;
 
-// Basic Auth: posId:reportsKey
+// Basic Auth: posId:reportsKey (oba jako string)
 function authHeader() {
-  return 'Basic ' + Buffer.from(`${POS_ID}:${API_KEY}`).toString('base64');
+  const credentials = `${POS_ID}:${API_KEY}`;
+  return 'Basic ' + Buffer.from(credentials).toString('base64');
 }
 
-// Podpis SHA384 rejestracji
+// Podpis SHA384 rejestracji — merchantId jako liczba w JSON
 function signRegister(sessionId, amount, currency) {
-  const payload = JSON.stringify({ sessionId, merchantId: MERCHANT_ID, amount, currency });
-  return crypto.createHash('sha384').update(payload + CRC).digest('hex');
+  const obj = {
+    sessionId:  sessionId,
+    merchantId: parseInt(MERCHANT_ID, 10),
+    amount:     amount,
+    currency:   currency,
+  };
+  return crypto.createHash('sha384')
+    .update(JSON.stringify(obj) + CRC)
+    .digest('hex');
 }
 
 // Podpis SHA384 weryfikacji
 function signVerify(sessionId, orderId, amount, currency) {
-  const payload = JSON.stringify({ sessionId, orderId, amount, currency });
-  return crypto.createHash('sha384').update(payload + CRC).digest('hex');
+  const obj = {
+    sessionId: sessionId,
+    orderId:   orderId,
+    amount:    amount,
+    currency:  currency,
+  };
+  return crypto.createHash('sha384')
+    .update(JSON.stringify(obj) + CRC)
+    .digest('hex');
 }
 
 module.exports = async function handler(req, res) {
@@ -38,6 +54,20 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { action } = req.query;
+
+  // ── TEST POŁĄCZENIA ────────────────────────────────────────
+  // Możesz wywołać GET /api/p24?action=test żeby sprawdzić dane
+  if (action === 'test') {
+    return res.status(200).json({
+      sandbox:    SANDBOX,
+      baseUrl:    BASE_URL,
+      merchantId: MERCHANT_ID,
+      posId:      POS_ID,
+      crcLen:     (CRC||'').length,
+      apiKeyLen:  (API_KEY||'').length,
+      authHeader: authHeader(),
+    });
+  }
 
   // ── REJESTRACJA ────────────────────────────────────────────
   if (action === 'register') {
@@ -51,8 +81,8 @@ module.exports = async function handler(req, res) {
     const sign         = signRegister(sessionId, amountGrosze, 'PLN');
 
     const body = {
-      merchantId:  MERCHANT_ID,
-      posId:       POS_ID,
+      merchantId:  parseInt(MERCHANT_ID, 10),
+      posId:       parseInt(POS_ID, 10),
       sessionId,
       amount:      amountGrosze,
       currency:    'PLN',
@@ -68,7 +98,9 @@ module.exports = async function handler(req, res) {
       client:      name || '',
     };
 
-    console.log('[P24] register →', BASE_URL, { merchantId: MERCHANT_ID, posId: POS_ID, sessionId, amountGrosze });
+    console.log('[P24] register request:', JSON.stringify({
+      merchantId: MERCHANT_ID, posId: POS_ID, sessionId, amountGrosze, sign
+    }));
 
     try {
       const resp = await fetch(`${BASE_URL}/api/v1/transaction/register`, {
@@ -79,20 +111,25 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify(body),
       });
-      const data = await resp.json();
-      console.log('[P24] register response:', JSON.stringify(data));
+
+      const text = await resp.text();
+      console.log('[P24] register response status:', resp.status);
+      console.log('[P24] register response body:', text);
+
+      let data;
+      try { data = JSON.parse(text); } catch(e) { data = { raw: text }; }
 
       if (data.data && data.data.token) {
         return res.status(200).json({
-          token:   data.data.token,
+          token:    data.data.token,
           sessionId,
-          payUrl:  `${BASE_URL}/trnRequest/${data.data.token}`,
-          sandbox: SANDBOX,
+          payUrl:   `${BASE_URL}/trnRequest/${data.data.token}`,
+          sandbox:  SANDBOX,
         });
       }
-      return res.status(500).json({ error: data.error || 'Bład rejestracji', raw: data });
+      return res.status(500).json({ error: data.error || 'Blad rejestracji', code: resp.status, raw: data });
     } catch (e) {
-      console.error('[P24] register error:', e.message);
+      console.error('[P24] fetch error:', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
@@ -108,8 +145,8 @@ module.exports = async function handler(req, res) {
     }
 
     const verifyBody = {
-      merchantId: parseInt(merchantId),
-      posId:      parseInt(posId),
+      merchantId: parseInt(merchantId, 10),
+      posId:      parseInt(posId, 10),
       sessionId,
       amount,
       currency,
@@ -130,7 +167,7 @@ module.exports = async function handler(req, res) {
       console.log('[P24] verify response:', JSON.stringify(data));
 
       if (data.data && data.data.status === 'success') {
-        console.log('[P24] ✅ Platnosc potwierdzona:', sessionId);
+        console.log('[P24] Platnosc potwierdzona:', sessionId);
         return res.status(200).json({ status: 'ok' });
       }
       return res.status(500).json({ error: 'Weryfikacja nieudana', raw: data });
@@ -139,5 +176,5 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: 'Nieznana akcja. Uzyj: register lub notify' });
+  return res.status(400).json({ error: 'Nieznana akcja' });
 };
