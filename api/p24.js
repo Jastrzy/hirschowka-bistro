@@ -1,48 +1,36 @@
 // Hirschówka Bistro — Przelewy24 Serverless Function
 // Vercel: api/p24.js
-// Obsługuje: rejestrację transakcji i weryfikację płatności
 
 const crypto = require('crypto');
 
-const SANDBOX   = process.env.P24_SANDBOX !== 'false'; // domyślnie sandbox
-const BASE_URL  = SANDBOX
+const SANDBOX  = process.env.P24_SANDBOX !== 'false';
+const BASE_URL = SANDBOX
   ? 'https://sandbox.przelewy24.pl'
   : 'https://secure.przelewy24.pl';
-const MERCHANT  = process.env.P24_MERCHANT_ID;
-const CRC       = process.env.P24_CRC;
-const API_KEY   = process.env.P24_API_KEY;
-const POS_ID    = process.env.P24_POS_ID || MERCHANT; // zwykle taki sam jak MERCHANT
 
-// Podpis SHA384 dla rejestracji transakcji
-function signRegister(sessionId, amount, currency) {
-  const data = JSON.stringify({
-    sessionId,
-    merchantId: parseInt(MERCHANT, 16) || MERCHANT,
-    amount,
-    currency
-  });
-  return crypto.createHash('sha384').update(data + CRC).digest('hex');
-}
+const MERCHANT_ID = parseInt(process.env.P24_MERCHANT_ID, 10);
+const POS_ID      = parseInt(process.env.P24_POS_ID || process.env.P24_MERCHANT_ID, 10);
+const CRC         = process.env.P24_CRC;
+const API_KEY     = process.env.P24_API_KEY; // klucz do raportów
 
-// Podpis SHA384 dla weryfikacji
-function signVerify(sessionId, orderId, amount, currency) {
-  const data = JSON.stringify({
-    sessionId,
-    orderId,
-    amount,
-    currency
-  });
-  return crypto.createHash('sha384').update(data + CRC).digest('hex');
-}
-
-// Nagłówki autoryzacji Basic Auth
+// Basic Auth: posId:reportsKey
 function authHeader() {
-  const token = Buffer.from(`${MERCHANT}:${API_KEY}`).toString('base64');
-  return `Basic ${token}`;
+  return 'Basic ' + Buffer.from(`${POS_ID}:${API_KEY}`).toString('base64');
 }
 
-export default async function handler(req, res) {
-  // CORS
+// Podpis SHA384 rejestracji
+function signRegister(sessionId, amount, currency) {
+  const payload = JSON.stringify({ sessionId, merchantId: MERCHANT_ID, amount, currency });
+  return crypto.createHash('sha384').update(payload + CRC).digest('hex');
+}
+
+// Podpis SHA384 weryfikacji
+function signVerify(sessionId, orderId, amount, currency) {
+  const payload = JSON.stringify({ sessionId, orderId, amount, currency });
+  return crypto.createHash('sha384').update(payload + CRC).digest('hex');
+}
+
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -51,12 +39,11 @@ export default async function handler(req, res) {
 
   const { action } = req.query;
 
-  // ── REJESTRACJA TRANSAKCJI ──────────────────────────────
+  // ── REJESTRACJA ────────────────────────────────────────────
   if (action === 'register') {
     const { orderId, amount, email, phone, name, description, returnUrl, notifyUrl } = req.body;
-
     if (!orderId || !amount || !email) {
-      return res.status(400).json({ error: 'Brak wymaganych danych: orderId, amount, email' });
+      return res.status(400).json({ error: 'Brak: orderId, amount lub email' });
     }
 
     const amountGrosze = Math.round(parseFloat(amount) * 100);
@@ -64,12 +51,12 @@ export default async function handler(req, res) {
     const sign         = signRegister(sessionId, amountGrosze, 'PLN');
 
     const body = {
-      merchantId:  parseInt(MERCHANT, 16) || parseInt(MERCHANT),
-      posId:       parseInt(POS_ID, 16)   || parseInt(POS_ID),
+      merchantId:  MERCHANT_ID,
+      posId:       POS_ID,
       sessionId,
       amount:      amountGrosze,
       currency:    'PLN',
-      description: description || `Zamówienie ${orderId} — Hirschówka Bistro`,
+      description: description || `Zamowienie ${orderId} - Hirschowka Bistro`,
       email,
       phone:       (phone || '').replace(/\D/g, ''),
       country:     'PL',
@@ -81,6 +68,8 @@ export default async function handler(req, res) {
       client:      name || '',
     };
 
+    console.log('[P24] register →', BASE_URL, { merchantId: MERCHANT_ID, posId: POS_ID, sessionId, amountGrosze });
+
     try {
       const resp = await fetch(`${BASE_URL}/api/v1/transaction/register`, {
         method:  'POST',
@@ -91,36 +80,33 @@ export default async function handler(req, res) {
         body: JSON.stringify(body),
       });
       const data = await resp.json();
+      console.log('[P24] register response:', JSON.stringify(data));
 
       if (data.data && data.data.token) {
         return res.status(200).json({
-          token:      data.data.token,
+          token:   data.data.token,
           sessionId,
-          payUrl:     `${BASE_URL}/trnRequest/${data.data.token}`,
-          sandbox:    SANDBOX,
+          payUrl:  `${BASE_URL}/trnRequest/${data.data.token}`,
+          sandbox: SANDBOX,
         });
-      } else {
-        console.error('[P24] register error:', data);
-        return res.status(500).json({ error: data.error || 'Błąd rejestracji transakcji', raw: data });
       }
+      return res.status(500).json({ error: data.error || 'Bład rejestracji', raw: data });
     } catch (e) {
-      console.error('[P24] register fetch error:', e);
+      console.error('[P24] register error:', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
 
-  // ── WERYFIKACJA PŁATNOŚCI (webhook od P24) ──────────────
+  // ── WERYFIKACJA (webhook) ──────────────────────────────────
   if (action === 'notify') {
-    const { merchantId, posId, sessionId, amount, originAmount, currency, orderId, methodId, statement, sign } = req.body;
-
-    // Sprawdź podpis
+    const { merchantId, posId, sessionId, amount, currency, orderId, sign } = req.body;
     const expectedSign = signVerify(sessionId, orderId, amount, currency);
+
     if (sign !== expectedSign) {
-      console.error('[P24] notify — nieprawidłowy podpis!');
+      console.error('[P24] notify — zly podpis!');
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
-    // Potwierdź transakcję w P24
     const verifyBody = {
       merchantId: parseInt(merchantId),
       posId:      parseInt(posId),
@@ -141,23 +127,17 @@ export default async function handler(req, res) {
         body: JSON.stringify(verifyBody),
       });
       const data = await resp.json();
+      console.log('[P24] verify response:', JSON.stringify(data));
 
       if (data.data && data.data.status === 'success') {
-        // Płatność zweryfikowana — wyciągnij orderId z sessionId (HB-#12345-timestamp)
-        const parts    = sessionId.split('-');
-        const orderNum = parts.slice(1, -1).join('-'); // np. #12345
-        console.log(`[P24] ✅ Płatność potwierdzona: ${orderNum}, kwota: ${amount / 100} PLN`);
-        // Tu możesz dodać zapis statusu do Firebase jeśli potrzeba
+        console.log('[P24] ✅ Platnosc potwierdzona:', sessionId);
         return res.status(200).json({ status: 'ok' });
-      } else {
-        console.error('[P24] verify failed:', data);
-        return res.status(500).json({ error: 'Weryfikacja nieudana', raw: data });
       }
+      return res.status(500).json({ error: 'Weryfikacja nieudana', raw: data });
     } catch (e) {
-      console.error('[P24] verify fetch error:', e);
       return res.status(500).json({ error: e.message });
     }
   }
 
-  return res.status(400).json({ error: 'Nieznana akcja. Użyj: register lub notify' });
-}
+  return res.status(400).json({ error: 'Nieznana akcja. Uzyj: register lub notify' });
+};
