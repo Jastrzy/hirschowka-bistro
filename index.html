@@ -1874,7 +1874,7 @@ function applyCoupon(){
 }
 
 // ════ ORDER ════
-function placeOrder(){
+async function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
   if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
@@ -1882,64 +1882,125 @@ function placeOrder(){
   const surname=(document.getElementById('c-surname')?.value||'').trim();
   const name=surname?`${firstName} ${surname}`.trim():firstName;
   const phone=(document.getElementById('c-phone')?.value||'').replace(/\s/g,'').trim();
+  const email=(document.getElementById('c-email')?.value||'').trim();
   if(!firstName){toast('Podaj imię');return;}
   if(!phone){toast('Podaj numer telefonu');return;}
   const cleanPhone=phone.replace(/^\+48/,'');
   if(cleanPhone.length!==9||!/^[0-9]{9}$/.test(cleanPhone)){toast('Numer telefonu musi mieć dokładnie 9 cyfr');const h=document.getElementById('phone-hint');if(h)h.style.display='block';return;}
   if(delType==='dostawa'&&!document.getElementById('addr-street').value.trim()){toast('Podaj adres dostawy');return;}
   if(delType==='dostawa'&&window._deliveryKm===null&&document.getElementById('addr-street').value.trim()){
-    // Sprawdź czy to celowo poza zasięgiem czy jeszcze nie sprawdzono
     const info=document.getElementById('zone-info');
     if(info&&info.innerHTML.includes('poza zasięgiem')){toast('⛔ Adres poza zasięgiem dostawy. Zadzwoń: +48 511 707 232');return;}
   }
+  // Przy płatnościach online email jest wymagany
+  const isOnline = ['blik','card','gpay'].includes(payType);
+  if(isOnline && !email){toast('Podaj adres e-mail do potwierdzenia płatności');document.getElementById('c-email')?.focus();return;}
+
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const rawDc=delType==='dostawa'?calcDel():0;
-  const dc=(rawDc===null)?0:rawDc; // null = poza zasięgiem, nie doliczamy
+  const dc=(rawDc===null)?0:rawDc;
   const pkg=calcPackaging();
   const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
   const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));
   const oid='#'+(10000+Math.floor(Math.random()*89999));
-  const typeMap = {'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
-  // Zapisujemy TYLKO nowe zamówienie — firebase-config używa push()
-  // żeby nie nadpisywać statusów innych zamówień zmienionych przez panel
-  const newOrder = {
-    id: oid,
-    type: typeMap[delType]||'delivery',
-    items: cart.map(c=>`${c.name} ×${c.qty}`).join(', '),
-    itemsArr: cart.map(c=>({name:c.name,qty:c.qty,unitPrice:c.unitPrice,mods:c.mods||[]})),
-    total,
-    timestamp: Date.now(),
-    time: new Date().toTimeString().slice(0,5),
-    date: new Date().toLocaleDateString('pl'),
-    status: 'pending',
-    customer: name,
-    phone,
-    addr: delType==='dostawa'?(document.getElementById('addr-street')?.value||''):'',
-    payment: payType,
-    comment: (document.getElementById('order-notes')?.value||'').trim(),
-    deliveryCost: dc,
-    invoice: document.getElementById('need-invoice')?.checked ? {
+  const typeMap={'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
+  const newOrder={
+    id:oid,
+    type:typeMap[delType]||'delivery',
+    items:cart.map(c=>`${c.name} ×${c.qty}`).join(', '),
+    itemsArr:cart.map(c=>({name:c.name,qty:c.qty,unitPrice:c.unitPrice,mods:c.mods||[]})),
+    total,timestamp:Date.now(),
+    time:new Date().toTimeString().slice(0,5),
+    date:new Date().toLocaleDateString('pl'),
+    status: isOnline ? 'awaiting_payment' : 'pending',
+    customer:name,phone,email,
+    addr:delType==='dostawa'?(document.getElementById('addr-street')?.value||''):'',
+    payment:payType,
+    comment:(document.getElementById('order-notes')?.value||'').trim(),
+    deliveryCost:dc,
+    invoice:document.getElementById('need-invoice')?.checked?{
       company:(document.getElementById('inv-company')?.value||'').trim(),
       nip:(document.getElementById('inv-nip')?.value||'').trim(),
       address:(document.getElementById('inv-address')?.value||'').trim(),
       city:(document.getElementById('inv-city')?.value||'').trim(),
-    } : null,
+    }:null,
   };
-  // Zapisz jako jednoelementową tablicę — firebase-config.js wyśle push() do Firebase
-  localStorage.setItem('orders', JSON.stringify([newOrder]));
+
+  // Zapisz zamówienie do Firebase
+  localStorage.setItem('orders',JSON.stringify([newOrder]));
+
+  // Rejestruj klienta
   const custs=LS('customers')||[];
   const raw=phone.replace(/\s/g,'');
-  if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){custs.push({name,phone,email:document.getElementById('c-email')?.value||'',sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});localStorage.setItem('customers',JSON.stringify(custs));}
+  if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){
+    custs.push({name,phone,email,sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});
+    localStorage.setItem('customers',JSON.stringify(custs));
+  }
+
   // Oznacz kupon jako użyty
   if(appliedCoupon){
     const all=LS('coupons')||[];
     const c=all.find(x=>(x.code||'').toUpperCase()===(appliedCoupon.code||'').toUpperCase());
-    if(c){ c.used=(c.used||0)+1; try{localStorage.setItem('coupons',JSON.stringify(all));}catch(e){} }
+    if(c){c.used=(c.used||0)+1;try{localStorage.setItem('coupons',JSON.stringify(all));}catch(e){}}
   }
+
+  // ── PŁATNOŚĆ ONLINE — Przelewy24 ──
+  if(isOnline){
+    const btn=document.querySelector('.order-btn');
+    if(btn){btn.disabled=true;btn.textContent='Przekierowuję do płatności…';}
+    try{
+      const resp=await fetch('/api/p24?action=register',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          orderId:oid,
+          amount:total,
+          email,
+          phone,
+          name,
+          description:`Zamówienie ${oid} — Hirschówka Bistro`,
+          returnUrl:`${location.origin}/?order=success&id=${encodeURIComponent(oid)}`,
+          notifyUrl:`${location.origin}/api/p24?action=notify`,
+        }),
+      });
+      const data=await resp.json();
+      if(data.payUrl){
+        cart=[];appliedCoupon=null;updateCartBadge();
+        // Przekieruj do Przelewy24
+        window.location.href=data.payUrl;
+        return;
+      } else {
+        if(btn){btn.disabled=false;btn.textContent='Do kasy — '+total.toFixed(2)+' zł';}
+        toast('❌ Błąd płatności: '+(data.error||'Spróbuj ponownie'));
+        return;
+      }
+    }catch(e){
+      if(btn){btn.disabled=false;btn.textContent='Do kasy — '+total.toFixed(2)+' zł';}
+      toast('❌ Błąd połączenia z płatnościami. Spróbuj ponownie.');
+      return;
+    }
+  }
+
+  // ── PŁATNOŚĆ PRZY ODBIORZE / GOTÓWKA ──
   cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
   document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
 }
+
+// Obsłuż powrót z Przelewy24 po udanej płatności
+(function(){
+  const params=new URLSearchParams(location.search);
+  if(params.get('order')==='success'){
+    const oid=params.get('id')||'';
+    window.addEventListener('DOMContentLoaded',function(){
+      setTimeout(function(){
+        const el=document.getElementById('menu-content');
+        if(el) el.insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">✅</div><h3>Płatność przyjęta!</h3><p>Numer zamówienia: <strong>${oid}</strong><br><br>Dziękujemy! Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem realizacji.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
+        window.history.replaceState({},'','/');
+      },800);
+    });
+  }
+})();
 
 // ════ LOYALTY ════
 function renderLoyaltyStamps(count){
@@ -2018,41 +2079,49 @@ async function subscribeNL(){
   r.style.color='var(--muted)'; r.textContent='Zapisuję…';
 
   if(!window._firebase || !window._firebase.db){
-    r.style.color='var(--red2)'; r.textContent='❌ Brak połączenia. Spróbuj ponownie.';
+    r.style.color='var(--red2)'; r.textContent='❌ Brak połączenia z bazą danych. Spróbuj ponownie.';
+    console.warn('[subscribeNL] Firebase niedostępny');
     return;
   }
 
-  // Poczekaj na auth (max 5s)
   try{
-    const fbAuth = firebase.auth();
-    if(!fbAuth.currentUser){
-      await new Promise((resolve, reject)=>{
-        const unsub = fbAuth.onAuthStateChanged(user=>{ if(user){ unsub(); resolve(); }});
-        fbAuth.signInAnonymously().catch(()=>{});
-        setTimeout(()=>{ unsub(); reject(new Error('timeout')); }, 5000);
-      });
+    const snap = await window._firebase.db.ref('customers').once('value');
+    const fbVal = snap.val();
+    let existingKey = null, existing = null;
+    if(fbVal){
+      const entries = Object.entries(fbVal);
+      const found = isEmail
+        ? entries.find(([k,x])=> x && (x.email||'').toLowerCase().trim()===val.toLowerCase().trim())
+        : entries.find(([k,x])=> x && (x.phone||'').replace(/\s/g,'')===val);
+      if(found){ existingKey=found[0]; existing=found[1]; }
     }
-  }catch(e){
-    r.style.color='var(--red2)'; r.textContent='❌ Problem z połączeniem. Odśwież stronę i spróbuj ponownie.';
-    return;
-  }
+    console.log('[subscribeNL]', isEmail?'email':'phone', val, '→', existing?'istniejący klient':'nowy');
 
-  try{
-    // Zapisz do /newsletter — osobny węzeł, nie wymaga czytania /customers
-    await window._firebase.db.ref('newsletter').push({
-      type: isEmail ? 'email' : 'phone',
-      value: val,
-      consent: true,
-      date: new Date().toISOString()
-    });
-    r.style.color='var(--gold2)';
-    r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
-    document.getElementById('nl-phone').value='';
-    document.getElementById('nl-emailinp').value='';
+    if(existing){
+      if(isEmail) existing.emailMkt=true; else existing.sms=true;
+      await window._firebase.db.ref('customers/'+existingKey).update(existing);
+      r.style.color='var(--gold2)';
+      r.textContent='✅ Zaktualizowano zgodę! Promocje będą trafiać do Ciebie.';
+    } else {
+      const newCust = {
+        name: isEmail ? 'Klient '+val.split('@')[0] : 'Klient '+val,
+        phone: isEmail ? '' : val,
+        email: isEmail ? val : '',
+        sms: !isEmail,
+        emailMkt: isEmail,
+        stamps:0, totalStamps:0, visits:0, spent:0,
+        last:'', registeredAt: new Date().toISOString().slice(0,10)
+      };
+      await window._firebase.db.ref('customers').push(newCust);
+      r.style.color='var(--gold2)';
+      r.textContent='✅ Zapisano! Promocje będą trafiać do Ciebie co tydzień.';
+    }
   }catch(e){
     console.error('[subscribeNL] błąd:', e);
     r.style.color='var(--red2)'; r.textContent='❌ Błąd zapisu: '+e.message;
   }
+  document.getElementById('nl-phone').value='';
+  document.getElementById('nl-emailinp').value='';
 }
 
 // ════ PWA INSTALL ════
