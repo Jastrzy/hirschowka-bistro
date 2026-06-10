@@ -8,42 +8,37 @@ const BASE_URL    = SANDBOX
   ? 'https://sandbox.przelewy24.pl'
   : 'https://secure.przelewy24.pl';
 
-// Wszystkie wartości jako stringi — P24 jest wrażliwy na typy
-const MERCHANT_ID = process.env.P24_MERCHANT_ID;   // '400164'
-const POS_ID      = process.env.P24_POS_ID || process.env.P24_MERCHANT_ID;
+const MERCHANT_ID = parseInt(process.env.P24_MERCHANT_ID, 10);
+const POS_ID      = parseInt(process.env.P24_POS_ID || process.env.P24_MERCHANT_ID, 10);
 const CRC         = process.env.P24_CRC;
 const API_KEY     = process.env.P24_API_KEY;
 
-// Basic Auth: posId:reportsKey (oba jako string)
+// Basic Auth: posId:reportsKey
 function authHeader() {
-  const credentials = `${POS_ID}:${API_KEY}`;
-  return 'Basic ' + Buffer.from(credentials).toString('base64');
+  return 'Basic ' + Buffer.from(`${POS_ID}:${API_KEY}`).toString('base64');
 }
 
-// Podpis SHA384 rejestracji — merchantId jako liczba w JSON
+// Podpis SHA384 — CRC jako pole wewnątrz obiektu JSON
 function signRegister(sessionId, amount, currency) {
   const obj = {
     sessionId:  sessionId,
-    merchantId: parseInt(MERCHANT_ID, 10),
+    merchantId: MERCHANT_ID,
     amount:     amount,
     currency:   currency,
+    crc:        CRC,
   };
-  return crypto.createHash('sha384')
-    .update(JSON.stringify(obj) + CRC)
-    .digest('hex');
+  return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
-// Podpis SHA384 weryfikacji
 function signVerify(sessionId, orderId, amount, currency) {
   const obj = {
     sessionId: sessionId,
     orderId:   orderId,
     amount:    amount,
     currency:  currency,
+    crc:       CRC,
   };
-  return crypto.createHash('sha384')
-    .update(JSON.stringify(obj) + CRC)
-    .digest('hex');
+  return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
 module.exports = async function handler(req, res) {
@@ -54,8 +49,9 @@ module.exports = async function handler(req, res) {
 
   const { action } = req.query;
 
-  // ── TEST POŁĄCZENIA (GET) ──────────────────────────────────
+  // ── TEST ──────────────────────────────────────────────────
   if (action === 'test') {
+    const testSign = signRegister('test-session', 100, 'PLN');
     return res.status(200).json({
       sandbox:    SANDBOX,
       baseUrl:    BASE_URL,
@@ -63,7 +59,7 @@ module.exports = async function handler(req, res) {
       posId:      POS_ID,
       crcLen:     (CRC||'').length,
       apiKeyLen:  (API_KEY||'').length,
-      authHeader: authHeader(),
+      testSign,
     });
   }
 
@@ -81,8 +77,8 @@ module.exports = async function handler(req, res) {
     const sign         = signRegister(sessionId, amountGrosze, 'PLN');
 
     const body = {
-      merchantId:  parseInt(MERCHANT_ID, 10),
-      posId:       parseInt(POS_ID, 10),
+      merchantId:  MERCHANT_ID,
+      posId:       POS_ID,
       sessionId,
       amount:      amountGrosze,
       currency:    'PLN',
@@ -98,9 +94,7 @@ module.exports = async function handler(req, res) {
       client:      name || '',
     };
 
-    console.log('[P24] register request:', JSON.stringify({
-      merchantId: MERCHANT_ID, posId: POS_ID, sessionId, amountGrosze, sign
-    }));
+    console.log('[P24] register →', { merchantId: MERCHANT_ID, posId: POS_ID, sessionId, amountGrosze, sign });
 
     try {
       const resp = await fetch(`${BASE_URL}/api/v1/transaction/register`, {
@@ -113,8 +107,7 @@ module.exports = async function handler(req, res) {
       });
 
       const text = await resp.text();
-      console.log('[P24] register response status:', resp.status);
-      console.log('[P24] register response body:', text);
+      console.log('[P24] response', resp.status, text);
 
       let data;
       try { data = JSON.parse(text); } catch(e) { data = { raw: text }; }
@@ -164,10 +157,9 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify(verifyBody),
       });
       const data = await resp.json();
-      console.log('[P24] verify response:', JSON.stringify(data));
+      console.log('[P24] verify:', JSON.stringify(data));
 
       if (data.data && data.data.status === 'success') {
-        console.log('[P24] Platnosc potwierdzona:', sessionId);
         return res.status(200).json({ status: 'ok' });
       }
       return res.status(500).json({ error: 'Weryfikacja nieudana', raw: data });
