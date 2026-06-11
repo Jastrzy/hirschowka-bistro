@@ -894,6 +894,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- STICKY BAR — tylko koszyk, zakładki dostawy przeniesione do koszyka -->
 <div class="del-bar" id="del-bar">
   <span style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:14px 0;">Menu</span>
+  <button class="addr-pill" onclick="openCart()">🛒 Koszyk <span id="cart-count-bar" style="font-weight:800;color:var(--brown);"></span></button>
 </div>
 
 <!-- PROMOS -->
@@ -1072,7 +1073,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- ═══ OVERLAYS ═══ -->
 <div class="ov" id="ov-product"><div class="sheet fi"><div class="sh-hd"><h3 id="sp-title"></h3><button class="sh-cl" onclick="closeOv('ov-product')">✕</button></div><div id="sp-desc" style="padding:10px 22px;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(59,37,18,.08);display:none;"></div><div id="sp-sizes"></div><div id="sp-addons"></div><div class="qty-row"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)">+</button></div><button class="addmain" onclick="doAdd()">Dodaj — <span id="sp-tot"></span></button></div></div></div>
 
-<div class="ov" id="ov-cross" style="align-items:center;"><div class="sheet fi" style="border-radius:16px;max-width:400px;"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><div style="display:flex;flex-direction:column;gap:8px;padding:0 22px 8px;"><button class="cross-cont" style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;" onclick="closeCross();openCart()">🛒 Przejdź do koszyka →</button><button class="cross-cont" style="background:var(--cream2);color:var(--brown);border:none;border-radius:8px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;" onclick="closeCross()">Kontynuuj zakupy →</button></div></div></div>
+<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy →</button></div></div>
 
 <div class="ov" id="ov-cart">
   <div class="sheet">
@@ -1108,9 +1109,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
         <div class="payopt on" id="pay-blik" onclick="selPay('blik')"><div class="payopt-l"><div class="dor2 on"></div><span class="pname">BLIK</span></div><span class="pbdg">BLIK</span></div>
         <div class="payopt" id="pay-gpay" onclick="selPay('gpay')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Google Pay</span></div><span style="font-size:14px;font-weight:900;color:#4285f4;">G</span></div>
         <div class="payopt" id="pay-card" onclick="selPay('card')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Karta płatnicza</span></div><span class="pbdg">VISA/MC</span></div>
-        <div class="payopt" id="pay-transfer" onclick="selPay('transfer')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Szybki przelew</span></div><span>💳</span></div>
         <div class="payopt" id="pay-cash" onclick="selPay('cash')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Gotówka przy odbiorze</span></div><span>💵</span></div>
-        <div class="payopt" id="pay-card2" onclick="selPay('card2')"><div class="payopt-l"><div class="dor2"></div><span class="pname">Karta przy odbiorze</span></div><span>💳</span></div>
       </div>
     </div>
     <div class="sblk">
@@ -1958,7 +1957,7 @@ async function placeOrder(){
           phone,
           name,
           description:`Zamówienie ${oid} — Hirschówka Bistro`,
-          returnUrl:`${location.origin}/?order=success&id=${encodeURIComponent(oid)}`,
+          returnUrl:`${location.origin}/?order=done&id=${encodeURIComponent(oid)}`,
           notifyUrl:`${location.origin}/api/p24?action=notify`,
         }),
       });
@@ -1986,32 +1985,63 @@ async function placeOrder(){
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
 }
 
-// Obsłuż powrót z Przelewy24 po udanej płatności
+// Obsłuż powrót z Przelewy24
 (function(){
   const params=new URLSearchParams(location.search);
-  if(params.get('order')==='success'){
-    const oid=params.get('id')||'';
-    window.history.replaceState({},'','/');
-    window.addEventListener('DOMContentLoaded',function(){
-      setTimeout(function(){
-        const overlay=document.createElement('div');
-        overlay.id='payment-success-modal';
-        overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-        overlay.innerHTML=`
-          <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-            <div style="font-size:56px;margin-bottom:12px;">✅</div>
-            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność przyjęta!</h2>
-            <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
-            <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Dziękujemy! Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem realizacji.</p>
-            <button onclick="document.getElementById('payment-success-modal').remove();"
-              style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">
-              Powrót do menu
-            </button>
-          </div>`;
-        document.body.appendChild(overlay);
-      },500);
-    });
+  if(params.get('order')!=='done') return;
+  const oid=params.get('id')||'';
+  window.history.replaceState({},'','/');
+
+  function showModal(paid){
+    const overlay=document.createElement('div');
+    overlay.id='payment-result-modal';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = paid ? `
+      <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="font-size:56px;margin-bottom:12px;">✅</div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność przyjęta!</h2>
+        <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
+        <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Dziękujemy! Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem realizacji.</p>
+        <button onclick="document.getElementById('payment-result-modal').remove();"
+          style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">
+          Powrót do menu
+        </button>
+      </div>` : `
+      <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="font-size:56px;margin-bottom:12px;">❌</div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność nieudana</h2>
+        <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
+        <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Płatność nie została zrealizowana lub upłynął czas sesji.<br>Możesz spróbować ponownie lub wybrać inną metodę płatności.</p>
+        <button onclick="document.getElementById('payment-result-modal').remove();openCart();"
+          style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-bottom:10px;">
+          Spróbuj ponownie
+        </button>
+        <button onclick="document.getElementById('payment-result-modal').remove();"
+          style="background:var(--cream2,#f5f0e8);color:#2A1A0E;border:none;border-radius:8px;padding:12px 32px;font-size:13px;font-weight:600;cursor:pointer;width:100%;">
+          Wróć do menu
+        </button>
+      </div>`;
+    document.body.appendChild(overlay);
   }
+
+  window.addEventListener('DOMContentLoaded', function(){
+    setTimeout(async function(){
+      // Sprawdź status zamówienia w Firebase
+      let paid = false;
+      try{
+        if(window._firebase && window._firebase.db){
+          const snap = await window._firebase.db.ref('orders')
+            .orderByChild('id').equalTo(oid).once('value');
+          const val = snap.val();
+          if(val){
+            const order = Object.values(val)[0];
+            paid = order && order.status === 'paid';
+          }
+        }
+      }catch(e){}
+      showModal(paid);
+    }, 1200); // poczekaj na załadowanie Firebase
+  });
 })();
 
 // ════ LOYALTY ════
