@@ -24,8 +24,8 @@ function signRegister(sessionId, amount, currency) {
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
-function signVerify(sessionId, orderId, amount, currency) {
-  const obj = { sessionId, orderId, amount, currency, crc: CRC };
+function signVerify(sessionId, orderId, amount, originAmount, currency, methodId, statement) {
+  const obj = { sessionId, orderId, amount, originAmount, currency, methodId, statement, crc: CRC };
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
@@ -124,41 +124,26 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ── WERYFIKACJA WEBHOOK (POST od P24) ─────────────────────
   if (action === 'notify') {
     const body = req.body || {};
-    const { merchantId, posId, sessionId, amount, currency, orderId, sign } = body;
+    const { merchantId, posId, sessionId, amount, originAmount, currency, orderId, methodId, statement, sign } = body;
 
-    // Loguj dokładnie co przyszło od P24
     console.log('[P24] notify body:', JSON.stringify(body));
-    console.log('[P24] notify types:', {
-      orderId: typeof orderId,
-      amount: typeof amount,
-      sessionId: typeof sessionId,
-      currency: typeof currency,
-    });
 
-    // Próbuj różne warianty podpisu — P24 może przekazywać orderId jako int lub string
-    const sign1 = signVerify(sessionId, orderId, amount, currency);
-    const sign2 = signVerify(sessionId, parseInt(orderId, 10), amount, currency);
-    const sign3 = signVerify(sessionId, String(orderId), amount, currency);
-    const sign4 = signVerify(sessionId, orderId, parseInt(amount, 10), currency);
-    const sign5 = signVerify(sessionId, parseInt(orderId, 10), parseInt(amount, 10), currency);
+    // Licz podpis ze wszystkich pól notyfikacji
+    const expectedSign = signVerify(sessionId, orderId, amount, originAmount, currency, methodId, statement);
+    console.log('[P24] sign check:', { received: sign, expected: expectedSign, match: sign === expectedSign });
 
-    console.log('[P24] sign variants:', { received: sign, sign1, sign2, sign3, sign4, sign5 });
-
-    const validSign = [sign1, sign2, sign3, sign4, sign5].find(s => s === sign);
-    if (!validSign) {
-      console.error('[P24] notify — zly podpis! Żaden wariant nie pasuje.');
+    if (sign !== expectedSign) {
+      console.error('[P24] notify — zly podpis!');
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
     console.log('[P24] notify — podpis OK ✓');
 
-    // Potwierdź transakcję w P24
     const verifyBody = {
       merchantId: parseInt(merchantId, 10), posId: parseInt(posId, 10),
-      sessionId, amount, currency, orderId, sign: validSign,
+      sessionId, amount, currency, orderId, sign: expectedSign,
     };
 
     try {
@@ -172,7 +157,7 @@ module.exports = async function handler(req, res) {
 
       if (data.data && data.data.status === 'success') {
         const parts = sessionId.split('-');
-        const orderNum = parts.slice(1, -1).join('-'); // np. #79077
+        const orderNum = parts.slice(1, -1).join('-');
         await updateOrderStatus(orderNum, 'paid');
         console.log('[P24] Platnosc potwierdzona:', orderNum);
         return res.status(200).json({ status: 'ok' });
