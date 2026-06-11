@@ -1993,6 +1993,10 @@ async function placeOrder(){
   window.history.replaceState({},'','/');
 
   function showModal(paid){
+    // Usuń ekran oczekiwania
+    const waiting = document.getElementById('payment-waiting-modal');
+    if(waiting) waiting.remove();
+
     const overlay=document.createElement('div');
     overlay.id='payment-result-modal';
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -2024,13 +2028,40 @@ async function placeOrder(){
     document.body.appendChild(overlay);
   }
 
+  function showWaiting(secondsLeft){
+    let el = document.getElementById('payment-waiting-modal');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'payment-waiting-modal';
+      el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      el.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+          <div style="font-size:48px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block;">⏳</div>
+          <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:#2A1A0E;margin-bottom:8px;">Weryfikujemy płatność…</h2>
+          <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:16px;">Numer zamówienia: <strong>${oid}</strong><br>Potwierdzenie może zająć do 30 sekund.</p>
+          <div style="background:#f5f0e8;border-radius:8px;height:6px;overflow:hidden;margin-bottom:16px;">
+            <div id="p24-progress" style="background:#2A1A0E;height:100%;width:0%;transition:width 1s linear;border-radius:8px;"></div>
+          </div>
+          <p id="p24-wait-txt" style="font-size:12px;color:#9B7B5A;">Oczekiwanie na potwierdzenie banku…</p>
+        </div>`;
+      document.body.appendChild(el);
+    }
+    // Aktualizuj pasek postępu
+    const pct = Math.round((1 - secondsLeft/45)*100);
+    const bar = document.getElementById('p24-progress');
+    if(bar) bar.style.width = pct+'%';
+    const txt = document.getElementById('p24-wait-txt');
+    if(txt) txt.textContent = secondsLeft > 10 ? 'Oczekiwanie na potwierdzenie banku…' : 'Prawie gotowe…';
+  }
+
   window.addEventListener('DOMContentLoaded', function(){
-    // Czekaj na Firebase i sprawdzaj status co 1s przez max 15s
     let attempts = 0;
-    const maxAttempts = 15;
+    const maxAttempts = 45; // 45 sekund
 
     async function checkStatus(){
       attempts++;
+      showWaiting(maxAttempts - attempts);
+
       try{
         if(window._firebase && window._firebase.db){
           const snap = await window._firebase.db.ref('orders')
@@ -2047,14 +2078,14 @@ async function placeOrder(){
       }catch(e){}
 
       if(attempts >= maxAttempts){
-        // Po 15s bez potwierdzenia — pokaż komunikat nieudanej płatności
         showModal(false);
       } else {
         setTimeout(checkStatus, 1000);
       }
     }
 
-    // Zacznij sprawdzać po 2s (czas na załadowanie Firebase)
+    // Pokaż ekran oczekiwania od razu, sprawdzaj po 2s
+    showWaiting(45);
     setTimeout(checkStatus, 2000);
   });
 })();
