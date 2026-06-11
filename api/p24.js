@@ -29,6 +29,12 @@ function signVerify(sessionId, orderId, amount, originAmount, currency, methodId
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
+// Podpis dla endpointu /transaction/verify (tylko 4 pola + crc)
+function signForVerify(sessionId, orderId, amount, currency) {
+  const obj = { sessionId, orderId, amount, currency, crc: CRC };
+  return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
+}
+
 // Aktualizuj status zamówienia w Firebase
 async function updateOrderStatus(orderId, status) {
   try {
@@ -130,16 +136,16 @@ module.exports = async function handler(req, res) {
 
     console.log('[P24] notify received:', JSON.stringify({ sessionId, orderId, amount, currency, sign: sign?.slice(0,16)+'...' }));
 
-    // Weryfikuj transakcję bezpośrednio przez API P24 — zamiast sprawdzać podpis lokalnie
-    // (podpis webhooka różni się między sandbox a produkcją)
+    // Do weryfikacji P24 wymaga naszego podpisu (nie oryginalnego od P24)
+    const verifySign = signForVerify(sessionId, orderId, amount, currency);
     const verifyBody = {
-      merchantId: parseInt(merchantId, 10) || MERCHANT_ID,
-      posId:      parseInt(posId, 10) || POS_ID,
+      merchantId: MERCHANT_ID,
+      posId:      POS_ID,
       sessionId,
       amount,
       currency,
       orderId,
-      sign: sign, // przekazujemy oryginalny podpis od P24
+      sign: verifySign,
     };
 
     try {
