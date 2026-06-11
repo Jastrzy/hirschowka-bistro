@@ -38,25 +38,31 @@ function signForVerify(sessionId, orderId, amount, currency) {
 // Aktualizuj status zamówienia w Firebase
 async function updateOrderStatus(orderId, status) {
   try {
-    // Szukaj zamówienia po id w Firebase
     const searchUrl = `${FB_URL}/orders.json?orderBy="id"&equalTo="${orderId}"${FB_SECRET?'&auth='+FB_SECRET:''}`;
+    console.log('[P24] Firebase search URL:', searchUrl.replace(FB_SECRET||'x', '***'));
     const searchResp = await fetch(searchUrl);
+    console.log('[P24] Firebase search status:', searchResp.status);
     const orders = await searchResp.json();
-    if (!orders || typeof orders !== 'object') return;
+    console.log('[P24] Firebase orders found:', JSON.stringify(orders));
+    if (!orders || typeof orders !== 'object' || Object.keys(orders).length === 0) {
+      console.warn('[P24] Nie znaleziono zamowienia:', orderId);
+      return;
+    }
 
-    // Zaktualizuj status każdego pasującego zamówienia
     const updates = Object.keys(orders).map(async (key) => {
       const updateUrl = `${FB_URL}/orders/${key}.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
-      await fetch(updateUrl, {
+      const updateResp = await fetch(updateUrl, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      console.log('[P24] Firebase update', key, '→', status, ':', updateResp.status);
     });
     await Promise.all(updates);
     console.log('[P24] Status zamowienia zaktualizowany:', orderId, '→', status);
   } catch(e) {
     console.error('[P24] Blad aktualizacji Firebase:', e.message);
+  }
   }
 }
 
