@@ -894,7 +894,6 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- STICKY BAR — tylko koszyk, zakładki dostawy przeniesione do koszyka -->
 <div class="del-bar" id="del-bar">
   <span style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:14px 0;">Menu</span>
-  <button class="addr-pill" onclick="openCart()">🛒 Koszyk <span id="cart-count-bar" style="font-weight:800;color:var(--brown);"></span></button>
 </div>
 
 <!-- PROMOS -->
@@ -1073,7 +1072,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <!-- ═══ OVERLAYS ═══ -->
 <div class="ov" id="ov-product"><div class="sheet fi"><div class="sh-hd"><h3 id="sp-title"></h3><button class="sh-cl" onclick="closeOv('ov-product')">✕</button></div><div id="sp-desc" style="padding:10px 22px;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(59,37,18,.08);display:none;"></div><div id="sp-sizes"></div><div id="sp-addons"></div><div class="qty-row"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)">+</button></div><button class="addmain" onclick="doAdd()">Dodaj — <span id="sp-tot"></span></button></div></div></div>
 
-<div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy →</button></div></div>
+<div class="ov" id="ov-cross" style="align-items:center;"><div class="sheet fi" style="border-radius:16px;max-width:400px;"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><div style="display:flex;flex-direction:column;gap:8px;padding:0 22px 8px;"><button class="cross-cont" style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;" onclick="closeCross();openCart()">🛒 Przejdź do koszyka →</button><button class="cross-cont" style="background:var(--cream2);color:var(--brown);border:none;border-radius:8px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;" onclick="closeCross()">Kontynuuj zakupy →</button></div></div></div>
 
 <div class="ov" id="ov-cart">
   <div class="sheet">
