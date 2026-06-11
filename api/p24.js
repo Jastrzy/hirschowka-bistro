@@ -63,7 +63,6 @@ async function updateOrderStatus(orderId, status) {
   } catch(e) {
     console.error('[P24] Blad aktualizacji Firebase:', e.message);
   }
-  }
 }
 
 module.exports = async function handler(req, res) {
