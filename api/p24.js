@@ -128,22 +128,18 @@ module.exports = async function handler(req, res) {
     const body = req.body || {};
     const { merchantId, posId, sessionId, amount, originAmount, currency, orderId, methodId, statement, sign } = body;
 
-    console.log('[P24] notify body:', JSON.stringify(body));
+    console.log('[P24] notify received:', JSON.stringify({ sessionId, orderId, amount, currency, sign: sign?.slice(0,16)+'...' }));
 
-    // Licz podpis ze wszystkich pól notyfikacji
-    const expectedSign = signVerify(sessionId, orderId, amount, originAmount, currency, methodId, statement);
-    console.log('[P24] sign check:', { received: sign, expected: expectedSign, match: sign === expectedSign });
-
-    if (sign !== expectedSign) {
-      console.error('[P24] notify — zly podpis!');
-      return res.status(400).json({ error: 'Invalid signature' });
-    }
-
-    console.log('[P24] notify — podpis OK ✓');
-
+    // Weryfikuj transakcję bezpośrednio przez API P24 — zamiast sprawdzać podpis lokalnie
+    // (podpis webhooka różni się między sandbox a produkcją)
     const verifyBody = {
-      merchantId: parseInt(merchantId, 10), posId: parseInt(posId, 10),
-      sessionId, amount, currency, orderId, sign: expectedSign,
+      merchantId: parseInt(merchantId, 10) || MERCHANT_ID,
+      posId:      parseInt(posId, 10) || POS_ID,
+      sessionId,
+      amount,
+      currency,
+      orderId,
+      sign: sign, // przekazujemy oryginalny podpis od P24
     };
 
     try {
@@ -153,18 +149,22 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify(verifyBody),
       });
       const data = await resp.json();
-      console.log('[P24] verify:', JSON.stringify(data));
+      console.log('[P24] verify response:', JSON.stringify(data));
 
       if (data.data && data.data.status === 'success') {
+        // Wyciągnij numer zamówienia z sessionId (format: HB-#79077-timestamp)
         const parts = sessionId.split('-');
         const orderNum = parts.slice(1, -1).join('-');
         await updateOrderStatus(orderNum, 'paid');
-        console.log('[P24] Platnosc potwierdzona:', orderNum);
+        console.log('[P24] ✅ Platnosc potwierdzona:', orderNum);
         return res.status(200).json({ status: 'ok' });
+      } else {
+        console.warn('[P24] verify nie udana:', data);
+        return res.status(200).json({ status: 'received' }); // 200 żeby P24 nie ponawiał
       }
-      return res.status(500).json({ error: 'Weryfikacja nieudana', raw: data });
     } catch(e) {
-      return res.status(500).json({ error: e.message });
+      console.error('[P24] verify error:', e.message);
+      return res.status(200).json({ status: 'error', message: e.message });
     }
   }
 
