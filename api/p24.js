@@ -128,17 +128,37 @@ module.exports = async function handler(req, res) {
   if (action === 'notify') {
     const body = req.body || {};
     const { merchantId, posId, sessionId, amount, currency, orderId, sign } = body;
-    const expectedSign = signVerify(sessionId, orderId, amount, currency);
 
-    if (sign !== expectedSign) {
-      console.error('[P24] notify — zly podpis!', { sign, expectedSign });
+    // Loguj dokładnie co przyszło od P24
+    console.log('[P24] notify body:', JSON.stringify(body));
+    console.log('[P24] notify types:', {
+      orderId: typeof orderId,
+      amount: typeof amount,
+      sessionId: typeof sessionId,
+      currency: typeof currency,
+    });
+
+    // Próbuj różne warianty podpisu — P24 może przekazywać orderId jako int lub string
+    const sign1 = signVerify(sessionId, orderId, amount, currency);
+    const sign2 = signVerify(sessionId, parseInt(orderId, 10), amount, currency);
+    const sign3 = signVerify(sessionId, String(orderId), amount, currency);
+    const sign4 = signVerify(sessionId, orderId, parseInt(amount, 10), currency);
+    const sign5 = signVerify(sessionId, parseInt(orderId, 10), parseInt(amount, 10), currency);
+
+    console.log('[P24] sign variants:', { received: sign, sign1, sign2, sign3, sign4, sign5 });
+
+    const validSign = [sign1, sign2, sign3, sign4, sign5].find(s => s === sign);
+    if (!validSign) {
+      console.error('[P24] notify — zly podpis! Żaden wariant nie pasuje.');
       return res.status(400).json({ error: 'Invalid signature' });
     }
+
+    console.log('[P24] notify — podpis OK ✓');
 
     // Potwierdź transakcję w P24
     const verifyBody = {
       merchantId: parseInt(merchantId, 10), posId: parseInt(posId, 10),
-      sessionId, amount, currency, orderId, sign: expectedSign,
+      sessionId, amount, currency, orderId, sign: validSign,
     };
 
     try {
@@ -151,7 +171,6 @@ module.exports = async function handler(req, res) {
       console.log('[P24] verify:', JSON.stringify(data));
 
       if (data.data && data.data.status === 'success') {
-        // Wyciągnij numer zamówienia z sessionId (format: HB-#79077-timestamp)
         const parts = sessionId.split('-');
         const orderNum = parts.slice(1, -1).join('-'); // np. #79077
         await updateOrderStatus(orderNum, 'paid');
