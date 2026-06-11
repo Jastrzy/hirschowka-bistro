@@ -95,7 +95,7 @@ module.exports = async function handler(req, res) {
       email, phone: (phone||'').replace(/\D/g,''),
       country: 'PL', language: 'pl',
       urlReturn: returnUrl || 'https://hirschowkabistro.pl/?order=success',
-      urlStatus: notifyUrl || 'https://hirschowkabistro.pl/api/p24?action=notify',
+      urlStatus: notifyUrl || 'https://www.hirschowkabistro.pl/api/p24?action=notify',
       sign, encoding: 'UTF-8', client: name||'',
     };
 

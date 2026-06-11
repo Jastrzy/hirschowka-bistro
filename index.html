@@ -1958,7 +1958,7 @@ async function placeOrder(){
           name,
           description:`Zamówienie ${oid} — Hirschówka Bistro`,
           returnUrl:`${location.origin}/?order=done&id=${encodeURIComponent(oid)}`,
-          notifyUrl:`${location.origin}/api/p24?action=notify`,
+          notifyUrl:'https://www.hirschowkabistro.pl/api/p24?action=notify',
         }),
       });
       const data=await resp.json();
@@ -2025,9 +2025,12 @@ async function placeOrder(){
   }
 
   window.addEventListener('DOMContentLoaded', function(){
-    setTimeout(async function(){
-      // Sprawdź status zamówienia w Firebase
-      let paid = false;
+    // Czekaj na Firebase i sprawdzaj status co 1s przez max 15s
+    let attempts = 0;
+    const maxAttempts = 15;
+
+    async function checkStatus(){
+      attempts++;
       try{
         if(window._firebase && window._firebase.db){
           const snap = await window._firebase.db.ref('orders')
@@ -2035,12 +2038,24 @@ async function placeOrder(){
           const val = snap.val();
           if(val){
             const order = Object.values(val)[0];
-            paid = order && order.status === 'paid';
+            if(order && order.status === 'paid'){
+              showModal(true);
+              return;
+            }
           }
         }
       }catch(e){}
-      showModal(paid);
-    }, 1200); // poczekaj na załadowanie Firebase
+
+      if(attempts >= maxAttempts){
+        // Po 15s bez potwierdzenia — pokaż komunikat nieudanej płatności
+        showModal(false);
+      } else {
+        setTimeout(checkStatus, 1000);
+      }
+    }
+
+    // Zacznij sprawdzać po 2s (czas na załadowanie Firebase)
+    setTimeout(checkStatus, 2000);
   });
 })();
 
