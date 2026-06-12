@@ -42,12 +42,18 @@ async function updateOrderStatus(orderId, status) {
     const fetchUrl = `${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
     const resp = await fetch(fetchUrl);
     console.log('[P24] Firebase fetch status:', resp.status);
-    const orders = await resp.json();
+    const text = await resp.text();
+    console.log('[P24] Firebase raw response (first 500 chars):', text.slice(0,500));
+    let orders;
+    try { orders = JSON.parse(text); } catch(e) { console.error('[P24] JSON parse error:', e.message); return; }
 
     if (!orders || typeof orders !== 'object') {
-      console.warn('[P24] Brak zamowien w Firebase');
+      console.warn('[P24] Brak zamowien w Firebase, typ:', typeof orders, 'wartosc:', JSON.stringify(orders));
       return;
     }
+
+    console.log('[P24] Liczba zamowien w Firebase:', Object.keys(orders).length);
+    console.log('[P24] Przykladowe ID zamowien:', Object.values(orders).slice(0,5).map(o=>o&&o.id));
 
     // Znajdź zamówienia z pasującym polem id
     const matchingKeys = Object.keys(orders).filter(key => {
