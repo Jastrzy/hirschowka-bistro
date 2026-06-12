@@ -38,18 +38,31 @@ function signForVerify(sessionId, orderId, amount, currency) {
 // Aktualizuj status zamówienia w Firebase
 async function updateOrderStatus(orderId, status) {
   try {
-    const searchUrl = `${FB_URL}/orders.json?orderBy="id"&equalTo="${orderId}"${FB_SECRET?'&auth='+FB_SECRET:''}`;
-    console.log('[P24] Firebase search URL:', searchUrl.replace(FB_SECRET||'x', '***'));
-    const searchResp = await fetch(searchUrl);
-    console.log('[P24] Firebase search status:', searchResp.status);
-    const orders = await searchResp.json();
-    console.log('[P24] Firebase orders found:', JSON.stringify(orders));
-    if (!orders || typeof orders !== 'object' || Object.keys(orders).length === 0) {
+    // Pobierz wszystkie zamówienia — orderBy wymaga indeksu którego nie mamy
+    const fetchUrl = `${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
+    const resp = await fetch(fetchUrl);
+    console.log('[P24] Firebase fetch status:', resp.status);
+    const orders = await resp.json();
+
+    if (!orders || typeof orders !== 'object') {
+      console.warn('[P24] Brak zamowien w Firebase');
+      return;
+    }
+
+    // Znajdź zamówienia z pasującym polem id
+    const matchingKeys = Object.keys(orders).filter(key => {
+      const order = orders[key];
+      return order && order.id === orderId;
+    });
+
+    console.log('[P24] Znalezione klucze dla', orderId, ':', matchingKeys);
+
+    if (matchingKeys.length === 0) {
       console.warn('[P24] Nie znaleziono zamowienia:', orderId);
       return;
     }
 
-    const updates = Object.keys(orders).map(async (key) => {
+    const updates = matchingKeys.map(async (key) => {
       const updateUrl = `${FB_URL}/orders/${key}.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
       const updateResp = await fetch(updateUrl, {
         method: 'PATCH',
