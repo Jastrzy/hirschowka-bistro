@@ -4937,6 +4937,18 @@ window.onFirebaseOrders = function(freshArr) {
         .includes((o.status||'').toLowerCase()))
         .forEach(o => sendOrderEmail(o));
     }
+    // Mimo okna ochrony — zawsze przyjmij potwierdzenie płatności (awaiting_payment → paid)
+    let paymentUpdated = false;
+    freshArr.forEach(fbOrder => {
+      if(fbOrder.status === 'paid'){
+        const localOrder = (orders||[]).find(lo=>lo.id===fbOrder.id);
+        if(localOrder && localOrder.status === 'awaiting_payment'){
+          localOrder.status = 'paid';
+          paymentUpdated = true;
+        }
+      }
+    });
+    if(paymentUpdated){ renderOrders(); updateAlarm(); renderDashboard(); }
     return;
   }
 
@@ -4952,7 +4964,7 @@ window.onFirebaseOrders = function(freshArr) {
     const localOrder = (orders||[]).find(lo=>lo.id===fbOrder.id);
     if(!localOrder) return fbOrder;
     // Jeśli lokalny status jest bardziej zaawansowany niż Firebase — zachowaj lokalny
-    const statusRank = {pending:0,nowe:0,'do akceptacji':0,new:0,accepted:1,ready:2,delivering:3,done:4,rejected:5};
+    const statusRank = {awaiting_payment:-1,pending:0,nowe:0,'do akceptacji':0,new:0,paid:0,accepted:1,ready:2,delivering:3,done:4,rejected:5};
     const fbRank = statusRank[(fbOrder.status||'').toLowerCase()]??0;
     const localRank = statusRank[(localOrder.status||'').toLowerCase()]??0;
     return localRank > fbRank ? localOrder : fbOrder;
