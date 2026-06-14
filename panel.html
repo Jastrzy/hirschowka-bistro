@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -422,26 +423,48 @@ window.doLogout = function(){
 };
 
 // onAuthStateChanged — wpuszczaj TYLKO zalogowanych emailem (nie anonimowych)
+window._wasLoggedIn = false;       // czy kiedykolwiek byliśmy zalogowani w tej sesji
+window._showLoginTimer = null;     // opóźnione pokazanie ekranu logowania
 window._onAuthReady = function(auth){
   window._fbAuth = auth;
   auth.onAuthStateChanged(function(user){
     if(user && !user.isAnonymous && user.email){
       // Zalogowany emailem — pokaż panel
       _loginAttempting = false;
+      window._wasLoggedIn = true;
+      // Anuluj ewentualne opóźnione pokazanie logowania
+      if(window._showLoginTimer){ clearTimeout(window._showLoginTimer); window._showLoginTimer = null; }
       localStorage.setItem('hb_login_email', user.email);
       showPanel();
     } else {
-      // Niezalogowany lub anonimowy — pokaż ekran logowania
-      // Wyloguj anonimową sesję żeby nie blokowała
+      // Niezalogowany lub anonimowy
       if(user && user.isAnonymous){
         auth.signOut();
       }
-      var ls = document.getElementById('login-screen');
-      if(ls) ls.style.display = 'flex';
-      setTimeout(function(){
-        var inp = document.getElementById('login-input');
-        if(inp) inp.focus();
-      }, 100);
+      // Jeśli byliśmy wcześniej zalogowani (powrót z uśpienia/tła) —
+      // NIE pokazuj od razu ekranu logowania. Firebase zwykle sam przywróci
+      // sesję w ciągu 1-2 s. Pokaż logowanie dopiero gdy po 4 s nadal brak usera.
+      if(window._wasLoggedIn){
+        if(window._showLoginTimer) clearTimeout(window._showLoginTimer);
+        window._showLoginTimer = setTimeout(function(){
+          // Sprawdź jeszcze raz aktualny stan zanim pokażesz logowanie
+          var cur = auth.currentUser;
+          if(!cur || cur.isAnonymous || !cur.email){
+            var ls = document.getElementById('login-screen');
+            if(ls) ls.style.display = 'flex';
+            var inp = document.getElementById('login-input');
+            if(inp) inp.focus();
+          }
+        }, 4000);
+      } else {
+        // Pierwsze wejście — pokaż logowanie od razu
+        var ls = document.getElementById('login-screen');
+        if(ls) ls.style.display = 'flex';
+        setTimeout(function(){
+          var inp = document.getElementById('login-input');
+          if(inp) inp.focus();
+        }, 100);
+      }
     }
   });
 };
@@ -4937,18 +4960,6 @@ window.onFirebaseOrders = function(freshArr) {
         .includes((o.status||'').toLowerCase()))
         .forEach(o => sendOrderEmail(o));
     }
-    // Mimo okna ochrony — zawsze przyjmij potwierdzenie płatności (awaiting_payment → paid)
-    let paymentUpdated = false;
-    freshArr.forEach(fbOrder => {
-      if(fbOrder.status === 'paid'){
-        const localOrder = (orders||[]).find(lo=>lo.id===fbOrder.id);
-        if(localOrder && localOrder.status === 'awaiting_payment'){
-          localOrder.status = 'paid';
-          paymentUpdated = true;
-        }
-      }
-    });
-    if(paymentUpdated){ renderOrders(); updateAlarm(); renderDashboard(); }
     return;
   }
 
@@ -4964,7 +4975,7 @@ window.onFirebaseOrders = function(freshArr) {
     const localOrder = (orders||[]).find(lo=>lo.id===fbOrder.id);
     if(!localOrder) return fbOrder;
     // Jeśli lokalny status jest bardziej zaawansowany niż Firebase — zachowaj lokalny
-    const statusRank = {awaiting_payment:-1,pending:0,nowe:0,'do akceptacji':0,new:0,paid:0,accepted:1,ready:2,delivering:3,done:4,rejected:5};
+    const statusRank = {pending:0,nowe:0,'do akceptacji':0,new:0,accepted:1,ready:2,delivering:3,done:4,rejected:5};
     const fbRank = statusRank[(fbOrder.status||'').toLowerCase()]??0;
     const localRank = statusRank[(localOrder.status||'').toLowerCase()]??0;
     return localRank > fbRank ? localOrder : fbOrder;
@@ -4999,8 +5010,12 @@ setTimeout(fetchOrdersNow, 1000);
 // Odśwież zamówienia gdy urządzenie wraca z uśpienia/tła
 document.addEventListener('visibilitychange', function(){
   if(!document.hidden){
-    console.log('[Panel] Powrót z tła — odświeżam zamówienia');
+    console.log('[Panel] Powrót z tła — odświeżam zamówienia i sesję');
     _ordersLastWrite = 0; // wymuś aktualizację
+    // Wymuś odnowienie tokenu Firebase żeby szybko przywrócić sesję
+    if(window._fbAuth && window._fbAuth.currentUser){
+      window._fbAuth.currentUser.getIdToken(true).catch(function(){});
+    }
     setTimeout(fetchOrdersNow, 500);
   }
 });

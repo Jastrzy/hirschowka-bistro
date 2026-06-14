@@ -71,19 +71,10 @@
     // ═══ PANEL ═══
     if (isPanel) {
       // Zamówienia real-time → callback panelu
-      // Mapa: id zamówienia → klucz Firebase (do aktualizacji statusów przez panel)
-      window._orderKeys = {};
       db.ref('orders').on('value', function(snap) {
-        var val = snap.val();
-        var arr = getArr(val);
-        // Zbuduj mapę id → klucz Firebase
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          window._orderKeys = {};
-          Object.keys(val).forEach(function(key){
-            if (val[key] && val[key].id) window._orderKeys[val[key].id] = key;
-          });
-        }
+        var arr = getArr(snap.val());
         console.log('[FB] Zamowienia:', arr.length);
+        // Nie nadpisuj localStorage jeśli panel właśnie zapisywał zamówienia
         var lastWrite = (window._ordersLastWrite || 0);
         if (Date.now() - lastWrite >= 8000) {
           localStorage.setItem('orders', JSON.stringify(arr));
@@ -92,30 +83,6 @@
           window.onFirebaseOrders(arr);
         }
       });
-
-      // Przechwytuj zapis orders z panelu → aktualizuj przez update() na kluczu Firebase
-      // (zamiast set() całej tablicy, co niszczyłoby strukturę push-kluczy)
-      var _origSetOrders = localStorage.setItem.bind(localStorage);
-      var _lastOrdersJSON = localStorage.getItem('orders');
-      setInterval(function() {
-        var now = localStorage.getItem('orders');
-        if (now === null || now === _lastOrdersJSON) return;
-        _lastOrdersJSON = now;
-        try {
-          var arr = JSON.parse(now);
-          if (!Array.isArray(arr)) return;
-          arr.forEach(function(order) {
-            if (!order || !order.id) return;
-            var key = window._orderKeys[order.id];
-            if (key) {
-              // Aktualizuj istniejące zamówienie po kluczu Firebase
-              db.ref('orders/' + key).update(order).catch(function(){});
-            }
-            // Jeśli brak klucza — zamówienie jeszcze nie w Firebase, push() ze strony klienta to obsłuży
-          });
-        } catch(e) {}
-      }, 1000);
-
 
       // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
       // (nie nadpisuj gdy obsługa właśnie edytowała menu)
@@ -192,10 +159,7 @@
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
       // UWAGA: 'customers' celowo pominięte — zapisywane bezpośrednio przez .update() w addStampByPhone
-      // UWAGA: 'orders' i 'customers' celowo pominięte w interwale —
-      // orders zapisywane przez push() (klient) i update() na kluczu (panel),
-      // customers przez update() w addStampByPhone. Set() całej tablicy niszczyłby strukturę kluczy.
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
