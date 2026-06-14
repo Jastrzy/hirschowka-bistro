@@ -13,7 +13,7 @@ const POS_ID      = parseInt(process.env.P24_POS_ID || process.env.P24_MERCHANT_
 const CRC         = process.env.P24_CRC;
 const API_KEY     = process.env.P24_API_KEY;
 const FB_URL      = process.env.FIREBASE_DB_URL || 'https://hirschowka-bistro-default-rtdb.europe-west1.firebasedatabase.app';
-const FB_SECRET   = process.env.FIREBASE_SECRET; // opcjonalny — do zapisu bez auth
+const FB_SECRET   = process.env.FIREBASE_SECRET;
 
 function authHeader() {
   return 'Basic ' + Buffer.from(`${POS_ID}:${API_KEY}`).toString('base64');
@@ -24,38 +24,25 @@ function signRegister(sessionId, amount, currency) {
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
-function signVerify(sessionId, orderId, amount, originAmount, currency, methodId, statement) {
-  const obj = { sessionId, orderId, amount, originAmount, currency, methodId, statement, crc: CRC };
-  return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
-}
-
-// Podpis dla endpointu /transaction/verify (tylko 4 pola + crc)
+// Podpis dla endpointu /transaction/verify
 function signForVerify(sessionId, orderId, amount, currency) {
   const obj = { sessionId, orderId, amount, currency, crc: CRC };
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
-// Aktualizuj status zamówienia w Firebase
+// Aktualizuj status zamówienia w Firebase — pobierz wszystkie i filtruj w JS
 async function updateOrderStatus(orderId, status) {
   try {
-    // Pobierz wszystkie zamówienia — orderBy wymaga indeksu którego nie mamy
     const fetchUrl = `${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
     const resp = await fetch(fetchUrl);
     console.log('[P24] Firebase fetch status:', resp.status);
-    const text = await resp.text();
-    console.log('[P24] Firebase raw response (first 500 chars):', text.slice(0,500));
-    let orders;
-    try { orders = JSON.parse(text); } catch(e) { console.error('[P24] JSON parse error:', e.message); return; }
+    const orders = await resp.json();
 
     if (!orders || typeof orders !== 'object') {
-      console.warn('[P24] Brak zamowien w Firebase, typ:', typeof orders, 'wartosc:', JSON.stringify(orders));
+      console.warn('[P24] Brak zamowien w Firebase');
       return;
     }
 
-    console.log('[P24] Liczba zamowien w Firebase:', Object.keys(orders).length);
-    console.log('[P24] Przykladowe ID zamowien:', Object.values(orders).slice(0,5).map(o=>o&&o.id));
-
-    // Znajdź zamówienia z pasującym polem id
     const matchingKeys = Object.keys(orders).filter(key => {
       const order = orders[key];
       return order && order.id === orderId;
@@ -124,7 +111,7 @@ module.exports = async function handler(req, res) {
       description: description || `Zamowienie ${orderId} - Hirschowka Bistro`,
       email, phone: (phone||'').replace(/\D/g,''),
       country: 'PL', language: 'pl',
-      urlReturn: returnUrl || 'https://hirschowkabistro.pl/?order=success',
+      urlReturn: returnUrl || 'https://www.hirschowkabistro.pl/?order=done',
       urlStatus: notifyUrl || 'https://www.hirschowkabistro.pl/api/p24?action=notify',
       sign, encoding: 'UTF-8', client: name||'',
     };
@@ -154,21 +141,19 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // ── WERYFIKACJA WEBHOOK (POST od P24) ─────────────────────
   if (action === 'notify') {
     const body = req.body || {};
     const { merchantId, posId, sessionId, amount, originAmount, currency, orderId, methodId, statement, sign } = body;
 
-    console.log('[P24] notify received:', JSON.stringify({ sessionId, orderId, amount, currency, sign: sign?.slice(0,16)+'...' }));
+    console.log('[P24] notify received:', JSON.stringify({ sessionId, orderId, amount, currency }));
 
-    // Do weryfikacji P24 wymaga naszego podpisu (nie oryginalnego od P24)
+    // Do weryfikacji P24 wymaga naszego podpisu
     const verifySign = signForVerify(sessionId, orderId, amount, currency);
     const verifyBody = {
       merchantId: MERCHANT_ID,
       posId:      POS_ID,
-      sessionId,
-      amount,
-      currency,
-      orderId,
+      sessionId, amount, currency, orderId,
       sign: verifySign,
     };
 
@@ -182,7 +167,6 @@ module.exports = async function handler(req, res) {
       console.log('[P24] verify response:', JSON.stringify(data));
 
       if (data.data && data.data.status === 'success') {
-        // Wyciągnij numer zamówienia z sessionId (format: HB-#79077-timestamp)
         const parts = sessionId.split('-');
         const orderNum = parts.slice(1, -1).join('-');
         await updateOrderStatus(orderNum, 'paid');
@@ -190,7 +174,7 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ status: 'ok' });
       } else {
         console.warn('[P24] verify nie udana:', data);
-        return res.status(200).json({ status: 'received' }); // 200 żeby P24 nie ponawiał
+        return res.status(200).json({ status: 'received' });
       }
     } catch(e) {
       console.error('[P24] verify error:', e.message);
