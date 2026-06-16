@@ -1925,9 +1925,6 @@ async function placeOrder(){
     }:null,
   };
 
-  // Zapisz zamówienie do Firebase
-  localStorage.setItem('orders',JSON.stringify([newOrder]));
-
   // Rejestruj klienta
   const custs=LS('customers')||[];
   const raw=phone.replace(/\s/g,'');

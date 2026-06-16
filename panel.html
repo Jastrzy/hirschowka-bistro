@@ -1805,7 +1805,16 @@ window._onAuthReady = function(auth){
 <script>
 // ── STORAGE ──
 const S = key => { try{return JSON.parse(localStorage.getItem(key));}catch{return null;} };
-const W = (key,val) => localStorage.setItem(key,JSON.stringify(val));
+const W = (key,val) => {
+  localStorage.setItem(key,JSON.stringify(val));
+  try{
+    if(window._firebase&&window._firebase.db){
+      window._firebase.db.ref(key).set(val).catch(function(e){
+        console.warn('[W] Firebase set error:',key,e.message);
+      });
+    }
+  }catch(e){}
+};
 
 // ── DEFAULT DATA ──
 let menuData = S('menu') || [
@@ -1827,6 +1836,23 @@ let orders = S('orders') || [
   {id:'#0041',type:'delivery',items:'Polędwiczki ×2, Krem z dyni ×2',total:64,time:'08:05',status:'accepted',customer:'Marek W.',phone:'601 200 300',addr:'ul. Sękowskiego 4'},
 ];
 let archive = S('archive') || [];
+// Załaduj archiwum z Firebase przy starcie
+(function loadArchiveFromFirebase(){
+  function tryLoad(){
+    if(!window._firebase||!window._firebase.db){ setTimeout(tryLoad,600); return; }
+    window._firebase.db.ref('archive').once('value').then(function(snap){
+      var val = snap.val();
+      if(!val) return;
+      var arr = Array.isArray(val) ? val : Object.values(val);
+      arr = arr.filter(function(o){ return o&&o.id; });
+      arr.sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+      archive = arr;
+      localStorage.setItem('archive', JSON.stringify(arr));
+      if(typeof renderOrders==='function') renderOrders();
+    }).catch(function(){});
+  }
+  setTimeout(tryLoad, 1000);
+})();
 let zones   = S('zones')   || [{name:'Centrum Mielca',cost:5,free:40,time:30,color:'#C8922A',desc:'ul. Mickiewicza i okolice'},{name:'Mielec Obrzeża',cost:8,free:60,time:45,color:'#B84C2B',desc:'Pozostałe dzielnice'}];
 let promos  = S('promos')  || [{name:'Śniadanie z kawą -20%',type:'Procentowy (%)',val:20,from:'2026-01-01',to:'2026-12-31',active:true}];
 let coupons = S('coupons') || [{code:'HIRSCH10',disc:10,exp:'2026-12-31',limit:100,used:3,min:0}];
@@ -1928,7 +1954,7 @@ function stopAlarm(){
 // Normalizacja statusu — obsługuje różne formaty
 function normStatus(s){
   const v=(s||'').toLowerCase().trim();
-  if(!v||v==='pending'||v==='new'||v==='nowe'||v==='do akceptacji') return 'pending';
+  if(!v||v==='pending'||v==='new'||v==='nowe'||v==='do akceptacji'||v==='awaiting_payment') return 'pending';
   if(v==='accepted'||v==='przyjete'||v==='przyjęte'||v==='w realizacji') return 'accepted';
   if(v==='delivering'||v==='w drodze') return 'delivering';
   if(v==='ready'||v==='gotowe') return 'ready';
