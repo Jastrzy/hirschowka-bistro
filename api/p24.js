@@ -15,6 +15,24 @@ const API_KEY     = process.env.P24_API_KEY;
 const FB_URL      = process.env.FIREBASE_DB_URL || 'https://hirschowka-bistro-default-rtdb.europe-west1.firebasedatabase.app';
 const FB_SECRET   = process.env.FIREBASE_SECRET;
 
+// Logowanie do Firebase — widoczne w panelu admina i Firebase Console
+async function fbLog(level, msg, data) {
+  const entry = {
+    ts: new Date().toISOString(),
+    level,
+    msg,
+    data: data || null,
+  };
+  console.log(`[P24][${level}]`, msg, data ? JSON.stringify(data) : '');
+  try {
+    await fetch(`${FB_URL}/p24-logs.json${FB_SECRET?'?auth='+FB_SECRET:''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+  } catch(e) { /* nie blokuj głównej logiki */ }
+}
+
 function authHeader() {
   return 'Basic ' + Buffer.from(`${POS_ID}:${API_KEY}`).toString('base64');
 }
@@ -35,11 +53,10 @@ async function updateOrderStatus(orderId, status) {
   try {
     const fetchUrl = `${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
     const resp = await fetch(fetchUrl);
-    console.log('[P24] Firebase fetch status:', resp.status);
     const orders = await resp.json();
 
     if (!orders || typeof orders !== 'object') {
-      console.warn('[P24] Brak zamowien w Firebase');
+      await fbLog('WARN', 'Brak zamowien w Firebase', { fetchStatus: resp.status });
       return;
     }
 
@@ -48,10 +65,10 @@ async function updateOrderStatus(orderId, status) {
       return order && order.id === orderId;
     });
 
-    console.log('[P24] Znalezione klucze dla', orderId, ':', matchingKeys);
+    await fbLog('INFO', 'updateOrderStatus szukam', { orderId, znaleziono: matchingKeys.length, klucze: matchingKeys });
 
     if (matchingKeys.length === 0) {
-      console.warn('[P24] Nie znaleziono zamowienia:', orderId);
+      await fbLog('WARN', 'Nie znaleziono zamowienia', { orderId, dostepneId: Object.values(orders).map(o=>o&&o.id).slice(0,10) });
       return;
     }
 
@@ -62,12 +79,11 @@ async function updateOrderStatus(orderId, status) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      console.log('[P24] Firebase update', key, '→', status, ':', updateResp.status);
+      await fbLog('INFO', 'Firebase update', { key, status, updateStatus: updateResp.status });
     });
     await Promise.all(updates);
-    console.log('[P24] Status zamowienia zaktualizowany:', orderId, '→', status);
   } catch(e) {
-    console.error('[P24] Blad aktualizacji Firebase:', e.message);
+    await fbLog('ERROR', 'Blad aktualizacji Firebase', { message: e.message });
   }
 }
 
@@ -146,16 +162,19 @@ module.exports = async function handler(req, res) {
     const body = req.body || {};
     const { merchantId, posId, sessionId, amount, originAmount, currency, orderId, methodId, statement, sign } = body;
 
-    console.log('[P24] notify received:', JSON.stringify({ sessionId, orderId, amount, currency }));
+    await fbLog('INFO', 'notify received', { sessionId, orderId, amount, currency, sign });
+    await fbLog('INFO', 'config', { merchantId: MERCHANT_ID, posId: POS_ID, crcLen: (CRC||'').length });
 
-    // Do weryfikacji P24 wymaga naszego podpisu
     const verifySign = signForVerify(sessionId, orderId, amount, currency);
+    await fbLog('INFO', 'verifySign', { verifySign });
+
     const verifyBody = {
       merchantId: MERCHANT_ID,
       posId:      POS_ID,
       sessionId, amount, currency, orderId,
       sign: verifySign,
     };
+    await fbLog('INFO', 'verifyBody', verifyBody);
 
     try {
       const resp = await fetch(`${BASE_URL}/api/v1/transaction/verify`, {
@@ -163,21 +182,23 @@ module.exports = async function handler(req, res) {
         headers: { 'Content-Type': 'application/json', 'Authorization': authHeader() },
         body: JSON.stringify(verifyBody),
       });
-      const data = await resp.json();
-      console.log('[P24] verify response:', JSON.stringify(data));
+      const text = await resp.text();
+      await fbLog('INFO', 'verify response', { status: resp.status, body: text });
+      let data; try { data = JSON.parse(text); } catch(e) { data = { raw: text }; }
 
       if (data.data && data.data.status === 'success') {
         const parts = sessionId.split('-');
         const orderNum = parts.slice(1, -1).join('-');
+        await fbLog('INFO', 'orderNum', { parts, orderNum });
         await updateOrderStatus(orderNum, 'paid');
-        console.log('[P24] ✅ Platnosc potwierdzona:', orderNum);
+        await fbLog('INFO', '✅ Platnosc potwierdzona', { orderNum });
         return res.status(200).json({ status: 'ok' });
       } else {
-        console.warn('[P24] verify nie udana:', data);
+        await fbLog('WARN', 'verify NIEUDANA', { status: resp.status, data });
         return res.status(200).json({ status: 'received' });
       }
     } catch(e) {
-      console.error('[P24] verify error:', e.message);
+      await fbLog('ERROR', 'verify exception', { message: e.message });
       return res.status(200).json({ status: 'error', message: e.message });
     }
   }
