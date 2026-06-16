@@ -1723,7 +1723,15 @@ function updateCartBadge(){
   const bar = document.getElementById('cart-count-bar');
   if(bar) bar.textContent = cnt>0 ? `(${cnt})` : '';
 }
-function openCart(){renderCart();document.getElementById('ov-cart').classList.add('open');}
+function openCart(){
+  ['dostawa','odbior','miejsce'].forEach(t=>{
+    const el=document.getElementById('do-'+t);
+    if(el) el.classList.toggle('on',t===delType);
+  });
+  document.getElementById('addr-block').style.display=delType==='dostawa'?'block':'none';
+  renderCart();
+  document.getElementById('ov-cart').classList.add('open');
+}
 function renderCart(){
   const wrap=document.getElementById('cart-items');
   if(!cart.length){wrap.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:48px;margin-bottom:10px;">🛒</div><div style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--brown);">Koszyk jest pusty</div><div style="font-size:13px;margin-top:6px;">Wybierz coś pysznego z menu ↑</div></div>`;document.getElementById('cs-sum').innerHTML='';document.getElementById('often-together').innerHTML='';document.getElementById('checkout-total').textContent='0,00 zł';return;}
@@ -1786,7 +1794,16 @@ function validatePhone(){
   return isValid||ph.length===0;
 }
 
-function selDO(type){delType=type;if(type!=='dostawa')window._deliveryKm=null;['dostawa','odbior','miejsce'].forEach(t=>document.getElementById('do-'+t)?.classList.toggle('on',t===type));document.getElementById('addr-block').style.display=type==='dostawa'?'block':'none';setDel(type,document.getElementById('dc-'+type));renderCartSum();}
+function selDO(type){
+  delType=type;
+  if(type!=='dostawa') window._deliveryKm=null;
+  ['dostawa','odbior','miejsce'].forEach(t=>{
+    const el=document.getElementById('do-'+t);
+    if(el) el.classList.toggle('on',t===type);
+  });
+  document.getElementById('addr-block').style.display=type==='dostawa'?'block':'none';
+  renderCartSum();
+}
 function selPay(type){payType=type;document.querySelectorAll('.payopt').forEach(p=>{p.classList.remove('on');p.querySelector('.dor2')?.classList.remove('on');});const el=document.getElementById('pay-'+type);if(el){el.classList.add('on');el.querySelector('.dor2')?.classList.add('on');}}
 let _geoTimer=null;
 window._deliveryKm=null; // ostatnio obliczona odległość
