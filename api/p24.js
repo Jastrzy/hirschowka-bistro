@@ -26,7 +26,7 @@ function signRegister(sessionId, amount, currency) {
 
 // Podpis dla endpointu /transaction/verify
 function signForVerify(sessionId, orderId, amount, currency) {
-  const obj = { sessionId, orderId, amount, currency, crc: CRC };
+  const obj = { sessionId, orderId, merchantId: MERCHANT_ID, amount, currency, crc: CRC };
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
