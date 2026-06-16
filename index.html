@@ -1962,6 +1962,15 @@ async function placeOrder(){
     const btn=document.querySelector('.order-btn');
     if(btn){btn.disabled=true;btn.textContent='Przekierowuję do płatności…';}
     try{
+      // 1. Najpierw zapisz zamówienie do Firebase
+      const db=window._firebase&&window._firebase.db;
+      if(db){
+        await db.ref('orders').push(newOrder);
+        console.log('[ORDER] ✅ Zamówienie online zapisane do Firebase:', oid);
+      } else {
+        console.warn('[ORDER] Firebase niedostępny przy płatności online');
+      }
+      // 2. Dopiero teraz rejestruj w P24
       const resp=await fetch('/api/p24?action=register',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1979,7 +1988,6 @@ async function placeOrder(){
       const data=await resp.json();
       if(data.payUrl){
         cart=[];appliedCoupon=null;updateCartBadge();
-        // Przekieruj do Przelewy24
         window.location.href=data.payUrl;
         return;
       } else {
