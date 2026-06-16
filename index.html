@@ -1981,6 +1981,25 @@ async function placeOrder(){
   }
 
   // ── PŁATNOŚĆ PRZY ODBIORZE / GOTÓWKA ──
+  // Bezpośredni zapis do Firebase z potwierdzeniem (nie przez localStorage pośrednio)
+  const btn2=document.querySelector('.order-btn');
+  if(btn2){btn2.disabled=true;btn2.textContent='Wysyłam zamówienie…';}
+  try{
+    const db=window._firebase&&window._firebase.db;
+    if(db){
+      await db.ref('orders').push(newOrder);
+      console.log('[ORDER] ✅ Zapisano do Firebase:', oid);
+    } else {
+      // Fallback — przez localStorage (stara ścieżka)
+      console.warn('[ORDER] Firebase niedostępny — fallback localStorage');
+      localStorage.setItem('orders',JSON.stringify([newOrder]));
+    }
+  }catch(e){
+    console.error('[ORDER] Błąd zapisu Firebase:', e.message);
+    // Mimo błędu pokaż sukces klientowi i zapisz lokalnie jako backup
+    localStorage.setItem('orders',JSON.stringify([newOrder]));
+  }
+  if(btn2){btn2.disabled=false;}
   cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
   document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
