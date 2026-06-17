@@ -2106,11 +2106,11 @@ async function placeOrder(){
 
       try{
         if(window._firebase && window._firebase.db){
-          const snap = await window._firebase.db.ref('orders')
-            .orderByChild('id').equalTo(oid).once('value');
+          const snap = await window._firebase.db.ref('orders').once('value');
           const val = snap.val();
           if(val){
-            const order = Object.values(val)[0];
+            const all = Array.isArray(val) ? val : Object.values(val);
+            const order = all.find(o => o && String(o.id) === String(oid));
             if(order && order.status === 'paid'){
               showModal(true);
               return;
