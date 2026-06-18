@@ -696,7 +696,7 @@ window._onAuthReady = function(auth){
           <div class="field"><label>Pieczątka po zamówieniu od (zł)</label><input type="number" id="mkt-stamp-min" value="19"></div>
           <div class="field"><label>Liczba pieczątek do nagrody</label><input type="number" id="mkt-stamp-count" value="9"></div>
         </div>
-        <div class="field"><label>Nagroda (np. darmowa kawa)</label><input id="mkt-stamp-reward" value="Darmowy obiad"></div>
+        <div class="field"><label>Nagroda (np. darmowa kawa)</label><input id="mkt-stamp-reward" value="50% na bajgla lub danie dnia"></div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">Cichy marketingowiec — wiadomość 1</h3>
@@ -744,6 +744,15 @@ window._onAuthReady = function(auth){
         <div class="stat"><div class="stat-lbl">Aktywni klienci</div><div class="stat-val" id="loy-active">0</div></div>
         <div class="stat"><div class="stat-lbl">Wydane nagrody</div><div class="stat-val" id="loy-rewards-count">0</div></div>
         <div class="stat"><div class="stat-lbl">Próg pieczątki</div><div class="stat-val">19 zł</div></div>
+      </div>
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">✅ Zrealizuj kod nagrody</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Klient podaje kod nagrody (np. LOY3ABCD) — wpisz go poniżej, żeby oznaczyć jako zrealizowany.</p>
+        <div class="frow">
+          <div class="field"><label>Kod nagrody</label><input type="text" id="loy-redeem-code" placeholder="np. LOY3ABCD" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+        </div>
+        <button class="btn bp" onclick="redeemLoyaltyCode()">✅ Zrealizuj kod</button>
+        <div id="loy-redeem-result" style="margin-top:12px;"></div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">⭐ Wbij pieczątkę klientowi</h3>
@@ -815,7 +824,7 @@ window._onAuthReady = function(auth){
         <div style="background:var(--bg);border-radius:var(--r);padding:12px;margin-bottom:12px;border:1px solid var(--border);">
           <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Szablony SMS</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Użyj {id} = numer zamówienia, {czas} = czas realizacji, {imie} = imię klienta. Bez polskich znaków (SMS może je zniekształcić).</div>
-          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">✅ Zamówienie przyjęte</label><textarea id="sms-tpl-accepted" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Czesc! Zamowienie #{id} z Hirschowki przyjete. Czas realizacji: {czas}. Smacznego!</textarea></div>
+          <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">✅ Zamówienie przyjęte</label><textarea id="sms-tpl-accepted" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Czesc! Zamowienie #{id} z Hirschowki przyjete. Czas: {czas}. Smacznego! ⭐ +1 pieczatka na karcie. hirschowkabistro.pl/lojalnosc</textarea></div>
           <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🔔 Gotowe do odbioru</label><textarea id="sms-tpl-ready" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Twoje zamowienie #{id} jest gotowe do odbioru! Zapraszamy :) Hirschowka Bistro</textarea></div>
           <div class="field" style="margin-bottom:8px;"><label style="font-size:12px;">🚗 Zamówienie w drodze</label><textarea id="sms-tpl-delivering" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Twoje zamowienie #{id} jest w drodze! Dotrze za ok. {czas} min. Hirschowka Bistro</textarea></div>
           <div class="field"><label style="font-size:12px;">❌ Zamówienie odrzucone</label><textarea id="sms-tpl-rejected" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">Przepraszamy, nie mozemy teraz zrealizowac zamowienia #{id}. Zadzwon: +48511707232. Hirschowka</textarea></div>
@@ -2067,7 +2076,10 @@ function renderOrderCard(o){
       <button class="btn-accept" onclick="openAcceptModal('${o.id}')" style="flex:1;min-width:200px;padding:12px 20px;font-size:14px;">✓ Przyjmij zamówienie</button>
       <button class="btn-reject" onclick="rejectOrd('${o.id}')">✕ Odrzuć</button>`;
   } else if(normStatus(o.status) === 'accepted'){
+    const stampInfo = o.stampGranted ? `<span style="font-size:12px;color:var(--gold);margin-right:6px;" title="Pieczątka przyznana">⭐ Pieczątka</span>` : '';
+    const revokeBtn = o.stampGranted ? `<button class="btn bo bsm" onclick="revokeStamp('${o.id}')" style="font-size:11px;padding:5px 10px;" title="Cofnij pieczątkę">↩ Cofnij</button>` : '';
     actions = `
+      ${stampInfo}${revokeBtn}
       ${o.type==='delivery'||o.type==='dostawa'
         ? `<button class="btn-delivering" onclick="setOrdStatus('${o.id}','delivering')">🚗 Wyruszyło</button>`
         : `<button class="btn-ready" onclick="setOrdStatus('${o.id}','ready')">🔔 Gotowe do odbioru</button>`}
@@ -2110,6 +2122,44 @@ function renderOrderCard(o){
 }
 
 // ── ACCEPT MODAL ──
+// ── PIECZĄTKI — przyznaj / cofnij ──
+function grantStampToCustomer(order){
+  if(!order||!order.phone||(order.total||0)<19) return;
+  const phone=(order.phone||'').replace(/\s/g,'');
+  let c=customers.find(x=>(x.phone||'').replace(/\s/g,'')===phone);
+  if(!c){
+    c={name:order.customer||('Klient '+order.phone),phone:order.phone,email:order.email||'',sms:true,emailMkt:false,stamps:0,totalStamps:0,visits:0,spent:0,last:'',registeredAt:new Date().toISOString().slice(0,10)};
+    customers.push(c);
+  }
+  const prev=c.stamps||0;
+  c.stamps=prev>=9?1:prev+1;
+  c.totalStamps=(c.totalStamps||0)+1;
+  c.visits=(c.visits||0)+1;
+  c.last=new Date().toLocaleDateString('pl-PL');
+  c.spent=(c.spent||0)+parseFloat(order.total||0);
+  saveCustomers();
+  const hitReward=[3,6,9].includes(c.stamps);
+  if(hitReward) toast(`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`);
+  else toast(`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
+}
+
+function revokeStamp(orderId){
+  const o=orders.find(x=>x.id===orderId)||archive.find(x=>x.id===orderId);
+  if(!o||!o.phone){toast('Nie znaleziono zamówienia');return;}
+  if(!confirm(`Cofnąć pieczątkę dla zamówienia ${orderId}?`)) return;
+  const phone=(o.phone||'').replace(/\s/g,'');
+  const c=customers.find(x=>(x.phone||'').replace(/\s/g,'')===phone);
+  if(!c){toast('Nie znaleziono klienta');return;}
+  c.stamps=Math.max(0,(c.stamps||1)-1);
+  c.totalStamps=Math.max(0,(c.totalStamps||1)-1);
+  saveCustomers();
+  o.stampGranted=false;
+  _ordersLastWrite=Date.now();
+  W('orders',orders);
+  renderOrders();
+  toast(`↩ Pieczątka cofnięta dla ${c.name} (${c.stamps}/9)`);
+}
+
 let acceptingOrderId = null;
 function openAcceptModal(id){
   acceptingOrderId = id;
@@ -2182,6 +2232,14 @@ function acceptOrdFinal(){
   o.status = 'accepted';
   o.timing = timing;
   o.acceptedAt = new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'});
+
+  // Pieczątka dla zamówień gotówkowych (online dostaje pieczątkę z p24.js)
+  const isCash = !['blik','card','gpay'].includes((o.payment||'').toLowerCase());
+  if(isCash && o.phone && (o.total||0) >= 19){
+    grantStampToCustomer(o);
+    o.stampGranted = true;
+  }
+
   _ordersLastWrite = Date.now();
   W('orders', orders);
 
@@ -3614,7 +3672,7 @@ function renderLoyalty(){
       <span style="color:var(--muted);min-width:80px;">${h.date}</span>
       <span style="flex:1;">${h.phone} — ${h.rewardName}</span>
       <code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:12px;letter-spacing:1px;">${h.code}</code>
-      <span style="font-size:11px;color:${h.used?'var(--muted)':'var(--green2)'};">${h.used?'Użyty':'Aktywny'}</span>
+      <span style="font-size:11px;color:${h.used?'var(--muted)':'var(--green2)'};">${h.used?`Zrealizowany${h.usedAt?' '+h.usedAt:''}`:'Aktywny'}</span>
     </div>`).join(''):'<div style="font-size:13px;color:var(--muted);padding:12px 0;">Brak historii nagród</div>';
 }
 async function addStampByPhone(){
@@ -3700,6 +3758,60 @@ async function addStampByPhone(){
   document.getElementById('loy-amount').value='';
   toast(msg);
 }
+async function redeemLoyaltyCode(){
+  const code=(document.getElementById('loy-redeem-code').value||'').trim().toUpperCase();
+  const resEl=document.getElementById('loy-redeem-result');
+  if(!code){toast('Wpisz kod nagrody');return;}
+
+  // Szukaj w kuponach
+  const allCoupons=S('coupons')||[];
+  const idx=allCoupons.findIndex(x=>(x.code||'').toUpperCase()===code);
+
+  if(idx===-1){
+    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ Nie znaleziono kodu <strong>${code}</strong></div>`;
+    return;
+  }
+
+  const coupon=allCoupons[idx];
+
+  if(!coupon.loyaltyReward){
+    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ To nie jest kod nagrody lojalnościowej</div>`;
+    return;
+  }
+
+  if(coupon.used && coupon.used>=1){
+    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">⚠️ Kod <strong>${code}</strong> został już zrealizowany</div>`;
+    return;
+  }
+
+  // Sprawdź datę ważności
+  if(coupon.exp){
+    const expDate=new Date(coupon.exp);
+    expDate.setHours(23,59,59,999);
+    if(Date.now()>expDate.getTime()){
+      resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">⚠️ Kod wygasł ${coupon.exp}</div>`;
+      return;
+    }
+  }
+
+  // Oznacz jako użyty
+  allCoupons[idx].used=1;
+  allCoupons[idx].usedAt=new Date().toLocaleString('pl-PL');
+  W('coupons',allCoupons);
+
+  // Oznacz w historii nagród
+  const now=new Date().toLocaleString('pl-PL');
+  loyaltyHistory=loyaltyHistory.map(h=>
+    (h.code||'').toUpperCase()===code ? {...h,used:true,usedAt:now} : h
+  );
+  W('loyalty-history',loyaltyHistory);
+
+  resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Kod <strong>${code}</strong> zrealizowany! Nagroda: ${coupon.rewardName||'nagroda lojalnościowa'}</div>`;
+  document.getElementById('loy-redeem-code').value='';
+  toast(`✅ Kod ${code} zrealizowany`);
+  renderLoyalty();
+}
+
 async function grantReward(){
   const phone=document.getElementById('loy-rew-phone').value.trim();
   const stampLevel=parseInt(document.getElementById('loy-rew-type').value);

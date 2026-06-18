@@ -49,6 +49,90 @@ function signForVerify(sessionId, orderId, amount, currency) {
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
+// Przyznaj pieczątkę klientowi po opłaconym zamówieniu
+async function grantStampForOrder(order) {
+  try {
+    if (!order || !order.phone) {
+      await fbLog('WARN', 'grantStamp: brak telefonu w zamowieniu', { orderId: order && order.id });
+      return;
+    }
+    const total = parseFloat(order.total || 0);
+    if (total < 19) {
+      await fbLog('INFO', 'grantStamp: kwota za niska', { total, orderId: order.id });
+      return;
+    }
+
+    const phone = String(order.phone).replace(/\s/g, '');
+
+    // Pobierz bazę klientów
+    const custResp = await fetch(`${FB_URL}/customers.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const custVal = await custResp.json();
+
+    let customers = {};
+    let matchKey = null;
+    let matchCust = null;
+
+    if (custVal && typeof custVal === 'object') {
+      customers = custVal;
+      // Szukaj po telefonie
+      for (const [key, c] of Object.entries(customers)) {
+        if (c && String(c.phone || '').replace(/\s/g, '') === phone) {
+          matchKey = key;
+          matchCust = { ...c };
+          break;
+        }
+      }
+    }
+
+    if (matchKey && matchCust) {
+      // Klient istnieje — dodaj pieczątkę
+      const prev = matchCust.stamps || 0;
+      matchCust.stamps = prev >= 9 ? 1 : prev + 1;
+      matchCust.totalStamps = (matchCust.totalStamps || 0) + 1;
+      matchCust.visits = (matchCust.visits || 0) + 1;
+      matchCust.last = new Date().toLocaleDateString('pl-PL');
+      matchCust.spent = (matchCust.spent || 0) + total;
+
+      const updateUrl = `${FB_URL}/customers/${matchKey}.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`;
+      await fetch(updateUrl, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stamps: matchCust.stamps,
+          totalStamps: matchCust.totalStamps,
+          visits: matchCust.visits,
+          last: matchCust.last,
+          spent: matchCust.spent,
+        }),
+      });
+      await fbLog('INFO', '⭐ Pieczatka przyznana (istniejacy klient)', { phone, stamps: matchCust.stamps, orderId: order.id });
+    } else {
+      // Nowy klient — utwórz wpis i daj pieczątkę
+      const newCust = {
+        name: order.customer || ('Klient ' + phone),
+        phone: order.phone,
+        email: order.email || '',
+        sms: true,
+        emailMkt: false,
+        stamps: 1,
+        totalStamps: 1,
+        visits: 1,
+        last: new Date().toLocaleDateString('pl-PL'),
+        spent: total,
+        registeredAt: new Date().toISOString().slice(0, 10),
+      };
+      await fetch(`${FB_URL}/customers.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCust),
+      });
+      await fbLog('INFO', '⭐ Nowy klient + pieczatka', { phone, orderId: order.id });
+    }
+  } catch (e) {
+    await fbLog('ERROR', 'grantStamp exception', { message: e.message });
+  }
+}
+
 // Aktualizuj status zamówienia w Firebase — pobierz wszystkie i filtruj w JS
 async function updateOrderStatus(orderId, status) {
   try {
@@ -192,6 +276,24 @@ module.exports = async function handler(req, res) {
         const orderNum = parts.slice(1, -1).join('-');
         await fbLog('INFO', 'orderNum', { parts, orderNum });
         await updateOrderStatus(orderNum, 'paid');
+
+        // Przyznaj pieczątkę — pobierz dane zamówienia z Firebase
+        try {
+          const ordersResp = await fetch(`${FB_URL}/orders.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+          const ordersVal = await ordersResp.json();
+          if (ordersVal && typeof ordersVal === 'object') {
+            const allOrders = Object.values(ordersVal);
+            const paidOrder = allOrders.find(o => o && o.id === orderNum);
+            if (paidOrder) {
+              await grantStampForOrder(paidOrder);
+            } else {
+              await fbLog('WARN', 'grantStamp: nie znaleziono zamowienia', { orderNum });
+            }
+          }
+        } catch (e) {
+          await fbLog('ERROR', 'grantStamp fetch exception', { message: e.message });
+        }
+
         await fbLog('INFO', '✅ Platnosc potwierdzona', { orderNum });
         return res.status(200).json({ status: 'ok' });
       } else {

@@ -785,12 +785,12 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
-    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</a>
+    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = 50% na bajgla lub danie dnia</a>
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
     <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
-    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = darmowy obiad</a>
+    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = 50% na bajgla lub danie dnia</a>
   </div>
 </div>
 
@@ -929,7 +929,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     <div class="reveal">
       <div class="section-tag" style="justify-content:flex-start;display:inline-flex;">Program</div>
       <h2 style="font-family:var(--serif);font-size:clamp(30px,3.5vw,44px);font-weight:700;color:#F9F5EE;line-height:1.1;margin-bottom:14px;margin-top:10px;">Zbieraj pieczątki,<br>odbieraj nagrody</h2>
-      <p style="font-size:15px;color:rgba(249,245,238,0.75);line-height:1.7;font-weight:300;margin-bottom:28px;">Pieczątka za każdą wizytę od 19 zł. Po 9 wizytach — darmowy obiad. Nagrody też na 3. i 6. pieczątce!</p>
+      <p style="font-size:15px;color:rgba(249,245,238,0.75);line-height:1.7;font-weight:300;margin-bottom:28px;">Pieczątka za każdą wizytę od 19 zł. Po 9 wizytach — 50% zniżki na bajgla lub danie dnia. Nagrody też na 3. i 6. pieczątce!</p>
       <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:28px;">
         <div class="daily-feat" style="color:rgba(249,245,238,0.9)"><span class="feat-dot"></span>3 pieczątki → 50% zniżki na kawę lub deser</div>
         <div class="daily-feat" style="color:rgba(249,245,238,0.9)"><span class="feat-dot"></span>6 pieczątek → darmowa kawa lub deser</div>
@@ -1942,13 +1942,37 @@ async function placeOrder(){
     }:null,
   };
 
-  // Rejestruj klienta
-  const custs=LS('customers')||[];
+  // Rejestruj klienta — zapisz do Firebase (źródło prawdy) i lokalnie
   const raw=phone.replace(/\s/g,'');
-  if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){
-    custs.push({name,phone,email,sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});
-    localStorage.setItem('customers',JSON.stringify(custs));
-  }
+  (async()=>{
+    try{
+      const db=window._firebase&&window._firebase.db;
+      if(db){
+        const snap=await db.ref('customers').once('value');
+        const val=snap.val();
+        const arr=val?(Array.isArray(val)?val:Object.values(val)):[];
+        const exists=arr.find(c=>c&&(c.phone||'').replace(/\s/g,'')===raw);
+        if(!exists){
+          await db.ref('customers').push({
+            name,phone,email,
+            sms:false,
+            emailMkt:document.getElementById('c-mkt')?.checked||false,
+            stamps:0,totalStamps:0,visits:0,spent:0,last:'',
+            registeredAt:new Date().toISOString().slice(0,10)
+          });
+          console.log('[CUST] Nowy klient zapisany do Firebase:', phone);
+        }
+      }
+    }catch(e){
+      // Fallback — zapisz lokalnie jeśli Firebase niedostępny
+      const custs=LS('customers')||[];
+      if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){
+        custs.push({name,phone,email,sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});
+        localStorage.setItem('customers',JSON.stringify(custs));
+      }
+      console.warn('[CUST] Firebase niedostępny, zapis lokalny:', e.message);
+    }
+  })();
 
   // Oznacz kupon jako użyty
   if(appliedCoupon){
@@ -2047,7 +2071,12 @@ async function placeOrder(){
         <div style="font-size:56px;margin-bottom:12px;">✅</div>
         <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność przyjęta!</h2>
         <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
-        <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Dziękujemy! Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem realizacji.</p>
+        <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:16px;">Dziękujemy! Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem realizacji.</p>
+        <div style="background:#FBF6EC;border:1px solid #E8C97A;border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:left;">
+          <div style="font-size:15px;font-weight:700;color:#2A1A0E;margin-bottom:4px;">⭐ +1 pieczątka na Twojej karcie!</div>
+          <div style="font-size:12px;color:#6B4423;line-height:1.6;">Pieczątka zostanie dodana po potwierdzeniu płatności.<br>Zbieraj pieczątki za każde zamówienie od 19 zł i odbieraj nagrody: kawę, deser, a po 9 — 50% na bajgla lub danie dnia.</div>
+          <a href="/lojalnosc" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:600;color:#C8921A;text-decoration:none;">Zobacz program lojalnościowy →</a>
+        </div>
         <button onclick="document.getElementById('payment-result-modal').remove();"
           style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">
           Powrót do menu
