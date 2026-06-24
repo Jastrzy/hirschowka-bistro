@@ -455,7 +455,7 @@ window._onAuthReady = function(auth){
             var inp = document.getElementById('login-input');
             if(inp) inp.focus();
           }
-        }, 4000);
+        }, 8000);
       } else {
         // Pierwsze wejście — pokaż logowanie od razu
         var ls = document.getElementById('login-screen');
@@ -513,6 +513,10 @@ window._onAuthReady = function(auth){
   <header class="topbar">
     <div class="topbar-title" id="page-title">Pulpit</div>
     <div class="topbar-right">
+      <div id="fb-conn-pill" title="Status połączenia z Firebase" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;font-size:11px;font-weight:600;background:#FEF3C7;color:#92400E;transition:background .3s,color .3s;">
+        <span id="fb-conn-dot" style="width:7px;height:7px;border-radius:50%;background:#D97706;flex-shrink:0;"></span>
+        <span id="fb-conn-txt">Łączenie…</span>
+      </div>
       <button class="status-pill sp-open" id="sp-btn" onclick="toggleStatusManual()">
         <span class="sdot"></span><span id="sp-txt">Restauracja otwarta</span>
       </button>
@@ -5032,32 +5036,47 @@ updateAlarm();
     'emailjs-key','emailjs-service','emailjs-template',
     'geo-api-key','rest-address'
   ];
+  // ZAWSZE pobierane z Firebase przy starcie — nigdy nie ufaj localStorage
+  // kitchen-day i daily-dish muszą być zawsze aktualne (zmiana co tydzień!)
+  var alwaysFresh = ['kitchen-day','daily-dish'];
   var onDemand = [
     'cross','rewards','params','addons','coupons',
-    'promos','packaging','delivery-zones','kitchen-day','daily-dish'
+    'promos','packaging','delivery-zones'
   ];
 
   function doSync(){
     if(!window._firebase || !window._firebase.db){
       setTimeout(doSync, 500); return;
     }
+    var db = window._firebase.db;
+
     // Zawsze nadpisuj tokeny i klucze API — mogą mieć złe wartości
     alwaysSync.forEach(function(k){
-      window._firebase.db.ref(k).once('value').then(function(snap){
+      db.ref(k).once('value').then(function(snap){
         var val = snap.val();
         if(val === null) return;
         var current = localStorage.getItem(k);
-        // Nadpisz jeśli puste lub zawiera kod JS
         if(!current || current.includes('${') || current.includes("S('sms") || current.includes("S('rest")){
           localStorage.setItem(k, JSON.stringify(val));
           console.log('[FB Init] Naprawiono:', k);
         }
       }).catch(function(){});
     });
+
+    // Zawsze świeże — nadpisuj localStorage bez względu na stan
+    alwaysFresh.forEach(function(k){
+      db.ref(k).once('value').then(function(snap){
+        var val = snap.val();
+        if(val === null) return;
+        localStorage.setItem(k, JSON.stringify(val));
+        console.log('[FB Init] Odswiezono:', k, val);
+      }).catch(function(){});
+    });
+
     // Pobierz tylko jeśli brak w localStorage
     onDemand.forEach(function(k){
       if(!localStorage.getItem(k)){
-        window._firebase.db.ref(k).once('value').then(function(snap){
+        db.ref(k).once('value').then(function(snap){
           var val = snap.val();
           if(val === null) return;
           localStorage.setItem(k, JSON.stringify(val));
@@ -5070,6 +5089,8 @@ updateAlarm();
       }
     });
   }
+  // Eksportuj doSync żeby watchdog mógł go wywołać przy powrocie z uśpienia
+  window._syncFromFirebase = doSync;
   setTimeout(doSync, 800);
 })();
 
@@ -5121,7 +5142,28 @@ window.onFirebaseOrders = function(freshArr) {
   newPending.forEach(o => sendOrderEmail(o));
 };
 
-// Jednorazowe pobranie przy starcie panelu
+// ══════════════════════════════════════════════════════════════
+// WATCHDOG POŁĄCZENIA FIREBASE + KEEP-ALIVE
+// ══════════════════════════════════════════════════════════════
+
+// Wskaźnik połączenia w topbarze
+function _setConnPill(online) {
+  var pill = document.getElementById('fb-conn-pill');
+  var dot  = document.getElementById('fb-conn-dot');
+  var txt  = document.getElementById('fb-conn-txt');
+  if(!pill) return;
+  if(online){
+    pill.style.background='#DCFCE7'; pill.style.color='#166534';
+    dot.style.background='#16a34a';
+    txt.textContent='Online';
+  } else {
+    pill.style.background='#FEE2E2'; pill.style.color='#DC2626';
+    dot.style.background='#DC2626';
+    txt.textContent='Offline';
+  }
+}
+
+// Jednorazowe pobranie zamówień z Firebase
 function fetchOrdersNow() {
   if (window._firebase && window._firebase.db) {
     window._firebase.db.ref('orders').once('value').then(function(snap) {
@@ -5140,16 +5182,65 @@ function fetchOrdersNow() {
 }
 setTimeout(fetchOrdersNow, 1000);
 
-// Odśwież zamówienia gdy urządzenie wraca z uśpienia/tła
+// Watchdog — nasłuchuje .info/connected i reaguje na zerwanie/przywrócenie połączenia
+(function startWatchdog(){
+  if(!window._firebase || !window._firebase.db){
+    setTimeout(startWatchdog, 600); return;
+  }
+  var db = window._firebase.db;
+  var _wasConnected = false;
+
+  db.ref('.info/connected').on('value', function(snap){
+    var connected = !!snap.val();
+    _setConnPill(connected);
+
+    if(connected){
+      console.log('[Watchdog] Firebase POŁĄCZONY ✓');
+      if(_wasConnected === false){
+        // Pierwsze połączenie lub powrót po rozłączeniu — odśwież wszystko
+        _ordersLastWrite = 0;
+        setTimeout(fetchOrdersNow, 300);
+        if(typeof window._syncFromFirebase === 'function'){
+          setTimeout(window._syncFromFirebase, 600);
+        }
+      }
+      _wasConnected = true;
+    } else {
+      console.warn('[Watchdog] Firebase ROZŁĄCZONY');
+      _wasConnected = false;
+      _setConnPill(false);
+    }
+  });
+
+  // Keep-alive — lekki ping co 25 sekund żeby WebSocket nie usnął
+  setInterval(function(){
+    db.ref('.info/serverTimeOffset').once('value').catch(function(){});
+  }, 25000);
+})();
+
+// Odśwież gdy tablet wraca z uśpienia / karta z tła
 document.addEventListener('visibilitychange', function(){
   if(!document.hidden){
     console.log('[Panel] Powrót z tła — odświeżam zamówienia i sesję');
-    _ordersLastWrite = 0; // wymuś aktualizację
-    // Wymuś odnowienie tokenu Firebase żeby szybko przywrócić sesję
+    _ordersLastWrite = 0;
+
+    // Wymuś odnowienie tokenu Auth — zapobiega ekranowi logowania po uśpieniu
     if(window._fbAuth && window._fbAuth.currentUser){
       window._fbAuth.currentUser.getIdToken(true).catch(function(){});
     }
-    setTimeout(fetchOrdersNow, 500);
+
+    // Odśwież danie dnia z Firebase (może być zmienione przez obsługę)
+    if(window._firebase && window._firebase.db){
+      ['kitchen-day','daily-dish'].forEach(function(k){
+        window._firebase.db.ref(k).once('value').then(function(snap){
+          var val = snap.val();
+          if(val !== null) localStorage.setItem(k, JSON.stringify(val));
+        }).catch(function(){});
+      });
+    }
+
+    // Daj Firebase chwilę na reconnect, potem pobierz zamówienia
+    setTimeout(fetchOrdersNow, 800);
   }
 });
 </script>
