@@ -1621,7 +1621,7 @@ window._onAuthReady = function(auth){
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
           <span style="font-size:13px;color:var(--muted);">Typ:</span>
-          <span id="acc-type" style="font-size:13px;"></span>
+          <span id="acc-type" style="font-size:13px;font-weight:700;"></span>
         </div>
         <div style="display:flex;justify-content:space-between;">
           <span style="font-size:13px;color:var(--muted);">Kwota:</span>
@@ -1629,34 +1629,17 @@ window._onAuthReady = function(auth){
         </div>
       </div>
       <div class="field">
-        <label>⏰ Na kiedy?</label>
-        <select id="acc-timing-select" onchange="document.getElementById('acc-custom-time').style.display=this.value==='custom'?'block':'none'"
-          style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
-          <option value="asap">Jak najszybciej</option>
-          <option value="15">~15 minut</option>
-          <option value="20">~20 minut</option>
-          <option value="25">~25 minut</option>
-          <option value="30">~30 minut</option>
-          <option value="45">~45 minut</option>
-          <option value="60">~60 minut</option>
-          <option value="custom">Konkretna godzina...</option>
-        </select>
-        <div id="acc-custom-time" style="display:none;margin-top:8px;">
-          <input type="time" id="acc-custom-time-inp" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
-        </div>
+        <label>⏱️ Za ile minut? (czas realizacji)</label>
+        <input type="number" id="acc-minutes" min="5" max="120" value="30" placeholder="np. 30"
+          style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:18px;font-weight:700;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);text-align:center;">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center;">Czas wpisany tutaj trafi do SMS-a wysłanego do klienta</div>
       </div>
-      <div class="field">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="acc-send-sms" style="width:16px;height:16px;accent-color:var(--brown);">
-          <span>Powiadom klienta o przyjęciu zamówienia</span>
-        </label>
-        <div id="acc-sms-info" style="margin-top:6px;padding:8px 10px;border-radius:var(--r);font-size:12px;line-height:1.5;"></div>
-        <div style="font-size:13px;font-weight:700;color:var(--brown);margin-top:6px;">📞 Telefon klienta: <span id="acc-phone" style="font-family:monospace;letter-spacing:1px;"></span></div>
-      </div>
+      <div id="acc-sms-info" style="margin-top:8px;padding:10px 12px;border-radius:var(--r);font-size:12px;line-height:1.6;"></div>
+      <div style="font-size:13px;font-weight:700;color:var(--brown);margin-top:8px;">📞 Telefon klienta: <span id="acc-phone" style="font-family:monospace;letter-spacing:1px;"></span></div>
     </div>
     <div class="modal-ft">
       <button class="btn bo" onclick="closeModal('mo-accept-order')">Anuluj</button>
-      <button class="btn bgreen" onclick="acceptOrdFinal()" style="background:var(--green2);color:#fff;border-color:var(--green2);">✓ Przyjmij zamówienie</button>
+      <button class="btn bgreen" onclick="acceptOrdFinal()" style="background:var(--green2);color:#fff;border-color:var(--green2);">✓ Przyjmij i wyślij SMS</button>
     </div>
   </div>
 </div>
@@ -2169,72 +2152,61 @@ function openAcceptModal(id){
   acceptingOrderId = id;
   const o = orders.find(x=>x.id===id);
   if(!o) return;
+  const isPickup = o.type==='pickup';
+  const isDelivery = o.type==='delivery';
+
   document.getElementById('acc-ord-id').textContent = id;
   document.getElementById('acc-customer').textContent = o.customer||'Klient';
-  document.getElementById('acc-type').textContent = o.type==='delivery'?'Dostawa':o.type==='pickup'?'Odbiór osobisty':'Na miejscu';
+  document.getElementById('acc-type').textContent = isDelivery ? '🚗 Dostawa' : isPickup ? '🏃 Odbiór osobisty' : '🍽️ Na miejscu';
   document.getElementById('acc-total').textContent = o.total+' zł';
-  document.getElementById('acc-timing-select').value = 'asap';
-  document.getElementById('acc-custom-time').style.display='none';
-  document.getElementById('acc-send-sms').checked = !!o.phone;
+  document.getElementById('acc-minutes').value = isDelivery ? '40' : '20';
   document.getElementById('acc-phone').textContent = o.phone||'brak';
 
-  // Pokaż info o statusie SMS
-  // Token może być jeszcze nie zsynchronizowany z Firebase — sprawdź też bezpośrednio
-  const checkSmsStatus = function(){
-    const hasToken = !!(S('smsapi-token'));
-    const smsInfo = document.getElementById('acc-sms-info');
-    if(!smsInfo) return;
+  // Pokaż podgląd treści SMS
+  const smsInfo = document.getElementById('acc-sms-info');
+  if(smsInfo){
     if(!o.phone){
       smsInfo.style.background = 'rgba(239,68,68,.06)';
       smsInfo.style.border = '1px solid rgba(239,68,68,.15)';
-      smsInfo.innerHTML = '❌ Klient nie podał numeru telefonu — nie można wysłać SMS.';
-      document.getElementById('acc-send-sms').checked = false;
-      document.getElementById('acc-send-sms').disabled = true;
-    } else if(!hasToken){
-      smsInfo.style.background = 'rgba(200,146,42,.06)';
-      smsInfo.style.border = '1px solid rgba(200,146,42,.2)';
-      smsInfo.innerHTML = '⚠️ Ładowanie konfiguracji SMS...';
-      document.getElementById('acc-send-sms').disabled = true;
-      // Spróbuj pobrać token z Firebase bezpośrednio
-      if(window._firebase && window._firebase.db){
-        window._firebase.db.ref('smsapi-token').once('value').then(function(snap){
-          var fbToken = snap.val();
-          if(fbToken){
-            localStorage.setItem('smsapi-token', JSON.stringify(fbToken));
-            smsInfo.style.background = 'rgba(45,74,47,.06)';
-            smsInfo.style.border = '1px solid rgba(45,74,47,.2)';
-            smsInfo.innerHTML = '✅ <strong>SMS zostanie wysłany automatycznie</strong> z potwierdzeniem i czasem realizacji.';
-            document.getElementById('acc-send-sms').disabled = false;
-            document.getElementById('acc-send-sms').checked = true;
-          } else {
-            smsInfo.innerHTML = '⚠️ <strong>Token SMSAPI nie jest skonfigurowany.</strong> Wejdź w Ustawienia → SMS i wpisz token.';
-            document.getElementById('acc-send-sms').disabled = false;
-          }
-        }).catch(function(){
-          smsInfo.innerHTML = '⚠️ Brak tokenu SMS — skonfiguruj w Ustawieniach.';
-          document.getElementById('acc-send-sms').disabled = false;
-        });
-      }
+      smsInfo.innerHTML = '❌ Klient nie podał numeru telefonu — SMS nie zostanie wysłany.';
     } else {
-      smsInfo.style.background = 'rgba(45,74,47,.06)';
-      smsInfo.style.border = '1px solid rgba(45,74,47,.2)';
-      smsInfo.innerHTML = '✅ <strong>SMS zostanie wysłany automatycznie</strong> z potwierdzeniem i czasem realizacji.';
-      document.getElementById('acc-send-sms').disabled = false;
+      const hasToken = !!(S('smsapi-token'));
+      const minEl = document.getElementById('acc-minutes');
+      const min = minEl ? minEl.value : '30';
+      const preview = isPickup
+        ? `Twoje zamowienie #${id} zostalo przyjete. Bedzie gotowe do odbioru za ok. ${min} min. Hirschowka Bistro`
+        : `Twoje zamowienie #${id} zostalo przyjete. Szacowany czas dostawy: ok. ${min} min. Hirschowka Bistro`;
+
+      smsInfo.style.background = hasToken ? 'rgba(45,74,47,.06)' : 'rgba(200,146,42,.06)';
+      smsInfo.style.border = hasToken ? '1px solid rgba(45,74,47,.2)' : '1px solid rgba(200,146,42,.2)';
+      smsInfo.innerHTML = hasToken
+        ? `📱 <strong>SMS do klienta:</strong><br><em style="font-size:11px;color:var(--muted);">${preview}</em>`
+        : `⚠️ <strong>Brak tokenu SMSAPI</strong> — SMS nie zostanie wysłany. Skonfiguruj w Ustawieniach → SMS.<br><em style="font-size:11px;color:var(--muted);">${preview}</em>`;
+
+      // Odśwież podgląd SMS gdy obsługa zmienia minuty
+      const updatePreview = function(){
+        const m = document.getElementById('acc-minutes').value || '30';
+        const p = isPickup
+          ? `Twoje zamowienie #${id} zostalo przyjete. Bedzie gotowe do odbioru za ok. ${m} min. Hirschowka Bistro`
+          : `Twoje zamowienie #${id} zostalo przyjete. Szacowany czas dostawy: ok. ${m} min. Hirschowka Bistro`;
+        const em = smsInfo.querySelector('em');
+        if(em) em.textContent = p;
+      };
+      document.getElementById('acc-minutes').oninput = updatePreview;
     }
-  };
-  checkSmsStatus();
+  }
+
   openModal('mo-accept-order');
 }
+
 function acceptOrdFinal(){
   const o = orders.find(x=>x.id===acceptingOrderId);
   if(!o) return;
-  const timingSelect = document.getElementById('acc-timing-select').value;
-  const customTime = document.getElementById('acc-custom-time-inp').value;
-  const timeMap = {'asap':'Jak najszybciej','15':'~15 min','20':'~20 min','25':'~25 min','30':'~30 min','45':'~45 min','60':'~60 min'};
-  const timing = timingSelect==='custom' ? (customTime||'ustalony') : (timeMap[timingSelect]||'jak najszybciej');
+  const minutes = parseInt(document.getElementById('acc-minutes').value) || 30;
+  const isPickup = o.type==='pickup';
 
   o.status = 'accepted';
-  o.timing = timing;
+  o.timing = `ok. ${minutes} min`;
   o.acceptedAt = new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'});
 
   // Pieczątka dla zamówień gotówkowych (online dostaje pieczątkę z p24.js)
@@ -2247,25 +2219,25 @@ function acceptOrdFinal(){
   _ordersLastWrite = Date.now();
   W('orders', orders);
 
-  // SMS jeśli zaznaczono checkbox
-  const smsChecked = document.getElementById('acc-send-sms').checked;
-  if(smsChecked && o.phone){
-    // Pobierz token — z localStorage lub bezpośrednio z Firebase
+  // Wyślij SMS automatycznie jeśli klient podał telefon
+  if(o.phone){
     const sendSms = async () => {
       let token = S('smsapi-token');
       if(!token && window._firebase && window._firebase.db){
         const snap = await window._firebase.db.ref('smsapi-token').once('value');
         if(snap.val()){ token = snap.val(); localStorage.setItem('smsapi-token', JSON.stringify(token)); }
       }
-      if(token) sendSmsToCustomer(o, 'accepted');
-      else console.warn('[SMS] Brak tokenu SMSAPI');
+      if(!token){ console.warn('[SMS] Brak tokenu SMSAPI'); return; }
+      // Wybierz treść SMS na podstawie typu zamówienia
+      const msg = isPickup
+        ? `Twoje zamowienie #${o.id} zostalo przyjete. Bedzie gotowe do odbioru za ok. ${minutes} min. Hirschowka Bistro`
+        : `Twoje zamowienie #${o.id} zostalo przyjete. Szacowany czas dostawy: ok. ${minutes} min. Hirschowka Bistro`;
+      sendSmsRaw(o.phone, msg, r=>{ if(!r.ok) console.warn('[SMS] Błąd:', r.err); });
     };
     sendSms();
-    toast(`✅ Zamówienie ${acceptingOrderId} przyjęte`);
-  } else {
-    toast(`✅ Zamówienie ${acceptingOrderId} przyjęte — czas: ${timing}`);
   }
 
+  toast(`✅ Zamówienie ${acceptingOrderId} przyjęte — SMS wysłany`);
   closeModal('mo-accept-order');
   stopAlarm();
   renderOrders();
@@ -2295,14 +2267,7 @@ function setOrdStatus(id, newStatus){
   }
   _ordersLastWrite = Date.now();
   W('orders', orders);
-  // SMS przy zmianie statusu
-  if(newStatus==='delivering'){
-    // Zapytaj o czas dostawy przed wysłaniem SMS
-    const dTime = prompt('Szacowany czas dostawy (minuty):', '30');
-    if(dTime) o.deliveryTime = dTime;
-    if(o.phone) sendSmsToCustomer(o, 'delivering');
-  }
-  if(newStatus==='ready' && o.phone) sendSmsToCustomer(o, 'ready');
+  // SMS usunięty przy delivering i ready — wysyłany tylko przy akceptacji i odrzuceniu
   renderOrders();
   const labels={delivering:'W drodze 🚗',ready:'Gotowe do odbioru 🔔',done:'Zrealizowane ✓'};
   toast(`Zamówienie ${id}: ${labels[newStatus]||newStatus}`);
@@ -5129,10 +5094,17 @@ window.onFirebaseOrders = function(freshArr) {
     const localOrder = (orders||[]).find(lo=>lo.id===fbOrder.id);
     if(!localOrder) return fbOrder;
     // Jeśli lokalny status jest bardziej zaawansowany niż Firebase — zachowaj lokalny
-    const statusRank = {pending:0,nowe:0,'do akceptacji':0,new:0,accepted:1,ready:2,delivering:3,done:4,rejected:5};
+    const statusRank = {pending:0,nowe:0,'do akceptacji':0,new:0,paid:1,accepted:1,ready:2,delivering:3,done:4,rejected:5};
     const fbRank = statusRank[(fbOrder.status||'').toLowerCase()]??0;
     const localRank = statusRank[(localOrder.status||'').toLowerCase()]??0;
-    return localRank > fbRank ? localOrder : fbOrder;
+    if(localRank >= fbRank) {
+      // Zachowaj lokalny status ale przenieś paymentStatus z Firebase jeśli jest
+      const merged = {...localOrder};
+      if(fbOrder.paymentStatus) merged.paymentStatus = fbOrder.paymentStatus;
+      if(fbOrder.status === 'paid') merged.paymentStatus = 'PAID';
+      return merged;
+    }
+    return fbOrder;
   });
 
   orders = mergedOrders;
