@@ -1273,7 +1273,6 @@ function getMenu(){
   if(adminData&&adminData.length>0) return adminData;
   return MENU_BASE;  // fallback gdy Firebase niedostępny
 }
-window._menuLoaded = false; // flaga: czy Firebase już odpowiedział z menu
 
 // ════ HERO CLOCK ════
 function updateClock(){
@@ -1302,8 +1301,8 @@ function init(){
   renderAdminTicker();
   renderDaily();
   renderKitchen();
-  buildCatTabs();
-  buildMenu();
+  // Pokaż skeleton zamiast MENU_BASE — Firebase zaraz nadpisze menu prawdziwymi danymi
+  buildMenuSkeleton();
   renderReviews();
   renderLoyaltyStamps();
 }
@@ -1461,11 +1460,6 @@ function getCats(){return[...new Set(getMenu().map(d=>d.cat))];}
 function slug(s){return s.replace(/\s+/g,'-').replace(/[^\w-]/g,'').toLowerCase();}
 
 function buildCatTabs(){
-  if(!window._menuLoaded){
-    // Firebase jeszcze nie odpowiedział - wyczyść taby (wypełni je po załadowaniu)
-    document.getElementById('cat-tabs').innerHTML='';
-    return;
-  }
   const cats=getCats();
   document.getElementById('cat-tabs').innerHTML=cats.map((c,i)=>`<button class="ctab ${i===0?'on':''}" id="ctab-${slug(c)}" onclick="scrollToCat('${c}',this)">${c}</button>`).join('');
 }
@@ -1476,17 +1470,12 @@ function scrollToCat(cat,el){
 }
 
 function buildMenuSkeleton(){
-  // Wyświetl animowane bloki skeleton podczas ładowania menu z Firebase
+  // Skeleton — wyświetlany przy pierwszym ładowaniu zanim Firebase odpowie
   const skeletonItem=`<div class="skel-item"><div class="skel-img"></div><div class="skel-lines"><div class="skel-line skel-l1"></div><div class="skel-line skel-l2"></div><div class="skel-line skel-l3"></div></div></div>`;
   const skeletonSection=`<div class="cat-sec"><div class="cat-head skel-head"></div><div class="menu-grid">${skeletonItem.repeat(3)}</div></div>`;
   document.getElementById('menu-content').innerHTML=skeletonSection.repeat(3);
 }
 function buildMenu(){
-  if(!window._menuLoaded){
-    // Firebase jeszcze nie odpowiedział - pokaż skeleton i czekaj
-    buildMenuSkeleton();
-    return;
-  }
   const cats=getCats();let html='';
   cats.forEach(cat=>{
     const items=getMenu().filter(d=>d.cat===cat);if(!items.length)return;
@@ -1927,22 +1916,6 @@ function applyCoupon(){
 // ════ ORDER ════
 async function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
-  // Sprawdź czy bistro jest otwarte (klucz bistro-open w Firebase)
-  try{
-    const db=window._firebase&&window._firebase.db;
-    if(db){
-      const snap=await db.ref('bistro-open').once('value');
-      const bistroOpen=snap.val();
-      // null = klucz nie istnieje (stary stan) = traktuj jako otwarte
-      if(bistroOpen===false){
-        toast('🔒 Restauracja jest teraz zamknięta. Zadzwoń: 511 707 232');
-        return;
-      }
-    }
-  }catch(e){
-    // Błąd Firebase — nie blokuj zamówienia
-    console.warn('[ORDER] Nie można sprawdzić statusu bistro:',e.message);
-  }
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
   if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
   const firstName=(document.getElementById('c-name')?.value||'').trim();

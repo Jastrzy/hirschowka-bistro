@@ -202,7 +202,7 @@
     if (isClient) {
       // Czytaj konfigurację z Firebase → aktualizuj UI
       var read_keys = {
-        'menu':        function() { window._menuLoaded=true; if(window.buildMenu){window.buildCatTabs();window.buildMenu();} },
+        'menu':        function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); },
         'daily-dish':  function() { if(window.renderDaily) window.renderDaily(); },
         'kitchen-day': function() { if(window.renderKitchen) window.renderKitchen(); if(window.renderDailyDish) window.renderDailyDish(); if(window.renderDaily) window.renderDaily(); },
         'promos':      function() { if(window.renderAdminPromos) window.renderAdminPromos(); if(window.renderAdminTicker) window.renderAdminTicker(); },
