@@ -34,6 +34,17 @@
   --shadow:0 2px 12px rgba(59,37,18,.08);
   --shadow-lg:0 8px 40px rgba(59,37,18,.12);
 }
+
+/* ════ SKELETON LOADING ════ */
+@keyframes skel-pulse{0%,100%{opacity:.6}50%{opacity:.3}}
+.skel-head{height:28px;width:200px;background:var(--cream3);border-radius:4px;margin-bottom:16px;animation:skel-pulse 1.4s ease infinite;}
+.skel-item{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--cream2);}
+.skel-img{width:80px;min-width:80px;height:80px;background:var(--cream3);border-radius:var(--r);animation:skel-pulse 1.4s ease infinite;}
+.skel-lines{flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center;}
+.skel-line{height:14px;background:var(--cream3);border-radius:4px;animation:skel-pulse 1.4s ease infinite;}
+.skel-l1{width:70%;}
+.skel-l2{width:50%;animation-delay:.2s;}
+.skel-l3{width:30%;animation-delay:.4s;}
 html{scroll-behavior:smooth;background:var(--cream);}
 body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-x:hidden;}
 
@@ -1173,57 +1184,46 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 const ADDONS_DB=[];
 
 const MENU_BASE=[
-  {id:1,cat:'Śniadania i lunche',name:'Bajgiel z boczkiem, jajkiem sadzonym, sałatą, pomidorem i sosem',desc:'CHRUPIĄCY NA ZEWNĄTRZ, MIĘKKI W ŚRODKU - NA KAŻDY GUST',price:24,avail:true,badge:'new'},
-  {id:2,cat:'Śniadania i lunche',name:'Bajgiel barona - wolno pieczona wieprzowina, ogórek kiszony, szkarłatna marynowana cebula, sałata, rukola, sos BBQ',desc:'',price:29,avail:true},
-  {id:3,cat:'Śniadania i lunche',name:'Bajgiel z Caprese - mozzarellą, pomidorem, oliwą, bazylią i czosnkiem',desc:'',price:22,avail:true},
-  {id:4,cat:'Śniadania i lunche',name:'Bajgiel z chrupiącym kurczakiem w panierce, sałatą i majonezem',desc:'',price:26,avail:true},
-  {id:5,cat:'Śniadania i lunche',name:'Bajgiel z pastą z tuńczyka, ogórkiem, rukolą i oliwą',desc:'',price:23,avail:true},
-  {id:6,cat:'Śniadania i lunche',name:'Hot Dog klasyczny',desc:'bułka, parówka, ketchup, musztarda',price:9,avail:true},
-  {id:7,cat:'Śniadania i lunche',name:'Hot Dog wzbogacony',desc:'bułka, parówka, sałata, pomidor, ogórek kiszony, ketchup, musztarda',price:12,avail:true},
-  {id:8,cat:'Śniadania i lunche',name:'Quesadilla z grillowanym kurczakiem',desc:'z serem, papryką, cebulą, kukurydzą i z sosem',price:16,avail:true},
-  {id:9,cat:'Śniadania i lunche',name:'Wrap z grillowanym kurczakiem',desc:'z pekińą, ogórkiem, papryką, pomidorem, cebulką i sosem',price:19,avail:true},
-  {id:10,cat:'Śniadania i lunche',name:'Zapiekanka z kurczakiem i serem',desc:'',price:12,avail:true},
-  {id:11,cat:'Śniadania i lunche',name:'Bagietka z kurczakiem, serem żółtym, pomidorem, ogórkiem konserwowym, sałatą i sosem',desc:'',price:16,avail:true},
-  {id:12,cat:'Śniadania i lunche',name:'Zapiekanka z szynką i serem',desc:'',price:12,avail:true},
-  {id:13,cat:'Śniadania i lunche',name:'Bagietka z mozzarellą, pomidorami, sałatą, oliwą i ziołami',desc:'',price:15,avail:true},
-  {id:14,cat:'Śniadania i lunche',name:'Sałatka grecka',desc:'sałata z ogórkiem zielonym, cebulką czerwoną, serem feta, pomidorkami, oliwkami i sosem winegret',price:22,avail:true},
-  {id:15,cat:'Śniadania i lunche',name:'Sałatka grillowany kurczak',desc:'filet z kurczaka, sałata z ogórkiem zielonym, papryką, kukurydzą i sosem czosnkowym',price:24,avail:true},
-  {id:16,cat:'Śniadania i lunche',name:'Sałatka tuńczyk',desc:'tuńczyk, sałata z ogórkiem kiszonym, pomidorem, papryką, pestkami słonecznika, cebulką czerwoną i sosem miodowo-musztardowym',price:26,avail:true},
-  {id:17,cat:'Dania obiadowe',name:'Krem z dyni',desc:'',price:12,avail:true},
-  {id:18,cat:'Dania obiadowe',name:'Krem z cukini',desc:'',price:12,avail:true},
-  {id:19,cat:'Dania obiadowe',name:'Roladki schabowe z boczkiem i ogórkiem, ziemniaki, surówka z kiszonej kapusty',desc:'',price:26,avail:true},
-  {id:20,cat:'Dania obiadowe',name:'Zestaw: Zupa pomidorowa z makaronem + roladki schabowe z boczkiem i ogórkiem, ziemniaki, surówka z kiszonej kapusty',desc:'',price:30,avail:true},
-  {id:21,cat:'Napoje zimne',name:'Sok wyciskany pomarańczowy 250ml',desc:'Świeżo wyciskany',price:12,avail:true},
-  {id:22,cat:'Napoje zimne',name:'Sok wyciskany burak z jabłkiem 250ml',desc:'',price:10,avail:false,badge:'unavail'},
-  {id:23,cat:'Napoje zimne',name:'Sok wyciskany pomarańcza/szpinak 250ml',desc:'',price:14,avail:true},
-  {id:24,cat:'Napoje zimne',name:'Lemoniada szklanka',desc:'',price:6,avail:true},
-  {id:25,cat:'Napoje zimne',name:'Lemoniada dzbanek',desc:'',price:12,avail:true},
-  {id:26,cat:'Napoje zimne',name:'Woda w butelce',desc:'',price:5,avail:true},
-  {id:27,cat:'Desery i słodkie przekąski',name:'Gofr z cukrem pudrem',desc:'',price:8,avail:true},
-  {id:28,cat:'Desery i słodkie przekąski',name:'Gofr z owocami',desc:'',price:10,avail:true},
-  {id:29,cat:'Desery i słodkie przekąski',name:'Gofr z owocami i bitą śmietaną',desc:'',price:14,avail:true},
-  {id:30,cat:'Desery i słodkie przekąski',name:'Deser chia',desc:'',price:10,avail:true},
-  {id:31,cat:'Desery i słodkie przekąski',name:'Deser bananowy',desc:'',price:10,avail:true},
-  {id:32,cat:'Desery i słodkie przekąski',name:'Szorlotka',desc:'',price:12,avail:true},
-  {id:33,cat:'Napoje gorące',name:'Herbata',desc:'',price:5,avail:true,addonGroups:['Rodzaj herbaty','Kubeczek']},
-  {id:34,cat:'Napoje gorące',name:'Gorąca czekolada',desc:'',price:6,avail:true,addonGroups:['Kubeczek']},
-  {id:35,cat:'Napoje gorące',name:'Mleko gorące',desc:'',price:3,avail:true,addonGroups:['Kubeczek']},
-  {id:36,cat:'Kawy klasyczne',name:'Espresso',desc:'40ml intensywnej kawy',price:5,avail:true,sizes:[{n:'',p:0},{n:'duże',p:3}],addonGroups:['Kubeczek']},
-  {id:37,cat:'Kawy klasyczne',name:'Espresso Doppio',desc:'80ml intensywnej kawy',price:8,avail:true,addonGroups:['Kubeczek']},
-  {id:38,cat:'Kawy klasyczne',name:'Americano',desc:'espresso + woda',price:6,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Kubeczek']},
-  {id:39,cat:'Kawy klasyczne',name:'Cappuccino',desc:'espresso + aksamitnie spienione mleko',price:8,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:40,cat:'Kawy klasyczne',name:'Latte',desc:'espresso + dużo mleka i pianki',price:8,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:41,cat:'Kawy klasyczne',name:'Flat White',desc:'podwójne espresso + aksamitnie spienione mleko',price:12,avail:true,addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:42,cat:'Kawy smakowe',name:'Karmelowe Latte',desc:'espresso + mleko + syrop karmelowy + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:43,cat:'Kawy smakowe',name:'Mokka',desc:'espresso + mleko + czekolada + bita śmietana',price:10,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:44,cat:'Kawy sezonowe i autorskie',name:'Gingerbread Spice Latte (jesień)',desc:'espresso + mleko + syrop piernikowy + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:45,cat:'Kawy sezonowe i autorskie',name:'Kokosowe Macchiato (lato)',desc:'espresso + mleko + syrop kokosowy + posypka kokosowa',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:46,cat:'Kawy sezonowe i autorskie',name:'Matcha Latte',desc:'japońska herbata matcha + mleko',price:9,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:47,cat:'Kawy sezonowe i autorskie',name:'Chai Latte',desc:'aromatyczna herbata chai + mleko + przyprawy',price:9,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:48,cat:'Kawy mrożone',name:'Iced Latte',desc:'espresso + zimne mleko + lód',price:8,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:49,cat:'Kawy mrożone',name:'Iced Mocha',desc:'espresso + mleko + syrop czekoladowy + lód + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:50,cat:'Kawy mrożone',name:'Frappe',desc:'kawa rozpuszczalna + lód + cukier trzcinowy + mleko',price:10,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:2}],addonGroups:['Mleko do kawy','Kubeczek']},
-  {id:51,cat:'Kawy mrożone',name:'Frappe Deluxe',desc:'kawa rozpuszczalna + lód + lody waniliowe + bita śmietana',price:12,avail:true,sizes:[{n:'małe',p:0},{n:'duże',p:3}],addonGroups:['Mleko do kawy','Kubeczek']},
+  {"id": 16, "cat": "Bajgle", "name": "Bajgiel Barona", "desc": "wolno pieczona wieprzowina, sałata, rukola, ogórek kiszony, szkarłatna marynowana cebula, sos BBQ", "price": 29, "avail": true, "badges": ["Szef kuchni poleca", "Bestseller"]},
+  {"id": 17, "cat": "Bajgle", "name": "Bajgiel Farmer", "desc": "boczek smażony, jajko sadzone, sałata, pomidor, ogórek konserwowy i sos tysiąc wysp", "price": 24, "avail": true},
+  {"id": 18, "cat": "Bajgle", "name": "Bajgiel tuńczyk & rukola", "desc": "pasta z tuńczyka, ogórek, rukola i oliwa", "price": 23, "avail": true},
+  {"id": 19, "cat": "Bajgle", "name": "Bajgiel Klasyk Kurczak", "desc": "chrupiący kurczak w panierce, sałata, papryka, ogórek, cebula czerwona, sos tysiąc wysp", "price": 26, "avail": true},
+  {"id": 20, "cat": "Bajgle", "name": "Bajgiel Caprese", "desc": "mozzarella, sałata, szpinak, pomidor, oliwa, bazylia, oregano, sól, pieprz", "price": 22, "avail": true, "badges": ["Wegetariańskie"]},
+  {"id": 21, "cat": "Napary Premium", "name": "Ogień u Hirscha", "desc": "czarna herbata, przyprawy korzenne, pomarańcza, goździki, gałązka rozmarynu, miód", "price": 15, "avail": true},
+  {"id": 22, "cat": "Napary Premium", "name": "Złoty Eliksir", "desc": "zielona herbata, świeży imbir, cytryna, miód, kurkuma", "price": 16, "avail": true},
+  {"id": 23, "cat": "Napary Premium", "name": "Chai Latte Barona Hirscha", "desc": "aromatyczny napar herbaty z mlekiem, miodem, kardamonem, czarnym pieprzem i goździkami", "price": 13, "avail": true},
+  {"id": 24, "cat": "Napary Premium", "name": "Bursztyn Mickiewicza", "desc": "napar owocowy, konfitura malinowa, mrożone owoce leśne, miód", "price": 15, "avail": true},
+  {"id": 25, "cat": "Śniadania", "name": "Zestaw śniadaniowy Bajgiel", "desc": "Bajgiel własnego wypieku z sałatą, chrupiącym bekonem, pomidorem, jajkiem sadzonym, sosem + sok świeżo wyciskany jabłko- burak lub średnia kawa", "price": 25.9, "avail": true},
+  {"id": 26, "cat": "Śniadania", "name": "Zestaw śniadaniowy croissant wytrawny nr 1", "desc": "Croissant wytrawny z świeżym szpinakiem, mozzarellą, pomidorem, oliwą i ziołami w zestawie z jajecznicą z 3 jajek i szklanką świeżo wyciskanego soku jabłko-burak", "price": 22.9, "avail": true},
+  {"id": 27, "cat": "Śniadania", "name": "Tortilla z puszystą jajecznicą i delikatną szynką", "desc": "Jajka, szynka, tortilla, ser żółty, ogórek, pomidor i sałata", "price": 19.9, "avail": true},
+  {"id": 28, "cat": "Bagietki na Ciepło", "name": "Chrupiąca Bagietka z kurczakiem", "desc": "Grillowany kurczak, ser żółty, pomidor, ogórek konserwowy, sałata i sos", "price": 18, "avail": true, "paramName": "Pieczywo", "paramPrices": [18, 18]},
+  {"id": 29, "cat": "Bagietki na Ciepło", "name": "Chrupiąca bagietka Capresse", "desc": "Bagietka z mozzarellą, pomidorami, sałatą, oliwą i ziołami", "price": 16, "avail": true, "paramName": "Pieczywo", "paramPrices": [16, 16]},
+  {"id": 30, "cat": "Sałatki", "name": "Sałatka Filantropa", "desc": "Grillowany kurczak, mix sałat, karmelizowana gruszka, czerwona cebula, ser camembert, orzechy włoskie, dressing miodowy", "price": 26, "avail": true},
+  {"id": 31, "cat": "Sałatki", "name": "Sałatka Grecka", "desc": "ser feta, sałata, ogórek zielony, cebulka czerwona , papryka, pomidorki, oliwki, sos winegret", "price": 22, "avail": true},
+  {"id": 32, "cat": "Sałatki", "name": "Sałatka z kurczakiem", "desc": "plastry grillowanego kurczaka, ogórek zielony, papryka, kukurydza, cebula czerwona, sos czosnkowy", "price": 24, "avail": true},
+  {"id": 33, "cat": "Sałatki", "name": "Sałatka z tuńczykiem", "desc": "tuńczyk, mix sałat, awokado, pomidory suszone, cebula czerwona, oliwki, sos miodowo-musztardowy", "price": 26, "avail": true},
+  {"id": 34, "cat": "Kawy czarne", "name": "Kawa czarna jak trzeba", "price": 9, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [9, 11]},
+  {"id": 35, "cat": "Kawy czarne", "name": "Espresso po mielecku", "price": 8, "avail": true, "paramName": "Espresso", "paramPrices": [8, 10]},
+  {"id": 42, "cat": "Soki Świeżo Wyciskane", "name": "Pomarańcza", "desc": "świeżo wyciskane pomarańcze", "price": 14, "avail": true, "badges": ["Bez laktozy", "Bez glutenu", "Vegańskie (vegan)"]},
+  {"id": 43, "cat": "Soki Świeżo Wyciskane", "name": "Burak z jabłkiem", "desc": "świeżo wyciskane na wolnych obrotach", "price": 13, "avail": true, "badges": ["Vegańskie (vegan)", "Bez glutenu", "Bez laktozy"]},
+  {"id": 44, "cat": "Soki Świeżo Wyciskane", "name": "Lemoniada", "desc": "świeże cytryny, miód i woda", "price": 6, "avail": true, "badges": ["Vegańskie (vegan)", "Bez glutenu", "Bez laktozy"]},
+  {"id": 46, "cat": "Wrapy na Gorąco", "name": "Wrap z grillowanym kurczakiem", "desc": "ser żółty, kapusta pekińska, ogórek, papryka, pomidor, cebula", "price": 19, "avail": true},
+  {"id": 47, "cat": "Wrapy na Gorąco", "name": "Wrap z szarpaną wieprzowiną", "desc": "ser żółty, kapusta pekińska, ogórek, papryka, pomidor, cebulka, sos do wyboru: czosnkowy, BBQ, tysiąc wysp", "price": 19, "avail": true},
+  {"id": 48, "cat": "Słodka Chwila", "name": "Cynamonka", "desc": "Wypiekana z naszego przepisu cynamonka.", "price": 5, "avail": true},
+  {"id": 49, "cat": "Słodka Chwila", "name": "Crossant z czekoladą", "desc": "Wypiekany na miejscu rogalik francuski z czekoladą w środku.", "price": 6, "avail": true},
+  {"id": 51, "cat": "Kawy i gorące napoje z mlekiem", "name": "Cappucino Galicyjskie", "desc": "espresso i aksamitne spienione mleko", "price": 12, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [12, 15]},
+  {"id": 52, "cat": "Kawy i gorące napoje z mlekiem", "name": "Latte Hirschowskie", "desc": "espresso, dużo mleka i pianki", "price": 12, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [12, 15]},
+  {"id": 53, "cat": "Kawy i gorące napoje z mlekiem", "name": "Kakao Aksamitne", "desc": "kakao na rozgrzanie z gorącym mlekiem", "price": 10, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [10, 12]},
+  {"id": 54, "cat": "Kawy i gorące napoje z mlekiem", "name": "Czekoladowa Mokka", "desc": "espresso, czekolada, aksamitne spienione mleko, bita śmietana", "price": 14, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [14, 16]},
+  {"id": 55, "cat": "Kawy i gorące napoje z mlekiem", "name": "Matcha Latte", "desc": "zielona herbata i aksamitne spienione mleko", "price": 12, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [12, 15]},
+  {"id": 56, "cat": "Kawy i gorące napoje z mlekiem", "name": "Flat white", "desc": "podwójne espresso z mlekiem", "price": 12, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [12, 15]},
+  {"id": 57, "cat": "Kawy i gorące napoje z mlekiem", "name": "Gorąca Czekolada Delux", "desc": "Czekolada, bita śmietana i pianki", "price": 13, "avail": true, "paramName": "Pojemność kawy", "paramPrices": [13, 16]},
+  {"id": 58, "cat": "Słodka Chwila", "name": "Crossaint z masą pistacjową", "desc": "Wypiekany na miejscu, nadziany rozpływającą się masą pistacjową.", "price": 10, "avail": true},
+  {"id": 59, "cat": "Soki Świeżo Wyciskane", "name": "Pomarańcza / Szpinak", "price": 16, "avail": true},
+  {"id": 60, "cat": "Słodka Chwila", "name": "Gofr z cukrem pudrem", "price": 8, "avail": true},
+  {"id": 61, "cat": "Słodka Chwila", "name": "Gofr z owocami", "price": 10, "avail": true},
+  {"id": 62, "cat": "Słodka Chwila", "name": "Gofr z owocami i bitą śmietaną", "price": 14, "avail": true},
+  {"id": 63, "cat": "Śniadania", "name": "Zestaw śniadaniowy croissant wytrawny nr 2", "desc": "Croissant wytrawny z szynką,serkiem kremowym, rukolą i pomidorem w zestawie z jajecznicą z 3 jajek i szklanką świeżo wyciskanego soku jabłko-burak", "price": 22.9, "avail": true}
 ];
 
 const CROSS=[
@@ -1271,8 +1271,9 @@ let appliedCoupon=null;
 function getMenu(){
   const adminData=LS('menu');
   if(adminData&&adminData.length>0) return adminData;
-  return MENU_BASE;
+  return MENU_BASE;  // fallback gdy Firebase niedostępny
 }
+window._menuLoaded = false; // flaga: czy Firebase już odpowiedział z menu
 
 // ════ HERO CLOCK ════
 function updateClock(){
@@ -1460,6 +1461,11 @@ function getCats(){return[...new Set(getMenu().map(d=>d.cat))];}
 function slug(s){return s.replace(/\s+/g,'-').replace(/[^\w-]/g,'').toLowerCase();}
 
 function buildCatTabs(){
+  if(!window._menuLoaded){
+    // Firebase jeszcze nie odpowiedział - wyczyść taby (wypełni je po załadowaniu)
+    document.getElementById('cat-tabs').innerHTML='';
+    return;
+  }
   const cats=getCats();
   document.getElementById('cat-tabs').innerHTML=cats.map((c,i)=>`<button class="ctab ${i===0?'on':''}" id="ctab-${slug(c)}" onclick="scrollToCat('${c}',this)">${c}</button>`).join('');
 }
@@ -1469,7 +1475,18 @@ function scrollToCat(cat,el){
   if(sec)sec.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+function buildMenuSkeleton(){
+  // Wyświetl animowane bloki skeleton podczas ładowania menu z Firebase
+  const skeletonItem=`<div class="skel-item"><div class="skel-img"></div><div class="skel-lines"><div class="skel-line skel-l1"></div><div class="skel-line skel-l2"></div><div class="skel-line skel-l3"></div></div></div>`;
+  const skeletonSection=`<div class="cat-sec"><div class="cat-head skel-head"></div><div class="menu-grid">${skeletonItem.repeat(3)}</div></div>`;
+  document.getElementById('menu-content').innerHTML=skeletonSection.repeat(3);
+}
 function buildMenu(){
+  if(!window._menuLoaded){
+    // Firebase jeszcze nie odpowiedział - pokaż skeleton i czekaj
+    buildMenuSkeleton();
+    return;
+  }
   const cats=getCats();let html='';
   cats.forEach(cat=>{
     const items=getMenu().filter(d=>d.cat===cat);if(!items.length)return;
