@@ -1927,6 +1927,22 @@ function applyCoupon(){
 // ════ ORDER ════
 async function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
+  // Sprawdź czy bistro jest otwarte (klucz bistro-open w Firebase)
+  try{
+    const db=window._firebase&&window._firebase.db;
+    if(db){
+      const snap=await db.ref('bistro-open').once('value');
+      const bistroOpen=snap.val();
+      // null = klucz nie istnieje (stary stan) = traktuj jako otwarte
+      if(bistroOpen===false){
+        toast('🔒 Restauracja jest teraz zamknięta. Zadzwoń: 511 707 232');
+        return;
+      }
+    }
+  }catch(e){
+    // Błąd Firebase — nie blokuj zamówienia
+    console.warn('[ORDER] Nie można sprawdzić statusu bistro:',e.message);
+  }
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
   if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
   const firstName=(document.getElementById('c-name')?.value||'').trim();

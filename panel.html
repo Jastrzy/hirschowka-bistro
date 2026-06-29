@@ -2463,6 +2463,9 @@ function applyStatus(open, isManual=false){
   if(!btn) return;
   btn.className = 'status-pill '+(open?'sp-open':'sp-closed');
   txt.textContent = open ? 'Restauracja otwarta' : (isManual?'🔒 Zamknięta (ręcznie)':'Restauracja zamknięta');
+  // Zapisz status do Firebase — strona klienta go sprawdza przed zamówieniem
+  const db = window._firebase && window._firebase.db;
+  if(db) db.ref('bistro-open').set(open).catch(()=>{});
 }
 function toggleStatusManual(){
   if(manualStatusOverride === null){
