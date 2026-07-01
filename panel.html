@@ -2087,7 +2087,7 @@ function renderOrderCard(o){
         <span class="ord-status-pill ${statusClass}">${statusLabel}</span>
         ${o.planned?'<span class="ord-meta-chip" style="background:rgba(59,130,246,.08);color:#3b82f6;border-color:rgba(59,130,246,.2);">📅 Zaplanowane</span>':''}
       </div>
-      <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${o.time||''}</span>
+      <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${o.date?o.date+' ':''} ${o.time||''}</span>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:4px;">
       <div>
@@ -2243,6 +2243,24 @@ function acceptOrdFinal(){
   renderOrders();
 }
 
+// ── ARCHIWUM — usuwa wpisy starsze niż 30 dni ──
+function pruneArchive(arr){
+  const cutoff = Date.now() - 30*24*60*60*1000;
+  return arr.filter(function(o){
+    // Zamówienia mają pole timestamp (ms) lub date (string 'dd.mm.yyyy')
+    if(o.timestamp) return o.timestamp > cutoff;
+    if(o.date){
+      // Parsuj datę polską dd.mm.yyyy
+      const parts = o.date.split('.');
+      if(parts.length===3){
+        const d = new Date(parts[2],parts[1]-1,parts[0]);
+        return d.getTime() > cutoff;
+      }
+    }
+    return true; // jeśli brak daty — zachowaj
+  });
+}
+
 // ── STATUS TRANSITIONS ──
 function setOrdStatus(id, newStatus){
   const o = orders.find(x=>x.id===id);
@@ -2253,6 +2271,7 @@ function setOrdStatus(id, newStatus){
     const idx = orders.findIndex(x=>x.id===id);
     orders.splice(idx,1);
     archive.unshift({...o, doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})});
+    archive = pruneArchive(archive);
     W('archive', archive);
     // Pieczątka dla klienta przy zamknięciu zamówienia
     if(o.phone&&(o.total||0)>=19){
@@ -2277,6 +2296,12 @@ function rejectOrd(id){
   if(!confirm(`Odrzucić zamówienie ${id}?`)) return;
   const o = orders.find(x=>x.id===id);
   if(o && o.phone) sendSmsToCustomer(o, 'rejected');
+  // Dodaj do archiwum z adnotacją odrzucenia
+  if(o){
+    archive.unshift({...o, status:'rejected', doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}), rejectedAt: new Date().toLocaleDateString('pl')});
+    archive = pruneArchive(archive);
+    W('archive', archive);
+  }
   orders = orders.filter(x=>x.id!==id);
   _ordersLastWrite = Date.now();
   W('orders', orders);
