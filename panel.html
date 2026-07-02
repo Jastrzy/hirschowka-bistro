@@ -1171,40 +1171,18 @@ window._onAuthReady = function(auth){
     <div class="page" id="page-smsmkt">
       <div class="sect-hdr"><h2>Kampanie SMS</h2></div>
       <div class="card card-pad" style="margin-bottom:14px;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">1. Wybierz odbiorców</h3>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;">1. Wybierz segment odbiorców</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Segmenty nie pokrywają się — każdy klient trafia do dokładnie jednej grupy.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-          <button class="btn bo bsm" onclick="smsMktFilter('inactive')">⏰ Nieaktywni</button>
-          <button class="btn bo bsm" onclick="smsMktFilter('stamps')">⭐ Pieczątki</button>
-          <button class="btn bo bsm" onclick="smsMktFilter('all')">👥 Wszyscy</button>
-          <button class="btn bo bsm" onclick="smsMktFilter('manual')">☑ Ręczny wybór</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('active')" id="smsmkt-seg-active">🟢 Aktywni</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('recover')" id="smsmkt-seg-recover">🟡 Do odzyskania</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('sleeping')" id="smsmkt-seg-sleeping">🔴 Śpiący</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('close')" id="smsmkt-seg-close">⭐ Blisko nagrody</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('new')" id="smsmkt-seg-new">🆕 Nowi</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('all')" id="smsmkt-seg-all">👥 Wszyscy</button>
+          <button class="btn bo bsm smsmkt-seg-btn" onclick="smsMktFilter('manual')" id="smsmkt-seg-manual">☑ Ręczny wybór</button>
         </div>
-        <div id="smsmkt-filter-inactive" style="display:none;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px;">
-          <label style="font-size:13px;font-weight:600;">Nie byli od co najmniej:</label>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            <select id="smsmkt-inactive-days" style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
-              <option value="7">1 tydzień (7 dni)</option>
-              <option value="14">2 tygodnie</option>
-              <option value="30" selected>1 miesiąc (30 dni)</option>
-              <option value="60">2 miesiące</option>
-              <option value="90">3 miesiące</option>
-              <option value="180">6 miesięcy</option>
-            </select>
-            <button class="btn bp bsm" onclick="smsMktApplyFilter()">Zastosuj filtr</button>
-          </div>
-        </div>
-        <div id="smsmkt-filter-stamps" style="display:none;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px;">
-          <label style="font-size:13px;font-weight:600;">Klienci z liczbą pieczątek:</label>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
-            <select id="smsmkt-stamps-op" style="padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
-              <option value="gte">co najmniej</option>
-              <option value="eq">dokładnie</option>
-              <option value="lte">najwyżej</option>
-            </select>
-            <input type="number" id="smsmkt-stamps-val" min="1" max="9" value="8" style="width:60px;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
-            <span style="font-size:13px;">pieczątek</span>
-            <button class="btn bp bsm" onclick="smsMktApplyFilter()">Zastosuj filtr</button>
-          </div>
-        </div>
+        <div id="smsmkt-seg-desc" style="display:none;background:var(--bg);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--muted);"></div>
         <div id="smsmkt-recipients-box" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span id="smsmkt-count-label" style="font-size:13px;font-weight:600;color:var(--text);"></span>
@@ -1233,12 +1211,19 @@ window._onAuthReady = function(auth){
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">3. Wyślij kampanię</h3>
-        <div id="smsmkt-summary" style="font-size:13px;color:var(--muted);margin-bottom:14px;">Wybierz odbiorców i wpisz treść aby zobaczyć podsumowanie.</div>
+        <div id="smsmkt-summary" style="font-size:13px;color:var(--muted);margin-bottom:14px;">Wybierz segment i wpisz treść aby zobaczyć podsumowanie.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn bp" onclick="smsMktSend()" id="smsmkt-send-btn" disabled style="opacity:.5;">📱 Wyślij kampanię</button>
           <button class="btn bo bsm" onclick="smsMktReset()">✕ Resetuj</button>
         </div>
         <div id="smsmkt-result" style="margin-top:14px;"></div>
+      </div>
+      <div class="card card-pad">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-size:14px;font-weight:700;margin:0;">📋 Historia kampanii</h3>
+          <button class="btn bo bsm" onclick="smsMktClearHistory()" style="font-size:11px;">🗑 Wyczyść historię</button>
+        </div>
+        <div id="smsmkt-history-list"><div style="font-size:13px;color:var(--muted);text-align:center;padding:20px;">Brak wysłanych kampanii.</div></div>
       </div>
     </div>
 
@@ -1920,7 +1905,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:renderCoupons,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad,smsmkt:smsMktRenderHistory};
   if(renders[id]) renders[id]();
 }
 
@@ -4758,7 +4743,7 @@ function handleJSONBackup(input){
 // ══════════════════════════════════════
 // KAMPANIE SMS
 // ══════════════════════════════════════
-var _smsMktMode=null, _smsMktSelected=[];
+var _smsMktMode=null, _smsMktSelected=[], _smsMktSegLabel='';
 const SMS_TEMPLATES={
   win_back:   'Tęsknimy za Tobą, {imie}! 🍽 Zapraszamy do Hirschówki Bistro — sprawdź nasze menu: hirschowkabistro.pl',
   promo:      'Hej {imie}! Mamy dla Ciebie wyjątkową promocję w Hirschówce Bistro 🎉 Zajrzyj: hirschowkabistro.pl',
@@ -4766,37 +4751,62 @@ const SMS_TEMPLATES={
   stamp_ready:'Gratulacje {imie}! 🎉 Masz nagrodę do odebrania w Hirschówce Bistro. Powiedz przy kasie!',
   new_dish:   'Nowość w Hirschówce Bistro! 🍽 Sprawdź nowe danie na hirschowkabistro.pl — zamów z dostawą!'
 };
+
+// Definicje segmentów — rozłączne, każdy klient w dokładnie jednej grupie
+const SMS_SEGMENTS={
+  active:   { label:'🟢 Aktywni',          desc:'Klienci którzy byli u nas w ciągu ostatnich 30 dni.' },
+  recover:  { label:'🟡 Do odzyskania',    desc:'Klienci nieobecni od 30 do 90 dni — warto ich przypomnieć o sobie.' },
+  sleeping: { label:'🔴 Śpiący',           desc:'Klienci nieobecni ponad 90 dni lub nigdy niezamówieni przez internet.' },
+  close:    { label:'⭐ Blisko nagrody',   desc:'Klienci z 7 lub 8 pieczątkami — jeden krok od nagrody.' },
+  new:      { label:'🆕 Nowi',             desc:'Klienci zarejestrowani w ciągu ostatnich 14 dni.' },
+  all:      { label:'👥 Wszyscy',          desc:'Wszyscy klienci z numerem telefonu.' },
+  manual:   { label:'☑ Ręczny wybór',     desc:'Zaznacz ręcznie klientów z listy.' }
+};
+
+function smsMktDaysSinceLast(c){
+  if(!c.last) return 9999;
+  var d, parts;
+  if(c.last.includes('.')){parts=c.last.split('.');d=new Date(parts[2],parts[1]-1,parts[0]);}
+  else d=new Date(c.last);
+  if(isNaN(d)) return 9999;
+  return (new Date()-d)/(1000*60*60*24);
+}
+
 function smsMktFilter(mode){
   _smsMktMode=mode; _smsMktSelected=[];
-  ['inactive','stamps'].forEach(function(f){document.getElementById('smsmkt-filter-'+f).style.display='none';});
+  // Podświetl aktywny segment
+  document.querySelectorAll('.smsmkt-seg-btn').forEach(function(b){ b.classList.remove('bp'); b.classList.add('bo'); });
+  var activeBtn=document.getElementById('smsmkt-seg-'+mode);
+  if(activeBtn){ activeBtn.classList.remove('bo'); activeBtn.classList.add('bp'); }
+  // Pokaż opis segmentu
+  var seg=SMS_SEGMENTS[mode]||{};
+  _smsMktSegLabel=seg.label||mode;
+  var descEl=document.getElementById('smsmkt-seg-desc');
+  descEl.style.display='block';
+  descEl.textContent=seg.desc||'';
   document.getElementById('smsmkt-recipients-box').style.display='none';
-  if(mode==='inactive') document.getElementById('smsmkt-filter-inactive').style.display='block';
-  else if(mode==='stamps') document.getElementById('smsmkt-filter-stamps').style.display='block';
-  else smsMktApplyFilter();
+  smsMktApplyFilter();
 }
+
 function smsMktApplyFilter(){
   var custs=_toArr(S('customers')).filter(function(c){return c&&c.phone;});
-  var filtered=[], today=new Date();
-  if(_smsMktMode==='all'){
-    filtered=custs;
-  } else if(_smsMktMode==='inactive'){
-    var days=parseInt(document.getElementById('smsmkt-inactive-days').value)||30;
+  var filtered=[];
+  if(_smsMktMode==='active'){
+    filtered=custs.filter(function(c){ return smsMktDaysSinceLast(c)<=30; });
+  } else if(_smsMktMode==='recover'){
+    filtered=custs.filter(function(c){ var d=smsMktDaysSinceLast(c); return d>30&&d<=90; });
+  } else if(_smsMktMode==='sleeping'){
+    filtered=custs.filter(function(c){ return smsMktDaysSinceLast(c)>90; });
+  } else if(_smsMktMode==='close'){
+    filtered=custs.filter(function(c){ var s=c.stamps||0; return s===7||s===8; });
+  } else if(_smsMktMode==='new'){
     filtered=custs.filter(function(c){
-      if(!c.last) return true;
-      var d, parts;
-      if(c.last.includes('.')){parts=c.last.split('.');d=new Date(parts[2],parts[1]-1,parts[0]);}
-      else d=new Date(c.last);
-      if(isNaN(d)) return true;
-      return (today-d)/(1000*60*60*24)>=days;
+      if(!c.registeredAt) return false;
+      var d=new Date(c.registeredAt);
+      if(isNaN(d)) return false;
+      return (new Date()-d)/(1000*60*60*24)<=14;
     });
-  } else if(_smsMktMode==='stamps'){
-    var op=document.getElementById('smsmkt-stamps-op').value;
-    var val=parseInt(document.getElementById('smsmkt-stamps-val').value)||1;
-    filtered=custs.filter(function(c){
-      var s=c.stamps||0;
-      return op==='gte'?s>=val:op==='eq'?s===val:s<=val;
-    });
-  } else if(_smsMktMode==='manual'){
+  } else if(_smsMktMode==='all'||_smsMktMode==='manual'){
     filtered=custs;
   }
   smsMktRenderList(filtered);
@@ -4890,17 +4900,73 @@ async function smsMktSend(){
   if(errors.length) result.innerHTML+='<div style="margin-top:6px;font-size:11px;color:var(--muted);">'+errors.slice(0,5).join(' · ')+'</div>';
   btn.textContent='📱 Wyślij kampanię';btn.disabled=false;
   toast('Kampania: '+ok+' wysłano, '+fail+' błędów');
+  // Zapisz kampanię do historii
+  if(ok>0) smsMktSaveHistory({
+    date: new Date().toLocaleDateString('pl-PL')+' '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}),
+    segment: _smsMktSegLabel||_smsMktMode||'—',
+    recipients: ok,
+    failed: fail,
+    msg: msg
+  });
 }
 function smsMktReset(){
-  _smsMktMode=null;_smsMktSelected=[];
-  ['inactive','stamps'].forEach(function(f){document.getElementById('smsmkt-filter-'+f).style.display='none';});
+  _smsMktMode=null;_smsMktSelected=[];_smsMktSegLabel='';
+  // Przywróć wszystkie przyciski segmentów do stylu 'bo'
+  document.querySelectorAll('.smsmkt-seg-btn').forEach(function(b){ b.classList.remove('bp'); b.classList.add('bo'); });
+  document.getElementById('smsmkt-seg-desc').style.display='none';
   document.getElementById('smsmkt-recipients-box').style.display='none';
   document.getElementById('smsmkt-msg').value='';
   document.getElementById('smsmkt-result').innerHTML='';
-  document.getElementById('smsmkt-summary').textContent='Wybierz odbiorców i wpisz treść aby zobaczyć podsumowanie.';
+  document.getElementById('smsmkt-summary').textContent='Wybierz segment i wpisz treść aby zobaczyć podsumowanie.';
   var btn=document.getElementById('smsmkt-send-btn');btn.disabled=true;btn.style.opacity='.5';
   smsMktCountChars();
 }
+
+// ══════════════════════════════════════
+// HISTORIA KAMPANII SMS
+// ══════════════════════════════════════
+function smsMktSaveHistory(entry){
+  var history = JSON.parse(localStorage.getItem('sms-campaign-history')||'[]');
+  history.unshift(entry); // najnowsze na górze
+  // Trzymaj max 50 wpisów
+  if(history.length>50) history=history.slice(0,50);
+  localStorage.setItem('sms-campaign-history', JSON.stringify(history));
+  // Zapisz też do Firebase
+  var db=window._firebase&&window._firebase.db;
+  if(db) db.ref('sms-campaign-history').set(history).catch(function(){});
+  smsMktRenderHistory();
+}
+
+function smsMktRenderHistory(){
+  var history = JSON.parse(localStorage.getItem('sms-campaign-history')||'[]');
+  var el = document.getElementById('smsmkt-history-list');
+  if(!el) return;
+  if(!history.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px;">Brak wysłanych kampanii.</div>';
+    return;
+  }
+  el.innerHTML=history.map(function(h){
+    return '<div style="padding:12px;border-bottom:1px solid var(--border2);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">'
+      +'<span style="font-size:13px;font-weight:700;color:var(--text);">'+h.segment+'</span>'
+      +'<span style="font-size:11px;color:var(--muted);">'+h.date+'</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📱 Wysłano: <strong style="color:var(--green);">'+h.recipients+'</strong>'
+      +(h.failed>0?' · ❌ Błędy: <strong style="color:var(--red);">'+h.failed+'</strong>':'')+'</div>'
+      +'<div style="font-size:12px;background:var(--bg);border-radius:6px;padding:6px 10px;color:var(--text);word-break:break-word;">'+h.msg+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function smsMktClearHistory(){
+  if(!confirm('Wyczyścić historię kampanii SMS?')) return;
+  localStorage.removeItem('sms-campaign-history');
+  var db=window._firebase&&window._firebase.db;
+  if(db) db.ref('sms-campaign-history').remove().catch(function(){});
+  smsMktRenderHistory();
+  toast('Historia wyczyszczona');
+}
+
 // ══════════════════════════════════════
 // NEWSLETTER PANEL
 // ══════════════════════════════════════
