@@ -1826,7 +1826,43 @@ let menuData = S('menu') || [
 ];
 function _toArr(val){ if(!val) return []; if(Array.isArray(val)) return val.filter(Boolean); return Object.values(val).filter(Boolean); }
 let customers = _toArr(S('customers'));
-function saveCustomers(){ W('customers', customers); }
+
+// Zapisz pojedynczego klienta do Firebase — szuka po telefonie lub email, robi update()
+async function saveCustomerToFirebase(c){
+  const db = window._firebase && window._firebase.db;
+  if(!db || !c) return;
+  try{
+    const snap = await db.ref('customers').once('value');
+    const val = snap.val();
+    if(!val) return;
+    const cleanPhone = (c.phone||'').replace(/\s/g,'');
+    const cleanEmail = (c.email||'').toLowerCase();
+    const entries = Object.entries(val);
+    const found = entries.find(function([k,x]){
+      if(!x) return false;
+      if(cleanPhone && (x.phone||'').replace(/\s/g,'') === cleanPhone) return true;
+      if(cleanEmail && (x.email||'').toLowerCase() === cleanEmail) return true;
+      return false;
+    });
+    if(found){
+      await db.ref('customers/'+found[0]).update(c);
+      console.log('[customers] Zaktualizowano Firebase ✓', found[0], c.name);
+    } else {
+      // Nowy klient — push
+      await db.ref('customers').push(c);
+      console.log('[customers] Dodano nowego klienta do Firebase ✓', c.name);
+    }
+  }catch(e){
+    console.warn('[customers] Błąd zapisu Firebase:', e.message);
+  }
+}
+
+function saveCustomers(){
+  // Zapisuje tylko do localStorage — Firebase jest aktualizowany przez saveCustomerToFirebase()
+  // NIE robimy tu db.ref('customers').set() bo to niszczy strukturę kluczy Firebase
+  // i prowadzi do duplikatów klientów przy następnym addStampByPhone().
+  localStorage.setItem('customers', JSON.stringify(customers));
+}
 let orders = S('orders') || [
   {id:'#0042',type:'pickup',items:'Kotlet schabowy ×1, Żurek ×1',total:33,time:'08:14',status:'pending',customer:'Anna K.',phone:'511 100 200',addr:''},
   {id:'#0041',type:'delivery',items:'Polędwiczki ×2, Krem z dyni ×2',total:64,time:'08:05',status:'accepted',customer:'Marek W.',phone:'601 200 300',addr:'ul. Sękowskiego 4'},
@@ -2125,6 +2161,7 @@ function grantStampToCustomer(order){
   c.last=new Date().toLocaleDateString('pl-PL');
   c.spent=(c.spent||0)+parseFloat(order.total||0);
   saveCustomers();
+  saveCustomerToFirebase(c); // ← zapisz do Firebase
   const hitReward=[3,6,9].includes(c.stamps);
   if(hitReward) toast(`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`);
   else toast(`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
@@ -2140,6 +2177,7 @@ function revokeStamp(orderId){
   c.stamps=Math.max(0,(c.stamps||1)-1);
   c.totalStamps=Math.max(0,(c.totalStamps||1)-1);
   saveCustomers();
+  saveCustomerToFirebase(c); // ← zapisz do Firebase
   o.stampGranted=false;
   _ordersLastWrite=Date.now();
   W('orders',orders);
@@ -2280,6 +2318,7 @@ function setOrdStatus(id, newStatus){
       const prev=c.stamps||0;c.stamps=prev>=9?1:prev+1;c.totalStamps=(c.totalStamps||0)+1;c.visits=(c.visits||0)+1;c.last=new Date().toLocaleDateString('pl-PL');
       c.spent=(c.spent||0)+parseFloat(o.total||0); // dodaj kwotę zamówienia do spent
       saveCustomers();
+      saveCustomerToFirebase(c); // ← zapisz do Firebase
       const hitReward=[3,6,9].includes(c.stamps);
       toast(hitReward?`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`:`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
     }
@@ -2889,6 +2928,7 @@ function addStamp(idx){
   c.last = new Date().toLocaleDateString('pl-PL');
   if(amt > 0) c.spent = (c.spent||0) + amt;
   saveCustomers();
+  saveCustomerToFirebase(c); // ← zapisz do Firebase
   renderCusts(document.getElementById('cust-search').value||'');
   const msg = [3,6,9].includes(c.stamps)
     ? `🎉 ${c.name} osiągnął nagrodę (${c.stamps}/9)! Przyznaj w Lojalność.`

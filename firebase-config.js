@@ -124,9 +124,10 @@
       db.ref('customers').on('value', function(snap) {
         var val = snap.val();
         if (!val) return;
-        // Nie nadpisuj jeśli panel właśnie zapisywał (np. addStampByPhone) — 12s ochrona
+        // Nie nadpisuj jeśli panel właśnie zapisywał (np. addStampByPhone) — 60s ochrona
+        // 60s daje czas na propagację Firebase między urządzeniami bez ryzyka nadpisania świeżej pieczątki
         var lastWrite = _localWriteTs['customers'] || 0;
-        if (Date.now() - lastWrite < 12000) return;
+        if (Date.now() - lastWrite < 60000) return;
         // Zawsze konwertuj na tablicę — Firebase zwraca obiekt z kluczami
         var arr = Array.isArray(val) ? val : Object.values(val);
         arr = arr.filter(function(c){ return c; });
@@ -158,7 +159,10 @@
       });
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','customers'];
+      // UWAGA: 'customers' jest celowo pominięty — zarządzany wyłącznie przez
+      // addStampByPhone() i saveCustomers() bezpośrednio przez db.ref('customers/key').update()
+      // Dodanie customers tutaj niszczyłoby strukturę kluczy Firebase (set() zastępuje obiekt tablicą)
+      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
