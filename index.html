@@ -651,6 +651,8 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 }
 
 @keyframes fu{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+#ios-pwa-popup.show{display:flex!important;}
 .fi{animation:fu .35s ease both;}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
 .reveal.visible{opacity:1;transform:translateY(0);}
@@ -2352,15 +2354,28 @@ function installPWA() {
       pwaPrompt = null;
     });
   } else {
-    // iOS Safari lub już zainstalowana
+    // iOS Safari — pokaż popup z instrukcją
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     if (isIOS) {
-      toast('Na iPhone: kliknij "Udostępnij" ⬆️ → "Dodaj do ekranu głównego" 📱');
+      openIosPwaPopup();
     } else {
-      toast('Otwórz tę stronę w Chrome na telefonie i kliknij "Pobierz aplikację"');
+      toast('Otwórz tę stronę w Safari na iPhone lub Chrome na Androidzie');
     }
   }
 }
+function openIosPwaPopup(){
+  const el = document.getElementById('ios-pwa-popup');
+  if(el){ el.style.display='flex'; setTimeout(()=>el.classList.add('show'),10); }
+}
+function closeIosPwaPopup(){
+  const el = document.getElementById('ios-pwa-popup');
+  if(el){ el.classList.remove('show'); setTimeout(()=>el.style.display='none',300); }
+}
+// Zamknij popup po kliknięciu w tło
+document.addEventListener('DOMContentLoaded',()=>{
+  const pop = document.getElementById('ios-pwa-popup');
+  if(pop) pop.addEventListener('click', e=>{ if(e.target===pop) closeIosPwaPopup(); });
+});
 // Rejestruj Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -2401,6 +2416,54 @@ window.addEventListener('focus',()=>{
   renderAdminTicker();
 });
 </script>
+
+<!-- ═══ iOS PWA POPUP ═══ -->
+<div id="ios-pwa-popup" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;animation:slideUp .3s ease;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <img src="logo-round.png" style="width:40px;height:40px;border-radius:10px;" alt="Hirschówka">
+        <div>
+          <div style="font-weight:700;font-size:15px;color:#2A1A0E;">Hirschówka Bistro</div>
+          <div style="font-size:12px;color:#7A5C3E;">Dodaj do ekranu głównego</div>
+        </div>
+      </div>
+      <button onclick="closeIosPwaPopup()" style="background:rgba(0,0,0,.08);border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;color:#555;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:36px;height:36px;background:#007AFF;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:14px;color:#2A1A0E;">Krok 1 — Kliknij "Udostępnij"</div>
+          <div style="font-size:12px;color:#7A5C3E;">Ikona ze strzałką ⬆️ na dole ekranu Safari</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:36px;height:36px;background:#34C759;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:14px;color:#2A1A0E;">Krok 2 — "Dodaj do ekranu głównego"</div>
+          <div style="font-size:12px;color:#7A5C3E;">Przewiń listę opcji w dół i kliknij</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:36px;height:36px;background:#C8922A;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:14px;color:#2A1A0E;">Krok 3 — Kliknij "Dodaj"</div>
+          <div style="font-size:12px;color:#7A5C3E;">Ikona Hirschówki pojawi się na pulpicie</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#FFF8EE;border:1px solid #F2D99B;border-radius:10px;padding:10px 14px;font-size:12px;color:#7A5C3E;text-align:center;">
+      ⚠️ Działa tylko w przeglądarce <strong>Safari</strong> na iPhone
+    </div>
+  </div>
+</div>
 
 <!-- ═══ COOKIES BANNER ═══ -->
 <div id="cookie-banner" role="dialog" aria-label="Zgoda na cookies">
