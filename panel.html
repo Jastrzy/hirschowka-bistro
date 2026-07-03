@@ -1650,7 +1650,7 @@ window._onAuthReady = function(auth){
     </div>
     <div class="modal-ft">
       <button class="btn bo" onclick="closeModal('mo-accept-order')">Anuluj</button>
-      <button class="btn bgreen" onclick="acceptOrdFinal()" style="background:var(--green2);color:#fff;border-color:var(--green2);">✓ Przyjmij i wyślij SMS</button>
+      <button class="btn bgreen" id="acc-final-btn" onclick="acceptOrdFinal()" style="background:var(--green2);color:#fff;border-color:var(--green2);">✓ Przyjmij i wyślij SMS</button>
     </div>
   </div>
 </div>
@@ -2248,25 +2248,94 @@ function openAcceptModal(id){
   openModal('mo-accept-order');
 }
 
-function acceptOrdFinal(){
+// ── OCHRONA PRZED PODWÓJNYM ZATWIERDZENIEM Z DWÓCH PANELI ──
+// Transakcja Firebase na kluczu 'orders': sprawdza AKTUALNY status zamówienia
+// (nie lokalną, potencjalnie nieaktualną kopię) i przerywa się, jeśli ktoś inny
+// już zmienił status w międzyczasie. Dzięki temu tylko JEDNO stanowisko "wygrywa"
+// prawo do wysłania SMS-a — drugie dostaje czytelną informację, że ktoś je ubiegł.
+async function claimOrderTransition(orderId, expectedStatus, listMutateFn){
+  const db=window._firebase&&window._firebase.db;
+  if(!db) return {ok:false,msg:'Brak połączenia z Firebase. Spróbuj ponownie.'};
+  try{
+    const result=await db.ref('orders').transaction(function(arr){
+      if(!arr) return arr;
+      const list=Array.isArray(arr)?arr:Object.values(arr);
+      const idx=list.findIndex(o=>o&&o.id===orderId);
+      if(idx===-1) return; // przerwij — zamówienie zniknęło (np. już zarchiwizowane)
+      const cur=normStatus(list[idx].status);
+      if(cur!==expectedStatus) return; // przerwij — ktoś już zmienił status na innym stanowisku
+      return listMutateFn(list, idx);
+    });
+    if(!result.committed) return {ok:false,msg:'To zamówienie zostało już obsłużone na innym stanowisku.'};
+    return {ok:true};
+  }catch(e){
+    return {ok:false,msg:'Błąd zapisu: '+e.message};
+  }
+}
+
+// Pobierz świeżą listę zamówień wprost z Firebase i odśwież widok —
+// używane, gdy okazuje się, że ktoś inny już obsłużył dane zamówienie
+async function refreshOrdersFromFirebase(){
+  const db=window._firebase&&window._firebase.db;
+  if(!db){ renderOrders(); return; }
+  try{
+    const snap=await db.ref('orders').once('value');
+    const val=snap.val();
+    const arr=val?(Array.isArray(val)?val:Object.values(val)):[];
+    orders=arr.filter(function(o){return o&&o.id;});
+    renderOrders();
+    updateAlarm();
+  }catch(e){
+    renderOrders();
+  }
+}
+
+async function acceptOrdFinal(){
   const o = orders.find(x=>x.id===acceptingOrderId);
   if(!o) return;
+  const orderId = acceptingOrderId;
   const minutes = parseInt(document.getElementById('acc-minutes').value) || 30;
   const isPickup = o.type==='pickup';
+  const isCash = !['blik','card','gpay'].includes((o.payment||'').toLowerCase());
+  const willGrantStamp = !!(isCash && o.phone && (o.total||0) >= 19);
 
+  const btn=document.getElementById('acc-final-btn');
+  if(btn){btn.disabled=true;btn.textContent='Sprawdzam…';}
+
+  const claim=await claimOrderTransition(orderId,'pending',function(list,idx){
+    list[idx]=Object.assign({},list[idx],{
+      status:'accepted',
+      timing:`ok. ${minutes} min`,
+      acceptedAt:new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}),
+      stampGranted: willGrantStamp || !!list[idx].stampGranted
+    });
+    return list;
+  });
+
+  if(btn){btn.disabled=false;btn.textContent='✓ Przyjmij i wyślij SMS';}
+
+  if(!claim.ok){
+    toast('⚠️ '+claim.msg);
+    closeModal('mo-accept-order');
+    stopAlarm();
+    refreshOrdersFromFirebase();
+    return;
+  }
+
+  // Transakcja się powiodła — TYLKO to stanowisko ma prawo wysłać SMS.
+  // Zaktualizuj lokalny obiekt (dane w Firebase są już zapisane przez transakcję).
   o.status = 'accepted';
   o.timing = `ok. ${minutes} min`;
   o.acceptedAt = new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'});
 
   // Pieczątka dla zamówień gotówkowych (online dostaje pieczątkę z p24.js)
-  const isCash = !['blik','card','gpay'].includes((o.payment||'').toLowerCase());
-  if(isCash && o.phone && (o.total||0) >= 19){
+  // — to osobny klucz Firebase (customers), niezależny od transakcji na orders
+  if(willGrantStamp){
     grantStampToCustomer(o);
     o.stampGranted = true;
   }
 
   _ordersLastWrite = Date.now();
-  W('orders', orders);
 
   // Wyślij SMS automatycznie jeśli klient podał telefon
   if(o.phone){
@@ -2286,7 +2355,7 @@ function acceptOrdFinal(){
     sendSms();
   }
 
-  toast(`✅ Zamówienie ${acceptingOrderId} przyjęte — SMS wysłany`);
+  toast(`✅ Zamówienie ${orderId} przyjęte — SMS wysłany`);
   closeModal('mo-accept-order');
   stopAlarm();
   renderOrders();
@@ -2342,19 +2411,32 @@ function setOrdStatus(id, newStatus){
   toast(`Zamówienie ${id}: ${labels[newStatus]||newStatus}`);
 }
 
-function rejectOrd(id){
+async function rejectOrd(id){
   if(!confirm(`Odrzucić zamówienie ${id}?`)) return;
   const o = orders.find(x=>x.id===id);
-  if(o && o.phone) sendSmsToCustomer(o, 'rejected');
-  // Dodaj do archiwum z adnotacją odrzucenia
-  if(o){
-    archive.unshift({...o, status:'rejected', doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}), rejectedAt: new Date().toLocaleDateString('pl')});
-    archive = pruneArchive(archive);
-    W('archive', archive);
+  if(!o) return;
+
+  const claim=await claimOrderTransition(id,'pending',function(list,idx){
+    list.splice(idx,1);
+    return list;
+  });
+
+  if(!claim.ok){
+    toast('⚠️ '+claim.msg);
+    refreshOrdersFromFirebase();
+    return;
   }
+
+  // Transakcja się powiodła — TYLKO to stanowisko ma prawo wysłać SMS o odrzuceniu.
+  if(o.phone) sendSmsToCustomer(o, 'rejected');
+
+  // Dodaj do archiwum z adnotacją odrzucenia (osobny klucz Firebase — bezpieczne)
+  archive.unshift({...o, status:'rejected', doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}), rejectedAt: new Date().toLocaleDateString('pl')});
+  archive = pruneArchive(archive);
+  W('archive', archive);
+
   orders = orders.filter(x=>x.id!==id);
   _ordersLastWrite = Date.now();
-  W('orders', orders);
   renderOrders();
   toast('Zamówienie odrzucone');
 }
