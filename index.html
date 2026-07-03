@@ -1964,7 +1964,9 @@ function logCouponRedemption(code,name,phone,orderId,amount){
     source:'www',
     timestamp:Date.now(),
     date:new Date().toLocaleString('pl-PL')
-  }).catch(function(){});
+  }).catch(function(e){
+    console.warn('[coupon-redemptions] Błąd zapisu do Firebase:', e.message);
+  });
 }
 
 // ════ ORDER ════
