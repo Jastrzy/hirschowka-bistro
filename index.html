@@ -1926,6 +1926,47 @@ function applyCoupon(){
   renderCartSum();
 }
 
+// Atomowa realizacja kodu — transakcja Firebase, bezpieczna gdy wielu klientów
+// próbuje użyć tego samego kodu w tym samym czasie (limit np. 100 osób)
+async function redeemCouponAtomic(code){
+  const db=window._firebase&&window._firebase.db;
+  if(!db) return {ok:false,msg:'Brak połączenia z internetem. Spróbuj ponownie.'};
+  try{
+    const result=await db.ref('coupons').transaction(function(arr){
+      if(!arr) return arr;
+      const list=Array.isArray(arr)?arr:Object.values(arr);
+      const idx=list.findIndex(c=>c&&(c.code||'').toUpperCase()===code.toUpperCase());
+      if(idx===-1) return; // przerwij transakcję — kod nie istnieje
+      const c=list[idx];
+      const limit=c.limit||1;
+      const used=c.used||0;
+      if(used>=limit) return; // przerwij — limit wyczerpany
+      if(c.exp){
+        const expDate=new Date(c.exp);expDate.setHours(23,59,59,999);
+        if(Date.now()>expDate.getTime()) return; // przerwij — kod wygasł
+      }
+      list[idx]=Object.assign({},c,{used:used+1,usedAt:new Date().toLocaleString('pl-PL')});
+      return list;
+    });
+    if(!result.committed) return {ok:false,msg:'Ten kod właśnie wygasł lub został w pełni wykorzystany.'};
+    return {ok:true};
+  }catch(e){
+    return {ok:false,msg:'Błąd zapisu kodu: '+e.message};
+  }
+}
+
+// Zapisz zdarzenie realizacji kodu do historii (widoczne w panelu, z numerem telefonu)
+function logCouponRedemption(code,name,phone,orderId,amount){
+  const db=window._firebase&&window._firebase.db;
+  if(!db) return;
+  db.ref('coupon-redemptions').push({
+    code,name:name||'',phone:phone||'',orderId:orderId||null,amount:amount||0,
+    source:'www',
+    timestamp:Date.now(),
+    date:new Date().toLocaleString('pl-PL')
+  }).catch(function(){});
+}
+
 // ════ ORDER ════
 async function placeOrder(){
   if(!cart.length){toast('Koszyk jest pusty');return;}
@@ -1965,6 +2006,24 @@ async function placeOrder(){
   const isOnline = ['blik','card','gpay'].includes(payType);
   if(isOnline && !email){toast('Podaj adres e-mail do potwierdzenia płatności');document.getElementById('c-email')?.focus();return;}
 
+  // Jeśli zastosowano kod — zarezerwuj go atomowo w Firebase ZANIM policzymy rabat i złożymy zamówienie.
+  // Chroni przed sytuacją, gdy dwóch klientów "ostatnie miejsce" limitu użyje kodu w tej samej chwili.
+  if(appliedCoupon){
+    const btnChk=document.querySelector('.order-btn');
+    if(btnChk){btnChk.disabled=true;btnChk.textContent='Sprawdzam kod…';}
+    const redemption=await redeemCouponAtomic(appliedCoupon.code);
+    if(btnChk){btnChk.disabled=false;}
+    if(!redemption.ok){
+      toast('❌ '+redemption.msg);
+      const cr=document.getElementById('coup-res');
+      if(cr){cr.style.color='var(--rust)';cr.textContent='❌ '+redemption.msg;}
+      appliedCoupon=null;
+      renderCartSum();
+      if(btnChk) btnChk.textContent='Złóż zamówienie';
+      return;
+    }
+  }
+
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const rawDc=delType==='dostawa'?calcDel():0;
   const dc=(rawDc===null)?0:rawDc;
@@ -1987,6 +2046,7 @@ async function placeOrder(){
     payment:payType,
     comment:(document.getElementById('order-notes')?.value||'').trim(),
     deliveryCost:dc,
+    couponCode:appliedCoupon?appliedCoupon.code:null,
     invoice:document.getElementById('need-invoice')?.checked?{
       company:(document.getElementById('inv-company')?.value||'').trim(),
       nip:(document.getElementById('inv-nip')?.value||'').trim(),
@@ -2027,11 +2087,10 @@ async function placeOrder(){
     }
   })();
 
-  // Oznacz kupon jako użyty
+  // Licznik użyć kodu został już bezpiecznie zwiększony wcześniej (redeemCouponAtomic).
+  // Tu tylko zapisujemy zdarzenie do historii realizacji — kto (telefon) i kiedy użył kodu.
   if(appliedCoupon){
-    const all=LS('coupons')||[];
-    const c=all.find(x=>(x.code||'').toUpperCase()===(appliedCoupon.code||'').toUpperCase());
-    if(c){c.used=(c.used||0)+1;try{localStorage.setItem('coupons',JSON.stringify(all));}catch(e){}}
+    logCouponRedemption(appliedCoupon.code,name,phone,oid,total);
   }
 
   // ── PŁATNOŚĆ ONLINE — Przelewy24 ──

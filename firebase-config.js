@@ -87,7 +87,7 @@
       // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
       // (nie nadpisuj gdy obsługa właśnie edytowała menu)
       // Śledź kiedy panel ostatnio zapisał menu lokalnie
-      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers'];
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons'];
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
@@ -117,6 +117,37 @@
             if (typeof window.renderMenu === 'function') window.renderMenu();
             console.log('[FB] Menu zaktualizowane z Firebase ✓');
           } catch(e) {}
+        }
+      });
+
+      // Kupony real-time → aktualizuj panel z Firebase (źródło prawdy dla licznika użyć)
+      // Bez tego nasłuchu licznik "used" zwiększany transakcją (np. przy realizacji kodu
+      // przez klienta lub przy kasie) nie trafiał z powrotem do zmiennej `coupons` w panelu
+      db.ref('coupons').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        // Nie nadpisuj jeśli panel zapisywał kupony w ostatnich 5 sekundach (np. dodawanie/usuwanie)
+        var lastWrite = _localWriteTs['coupons'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(c){ return c; });
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('coupons');
+        if (stored === fresh) return;
+        localStorage.setItem('coupons', fresh);
+        if (typeof window.onFirebaseCoupons === 'function') {
+          window.onFirebaseCoupons(arr);
+        }
+      });
+
+      // Historia realizacji kodów (WWW + kasa) real-time → tylko odczyt, zapis przez push()
+      db.ref('coupon-redemptions').on('value', function(snap) {
+        var val = snap.val();
+        var arr = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+        arr = arr.filter(function(r){ return r; });
+        window.couponRedemptions = arr;
+        if (typeof window.renderCouponRedemptions === 'function') {
+          window.renderCouponRedemptions();
         }
       });
 
@@ -167,7 +198,7 @@
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
       // Klucze których NIE wolno nadpisać pustą wartością w Firebase
-      var _protectedKeys = ['customers','menu','addons','params','cross','rewards','loyalty-history'];
+      var _protectedKeys = ['customers','menu','addons','params','cross','rewards','loyalty-history','coupons'];
       // Minimalna liczba elementów wymagana do zapisu dla kluczy tablicowych
       var _minItems = {'customers': 1, 'menu': 1};
 
