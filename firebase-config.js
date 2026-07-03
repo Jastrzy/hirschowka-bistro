@@ -193,7 +193,14 @@
       // UWAGA: 'customers' jest celowo pominięty — zarządzany wyłącznie przez
       // addStampByPhone() i saveCustomers() bezpośrednio przez db.ref('customers/key').update()
       // Dodanie customers tutaj niszczyłoby strukturę kluczy Firebase (set() zastępuje obiekt tablicą)
-      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
+      // UWAGA: 'coupons' CELOWO NIE JEST na tej liście.
+      // Licznik użyć (`used`) jest teraz zarządzany wyłącznie przez bezpieczne transakcje
+      // Firebase (redeemCouponAtomic — panel.html i index.html), a dodawanie/usuwanie
+      // kuponów przez admina idzie przez W() (natychmiastowy, bezpośredni zapis).
+      // Trzymanie 'coupons' w tej pętli powodowało realny wyścig: pętla potrafiła
+      // "odbić" starą, lokalną kopię z powrotem do Firebase i cofnąć świeżo
+      // zapisane zwiększenie licznika z innego urządzenia (np. zamówienia klienta).
+      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
