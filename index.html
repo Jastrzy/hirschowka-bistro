@@ -1456,7 +1456,18 @@ function addKitchenSet(){
 
 
 // ════ MENU ════
-function getCats(){return[...new Set(getMenu().map(d=>d.cat))];}
+function getCats(){
+  const allCats=[...new Set(getMenu().map(d=>d.cat))];
+  // Uwzględnij zapisaną kolejność kategorii z panelu
+  const order=LS('menu-cats-order');
+  if(order&&Array.isArray(order)&&order.length>0){
+    // Kategorie w zapisanej kolejności + ewentualne nowe których nie ma w order na końcu
+    const ordered=order.filter(c=>allCats.includes(c));
+    const rest=allCats.filter(c=>!order.includes(c));
+    return[...ordered,...rest];
+  }
+  return allCats;
+}
 function slug(s){return s.replace(/\s+/g,'-').replace(/[^\w-]/g,'').toLowerCase();}
 
 function buildCatTabs(){

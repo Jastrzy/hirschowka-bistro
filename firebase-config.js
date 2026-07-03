@@ -162,7 +162,7 @@
       // UWAGA: 'customers' jest celowo pominięty — zarządzany wyłącznie przez
       // addStampByPhone() i saveCustomers() bezpośrednio przez db.ref('customers/key').update()
       // Dodanie customers tutaj niszczyłoby strukturę kluczy Firebase (set() zastępuje obiekt tablicą)
-      var cfg_keys = ['menu','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
+      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','coupons','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -207,6 +207,8 @@
       // Czytaj konfigurację z Firebase → aktualizuj UI
       var read_keys = {
         'menu':        function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); },
+        'menu-cats-order': function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); },
+        'bistro-open':     null,
         'daily-dish':  function() { if(window.renderDaily) window.renderDaily(); },
         'kitchen-day': function() { if(window.renderKitchen) window.renderKitchen(); if(window.renderDailyDish) window.renderDailyDish(); if(window.renderDaily) window.renderDaily(); },
         'promos':      function() { if(window.renderAdminPromos) window.renderAdminPromos(); if(window.renderAdminTicker) window.renderAdminTicker(); },

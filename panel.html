@@ -443,19 +443,26 @@ window._onAuthReady = function(auth){
       }
       // Jeśli byliśmy wcześniej zalogowani (powrót z uśpienia/tła) —
       // NIE pokazuj od razu ekranu logowania. Firebase zwykle sam przywróci
-      // sesję w ciągu 1-2 s. Pokaż logowanie dopiero gdy po 4 s nadal brak usera.
+      // sesję w ciągu 1-2 s. Pokaż logowanie dopiero gdy po 30 s nadal brak usera.
       if(window._wasLoggedIn){
         if(window._showLoginTimer) clearTimeout(window._showLoginTimer);
         window._showLoginTimer = setTimeout(function(){
           // Sprawdź jeszcze raz aktualny stan zanim pokażesz logowanie
           var cur = auth.currentUser;
           if(!cur || cur.isAnonymous || !cur.email){
-            var ls = document.getElementById('login-screen');
-            if(ls) ls.style.display = 'flex';
-            var inp = document.getElementById('login-input');
-            if(inp) inp.focus();
+            // Ostatnia szansa — odśwież stan auth z Firebase
+            auth.currentUser && auth.currentUser.reload().catch(function(){});
+            setTimeout(function(){
+              var cur2 = auth.currentUser;
+              if(!cur2 || cur2.isAnonymous || !cur2.email){
+                var ls = document.getElementById('login-screen');
+                if(ls) ls.style.display = 'flex';
+                var inp = document.getElementById('login-input');
+                if(inp) inp.focus();
+              }
+            }, 2000);
           }
-        }, 8000);
+        }, 30000);
       } else {
         // Pierwsze wejście — pokaż logowanie od razu
         var ls = document.getElementById('login-screen');
@@ -2895,25 +2902,55 @@ async function deleteCust(idx){
 }
 
 // ── Dodaj pieczątkę ──
-function addStamp(idx){
-  const c = customers[idx];
-  if(!c) return;
+async function addStamp(idx){
+  const cLocal = customers[idx];
+  if(!cLocal) return;
   // Zapytaj o kwotę zamówienia
-  const amtStr = prompt(`Pieczątka dla: ${c.name}\nPodaj kwotę zamówienia (zł):`, '');
+  const amtStr = prompt(`Pieczątka dla: ${cLocal.name}\nPodaj kwotę zamówienia (zł):`, '');
   const amt = parseFloat((amtStr||'').replace(',','.')) || 0;
   if(amtStr !== null && amt < 19){
     toast('❌ Kwota musi wynosić min. 19 zł');
     return;
   }
   if(amtStr === null) return; // anulowano
+
+  // Pobierz świeże dane z Firebase żeby mieć aktualną liczbę pieczątek
+  let c = cLocal;
+  let fbKey = null;
+  const db = window._firebase && window._firebase.db;
+  if(db && (cLocal.phone || cLocal.email)){
+    try{
+      const snap = await db.ref('customers').once('value');
+      const val = snap.val();
+      if(val){
+        const cleanPhone = (cLocal.phone||'').replace(/\s/g,'');
+        const cleanEmail = (cLocal.email||'').toLowerCase();
+        const found = Object.entries(val).find(([k,x])=>x && (
+          cleanPhone ? (x.phone||'').replace(/\s/g,'')===cleanPhone :
+          cleanEmail ? (x.email||'').toLowerCase()===cleanEmail : false
+        ));
+        if(found){ fbKey=found[0]; c={...found[1]}; }
+      }
+    }catch(e){ console.warn('[addStamp] Firebase read error', e); }
+  }
+
   const prev = c.stamps||0;
   c.stamps = prev>=9 ? 1 : prev+1;
   c.totalStamps = (c.totalStamps||0)+1;
   c.visits = (c.visits||0) + 1;
   c.last = new Date().toLocaleDateString('pl-PL');
   if(amt > 0) c.spent = (c.spent||0) + amt;
+
+  // Zapisz do Firebase
+  if(db){
+    try{
+      if(fbKey) await db.ref('customers/'+fbKey).update(c);
+      else await db.ref('customers').push(c);
+    }catch(e){ console.warn('[addStamp] Firebase write error', e); }
+  }
+  // Synchronizuj lokalną tablicę
+  customers[idx] = c;
   saveCustomers();
-  saveCustomerToFirebase(c); // ← zapisz do Firebase
   renderCusts(document.getElementById('cust-search').value||'');
   const msg = [3,6,9].includes(c.stamps)
     ? `🎉 ${c.name} osiągnął nagrodę (${c.stamps}/9)! Przyznaj w Lojalność.`
