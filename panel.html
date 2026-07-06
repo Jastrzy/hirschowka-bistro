@@ -2164,7 +2164,7 @@ function renderOrderCard(o){
 
 // ── ACCEPT MODAL ──
 // ── PIECZĄTKI — przyznaj / cofnij ──
-function grantStampToCustomer(order){
+async function grantStampToCustomer(order){
   if(!order||!order.phone||(order.total||0)<19) return;
   const phone=(order.phone||'').replace(/\s/g,'');
   let c=customers.find(x=>(x.phone||'').replace(/\s/g,'')===phone);
@@ -2180,9 +2180,13 @@ function grantStampToCustomer(order){
   c.spent=(c.spent||0)+parseFloat(order.total||0);
   saveCustomers();
   saveCustomerToFirebase(c); // ← zapisz do Firebase
-  const hitReward=[3,6,9].includes(c.stamps);
-  if(hitReward) toast(`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`);
-  else toast(`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
+  const hitReward=STAMP_REWARDS.includes(c.stamps);
+  if(hitReward){
+    const r=await createLoyaltyRewardCode(order.phone, c.stamps);
+    toast(r.ok?`🎉 ${c.name} osiągnął ${c.stamps} pieczątek — kod nagrody wysłany SMS-em ✓`:`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek), ale: ${r.msg}`);
+  } else {
+    toast(`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
+  }
 }
 
 function revokeStamp(orderId){
@@ -2406,8 +2410,14 @@ function setOrdStatus(id, newStatus){
       saveCustomers();
       saveCustomerToFirebase(c); // ← zapisz do Firebase
       o.stampGranted = true;
-      const hitReward=[3,6,9].includes(c.stamps);
-      toast(hitReward?`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`:`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
+      const hitReward=STAMP_REWARDS.includes(c.stamps);
+      if(hitReward){
+        createLoyaltyRewardCode(o.phone, c.stamps).then(function(r){
+          toast(r.ok?`🎉 ${c.name} osiągnął ${c.stamps} pieczątek — kod nagrody wysłany SMS-em ✓`:`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek), ale: ${r.msg}`);
+        });
+      } else {
+        toast(`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
+      }
     }
 
     // Kopia do archiwum TERAZ — po ewentualnym przyznaniu pieczątki, żeby flaga stampGranted
@@ -4030,13 +4040,18 @@ async function addStampByPhone(){
   saveCustomers();
 
   const hitReward=STAMP_REWARDS.includes(c.stamps);
+  let rewardInfo='';
+  if(hitReward){
+    const r=await createLoyaltyRewardCode(c.phone, c.stamps);
+    rewardInfo=r.ok?` Kod: <strong>${r.code}</strong> — ${r.smsStatus}`:` (${r.msg})`;
+  }
   const msg=hitReward
-    ?`🎉 Pieczątka ${c.stamps}/9 — klient osiągnął nagrodę! Przyznaj w sekcji poniżej.`
+    ?`🎉 Pieczątka ${c.stamps}/9 — klient osiągnął nagrodę!${rewardInfo}`
     :`⭐ Pieczątka wbita ✓ — ${c.stamps}/9 (łącznie: ${c.totalStamps})`;
   resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">${msg}<br><small style="opacity:.7">${c.name}${isNew?' (nowe konto)':''}</small></div>`;
   document.getElementById('loy-phone').value='';
   document.getElementById('loy-amount').value='';
-  toast(msg);
+  toast(hitReward?`🎉 ${c.name} osiągnął ${c.stamps} pieczątek — kod nagrody wysłany SMS-em ✓`:msg);
 }
 async function redeemLoyaltyCode(){
   const code=(document.getElementById('loy-redeem-code').value||'').trim().toUpperCase();
@@ -4092,13 +4107,12 @@ async function redeemLoyaltyCode(){
   renderLoyalty();
 }
 
-async function grantReward(){
-  const phone=document.getElementById('loy-rew-phone').value.trim();
-  const stampLevel=parseInt(document.getElementById('loy-rew-type').value);
-  const resEl=document.getElementById('loy-rew-result');
-  if(!phone){toast('Podaj numer telefonu');return;}
+// Tworzy jednorazowy kod nagrody lojalnościowej i wysyła SMS z kodem.
+// Współdzielone przez: ręczne przyznanie (Lojalność), automatyczne przyznanie
+// przy osiągnięciu 3/6/9 pieczątek (accept, done, ręczne dodanie pieczątki).
+async function createLoyaltyRewardCode(phone, stampLevel){
   const rew=rewards.find(r=>r.stamp===stampLevel);
-  if(!rew){resEl.innerHTML='<div style="color:var(--red);font-size:13px;">Nie znaleziono nagrody</div>';return;}
+  if(!rew) return {ok:false,msg:'Brak zdefiniowanej nagrody dla '+stampLevel+' pieczątek'};
   const code='LOY'+stampLevel+Math.random().toString(36).slice(2,6).toUpperCase();
   const expDate=new Date();expDate.setDate(expDate.getDate()+30);
   const expStr=expDate.toISOString().slice(0,10);
@@ -4111,7 +4125,17 @@ async function grantReward(){
   let smsStatus='';
   if(hasToken){await new Promise(resolve=>{sendSmsRaw(phone,smsText,r=>{smsStatus=r.ok?'📱 SMS wysłany ✓':`⚠️ SMS błąd: ${r.err}`;resolve();});});}
   else{smsStatus='⚠️ Brak tokenu SMS — podaj kod klientowi ustnie';}
-  resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:12px;font-size:13px;color:var(--green);">🎁 Nagroda przyznana!<br><strong>Kod: <span style="font-size:16px;letter-spacing:2px;">${code}</span></strong><br>Ważny do: ${expStr}<br>${smsStatus}</div>`;
+  return {ok:true,code,expStr,smsStatus,rewardName:rew.name};
+}
+
+async function grantReward(){
+  const phone=document.getElementById('loy-rew-phone').value.trim();
+  const stampLevel=parseInt(document.getElementById('loy-rew-type').value);
+  const resEl=document.getElementById('loy-rew-result');
+  if(!phone){toast('Podaj numer telefonu');return;}
+  const r=await createLoyaltyRewardCode(phone, stampLevel);
+  if(!r.ok){resEl.innerHTML=`<div style="color:var(--red);font-size:13px;">${r.msg}</div>`;return;}
+  resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:12px;font-size:13px;color:var(--green);">🎁 Nagroda przyznana!<br><strong>Kod: <span style="font-size:16px;letter-spacing:2px;">${r.code}</span></strong><br>Ważny do: ${r.expStr}<br>${r.smsStatus}</div>`;
   renderLoyalty();
 }
 function saveReward(){

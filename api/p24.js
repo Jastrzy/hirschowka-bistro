@@ -49,6 +49,79 @@ function signForVerify(sessionId, orderId, amount, currency) {
   return crypto.createHash('sha384').update(JSON.stringify(obj)).digest('hex');
 }
 
+// Automatyczny kod nagrody + SMS przy osiągnięciu 3/6/9 pieczątek (płatności online).
+// Odpowiednik createLoyaltyRewardCode() z panel.html, przepisany na Node.js —
+// serwer nie może wywołać funkcji z przeglądarki, więc logika jest zduplikowana,
+// ale musi dawać identyczny efekt (ten sam format kodu, kuponu i treści SMS).
+async function autoGrantLoyaltyReward(phone, stamps) {
+  try {
+    if (![3, 6, 9].includes(stamps)) return;
+
+    const rewardsResp = await fetch(`${FB_URL}/rewards.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const rewardsVal = await rewardsResp.json();
+    const rewardsList = rewardsVal ? (Array.isArray(rewardsVal) ? rewardsVal : Object.values(rewardsVal)) : [];
+    const rew = rewardsList.find(r => r && r.stamp === stamps);
+    if (!rew) {
+      await fbLog('WARN', 'autoGrantLoyaltyReward: brak zdefiniowanej nagrody', { stamps });
+      return;
+    }
+
+    const code = 'LOY' + stamps + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const expDate = new Date();
+    expDate.setDate(expDate.getDate() + 30);
+    const expStr = expDate.toISOString().slice(0, 10);
+
+    // Dopisz kupon jednorazowy (ten sam format co ręczne przyznanie w panelu)
+    const couponsResp = await fetch(`${FB_URL}/coupons.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const couponsVal = await couponsResp.json();
+    const couponsList = couponsVal ? (Array.isArray(couponsVal) ? couponsVal : Object.values(couponsVal)) : [];
+    couponsList.push({ code, disc: rew.discVal || 100, exp: expStr, limit: 1, used: 0, min: 0, loyaltyReward: true, rewardStamp: stamps, rewardName: rew.name });
+    await fetch(`${FB_URL}/coupons.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(couponsList),
+    });
+
+    // Dopisz do historii lojalności
+    const histResp = await fetch(`${FB_URL}/loyalty-history.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const histVal = await histResp.json();
+    const histList = histVal ? (Array.isArray(histVal) ? histVal : Object.values(histVal)) : [];
+    histList.push({ phone, code, rewardName: rew.name, stampLevel: stamps, date: new Date().toLocaleDateString('pl-PL'), used: false });
+    await fetch(`${FB_URL}/loyalty-history.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(histList),
+    });
+
+    // Wyślij SMS z kodem — przez ten sam proxy /api/sms co panel, żeby uniknąć
+    // powielania logowania do SMSAPI w dwóch miejscach
+    const tokenResp = await fetch(`${FB_URL}/smsapi-token.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const token = await tokenResp.json();
+    const senderResp = await fetch(`${FB_URL}/smsapi-sender.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const senderVal = await senderResp.json();
+    const sender = senderVal || 'Hirschowka';
+
+    if (token) {
+      const cleanPhone = '48' + String(phone).replace(/\s/g, '').replace(/^\+48/, '').replace(/\D/g, '');
+      const smsText = stamps === 3
+        ? `Hirschowka: Gratulacje! Masz 3 pieczatki. Twoja nagroda: 50% na kawe lub deser. Kod: ${code}. Wazny 30 dni.`
+        : stamps === 6
+        ? `Hirschowka: Gratulacje! Masz 6 pieczątek. Twoja nagroda: darmowa kawa lub deser. Kod: ${code}. Wazny 30 dni.`
+        : `Hirschowka: Gratulacje! Masz 9 pieczątek. Twoja nagroda: 50% na bajgiel lub danie dnia. Kod: ${code}. Wazny 30 dni.`;
+      await fetch('https://www.hirschowkabistro.pl/api/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, to: cleanPhone, message: smsText, sender }),
+      });
+      await fbLog('INFO', '🎁 Kod nagrody wyslany SMS (platnosc online)', { phone, stamps, code });
+    } else {
+      await fbLog('WARN', 'autoGrantLoyaltyReward: brak tokenu SMSAPI — kod utworzony, SMS NIE wyslany', { phone, stamps, code });
+    }
+  } catch (e) {
+    await fbLog('ERROR', 'autoGrantLoyaltyReward exception', { message: e.message });
+  }
+}
+
 // Przyznaj pieczątkę klientowi po opłaconym zamówieniu
 async function grantStampForOrder(order) {
   try {
@@ -106,6 +179,7 @@ async function grantStampForOrder(order) {
         }),
       });
       await fbLog('INFO', '⭐ Pieczatka przyznana (istniejacy klient)', { phone, stamps: matchCust.stamps, orderId: order.id });
+      await autoGrantLoyaltyReward(order.phone, matchCust.stamps);
     } else {
       // Nowy klient — utwórz wpis i daj pieczątkę
       const newCust = {
