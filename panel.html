@@ -1816,14 +1816,30 @@ window._onAuthReady = function(auth){
 const S = key => { try{return JSON.parse(localStorage.getItem(key));}catch{return null;} };
 const W = (key,val) => {
   localStorage.setItem(key,JSON.stringify(val));
-  try{
-    if(window._firebase&&window._firebase.db){
-      window._firebase.db.ref(key).set(val).catch(function(e){
-        console.warn('[W] Firebase set error:',key,e.message);
-      });
-    }
-  }catch(e){}
+  writeToFirebaseWithRetry(key,val);
 };
+
+// Zapisuje do Firebase, czekając (do 5 sekund) aż połączenie będzie gotowe —
+// wcześniej W() cicho pomijało zapis, jeśli Firebase jeszcze się nie załadowało
+// (np. zaraz po otwarciu panelu), pokazując mimo to fałszywy komunikat sukcesu.
+// Teraz: próbuje przez 5s, a jeśli się nie uda — pokazuje WIDOCZNY błąd.
+function writeToFirebaseWithRetry(key, val, attempt){
+  attempt = attempt || 0;
+  const maxAttempts = 20; // 20 × 250ms = 5 sekund
+  if(!(window._firebase && window._firebase.db)){
+    if(attempt >= maxAttempts){
+      toast(`⚠️ Brak połączenia z Firebase — zmiana "${key}" NIE zapisała się na serwerze! Sprawdź internet i spróbuj ponownie.`);
+      console.error('[W] Firebase niedostępne po 5s, zapis pominięty:', key);
+      return;
+    }
+    setTimeout(function(){ writeToFirebaseWithRetry(key, val, attempt+1); }, 250);
+    return;
+  }
+  window._firebase.db.ref(key).set(val).catch(function(e){
+    toast(`⚠️ Błąd zapisu „${key}" do Firebase: ${e.message}. Spróbuj ponownie.`);
+    console.warn('[W] Firebase set error:',key,e.message);
+  });
+}
 
 // ── DEFAULT DATA ──
 let menuData = S('menu') || [
