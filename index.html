@@ -1797,6 +1797,11 @@ function renderCartSum(){
 function getDeliveryZones(){return LS('delivery-zones')||DEFAULT_DELIVERY_ZONES;}
 const FREE_DEL_THRESHOLD = 120; // próg darmowej dostawy w zł
 function calcDel(){
+  // Darmowa dostawa od progu (ten sam próg, co pokazuje pasek w koszyku) —
+  // wcześniej pasek to pokazywał, ale nigdy nie było to egzekwowane przy liczeniu ceny
+  const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
+  const threshold=getFreeDel();
+  if(sub>=threshold) return 0;
   if(window._deliveryKm!=null){
     const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
     const zone=zones.find(z=>window._deliveryKm<=z.km);
@@ -2049,6 +2054,8 @@ async function placeOrder(){
     comment:(document.getElementById('order-notes')?.value||'').trim(),
     deliveryCost:dc,
     couponCode:appliedCoupon?appliedCoupon.code:null,
+    couponDiscountPct:appliedCoupon?appliedCoupon.disc:null,
+    couponDiscountAmount:appliedCoupon?parseFloat(disc.toFixed(2)):0,
     invoice:document.getElementById('need-invoice')?.checked?{
       company:(document.getElementById('inv-company')?.value||'').trim(),
       nip:(document.getElementById('inv-nip')?.value||'').trim(),

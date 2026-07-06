@@ -54,12 +54,12 @@ async function grantStampForOrder(order) {
   try {
     if (!order || !order.phone) {
       await fbLog('WARN', 'grantStamp: brak telefonu w zamowieniu', { orderId: order && order.id });
-      return;
+      return false;
     }
     const total = parseFloat(order.total || 0);
     if (total < 19) {
       await fbLog('INFO', 'grantStamp: kwota za niska', { total, orderId: order.id });
-      return;
+      return false;
     }
 
     const phone = String(order.phone).replace(/\s/g, '');
@@ -128,8 +128,10 @@ async function grantStampForOrder(order) {
       });
       await fbLog('INFO', '⭐ Nowy klient + pieczatka', { phone, orderId: order.id });
     }
+    return true;
   } catch (e) {
     await fbLog('ERROR', 'grantStamp exception', { message: e.message });
+    return false;
   }
 }
 
@@ -282,10 +284,20 @@ module.exports = async function handler(req, res) {
           const ordersResp = await fetch(`${FB_URL}/orders.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
           const ordersVal = await ordersResp.json();
           if (ordersVal && typeof ordersVal === 'object') {
-            const allOrders = Object.values(ordersVal);
-            const paidOrder = allOrders.find(o => o && o.id === orderNum);
-            if (paidOrder) {
-              await grantStampForOrder(paidOrder);
+            const entries = Object.entries(ordersVal);
+            const paidEntry = entries.find(([, o]) => o && o.id === orderNum);
+            if (paidEntry) {
+              const [paidKey, paidOrder] = paidEntry;
+              const granted = await grantStampForOrder(paidOrder);
+              if (granted) {
+                // Oznacz na zamówieniu, że pieczątka już poszła — inaczej panel doliczy
+                // drugą, gdy obsługa oznaczy zamówienie jako "Zrealizowane"
+                await fetch(`${FB_URL}/orders/${paidKey}.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ stampGranted: true }),
+                });
+              }
             } else {
               await fbLog('WARN', 'grantStamp: nie znaleziono zamowienia', { orderNum });
             }

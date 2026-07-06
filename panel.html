@@ -118,6 +118,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .order-card.ord-delivering{border-left:4px solid #3b82f6;}
 .order-card.ord-ready{border-left:4px solid var(--green2);}
 .order-card.ord-done{border-left:4px solid var(--muted2);opacity:.7;}
+.order-card.ord-rejected{border-left:4px solid #ef4444;opacity:.7;}
 @keyframes ordPulse{0%,100%{box-shadow:0 2px 12px rgba(184,76,43,.1);}50%{box-shadow:0 4px 20px rgba(184,76,43,.3);}}
 .order-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;}
 .order-type-pill{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:99px;}
@@ -130,6 +131,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .os-delivering{background:rgba(59,130,246,.1);color:#3b82f6;}
 .os-ready{background:rgba(45,74,47,.1);color:var(--green2);}
 .os-done{background:rgba(120,113,108,.1);color:var(--muted2);}
+.os-rejected{background:rgba(239,68,68,.1);color:#ef4444;}
 .ord-tabs{display:flex;gap:4px;flex-wrap:wrap;}
 .ord-tab{padding:7px 16px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);background:var(--card);color:var(--muted);transition:all .15s;font-family:'Inter',sans-serif;position:relative;}
 .ord-tab.active{background:var(--brown);color:#fff;border-color:var(--brown);}
@@ -2002,6 +2004,7 @@ function normStatus(s){
   if(v==='delivering'||v==='w drodze') return 'delivering';
   if(v==='ready'||v==='gotowe') return 'ready';
   if(v==='done'||v==='zrealizowane'||v==='completed') return 'done';
+  if(v==='rejected'||v==='odrzucone') return 'rejected';
   return 'pending';
 }
 
@@ -2076,9 +2079,9 @@ function renderOrders(){
 function renderOrderCard(o){
   const typeLabel = o.type==='delivery'?'🚗 Dostawa':o.type==='pickup'?'🧍 Odbiór osobisty':'🍽 Na miejscu';
   const typeClass = o.type==='delivery'?'ot-del':o.type==='pickup'?'ot-pick':'ot-dine';
-  const statusLabel = {pending:'⏳ Do akceptacji',accepted:'✅ Przyjęte',delivering:'🚗 W drodze',ready:'🔔 Gotowe do odbioru',done:'✓ Zrealizowane'}[o.status]||o.status;
-  const statusClass = {pending:'os-pending',accepted:'os-accepted',delivering:'os-delivering',ready:'os-ready',done:'os-done'}[o.status]||'os-pending';
-  const cardClass = {pending:'ord-pending',accepted:'ord-accepted',delivering:'ord-delivering',ready:'ord-ready',done:'ord-done'}[o.status]||'ord-pending';
+  const statusLabel = {pending:'⏳ Do akceptacji',accepted:'✅ Przyjęte',delivering:'🚗 W drodze',ready:'🔔 Gotowe do odbioru',done:'✓ Zrealizowane',rejected:'✕ Odrzucone'}[normStatus(o.status)]||o.status;
+  const statusClass = {pending:'os-pending',accepted:'os-accepted',delivering:'os-delivering',ready:'os-ready',done:'os-done',rejected:'os-rejected'}[normStatus(o.status)]||'os-pending';
+  const cardClass = {pending:'ord-pending',accepted:'ord-accepted',delivering:'ord-delivering',ready:'ord-ready',done:'ord-done',rejected:'ord-rejected'}[normStatus(o.status)]||'ord-pending';
 
   // Items list
   let itemsHtml = '';
@@ -2100,6 +2103,7 @@ function renderOrderCard(o){
   const dist = o.distance?`<span class="ord-meta-chip">~${o.distance} km</span>`:'';
   const payment = o.payment?`<span class="ord-meta-chip">💳 ${({blik:'BLIK',gpay:'Google Pay',card:'Karta',cash:'Gotówka',card_delivery:'Karta przy odbiorze'})[o.payment]||o.payment}</span>`:'';
   const timing = o.timing?`<span class="ord-meta-chip">⏰ ${o.timing}</span>`:'';
+  const coupon = o.couponCode?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🏷 Rabat:</strong> -${o.couponDiscountAmount!=null?o.couponDiscountAmount.toFixed(2)+' zł':((o.couponDiscountPct||0)+'%')}${o.couponDiscountPct!=null?' ('+o.couponDiscountPct+'%)':''} · kod: <code style="background:var(--bg);padding:1px 6px;border-radius:4px;letter-spacing:1px;">${o.couponCode}</code></div>`:'';
   const comment = o.comment?`<div style="margin-top:8px;padding:8px 10px;background:rgba(200,146,42,.06);border:1px solid rgba(200,146,42,.15);border-radius:var(--r);font-size:12px;"><strong>💬 Uwagi klienta:</strong> ${o.comment}</div>`:'' ;
   const invoiceInfo = o.invoice&&o.invoice.nip?`<div style="margin-top:6px;padding:8px 10px;background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:var(--r);font-size:12px;"><strong>🧾 Faktura VAT:</strong> ${o.invoice.company||''} · NIP: ${o.invoice.nip} · ${o.invoice.address||''} ${o.invoice.city||''}</div>`:'';
 
@@ -2124,6 +2128,8 @@ function renderOrderCard(o){
       <button class="btn-sms" onclick="openSmsModal('${o.id}')">📱 SMS</button>`;
   } else if(normStatus(o.status) === 'done'){
     actions = `<span style="font-size:12px;color:var(--muted2);">✓ Zrealizowane ${o.doneAt||''}</span>`;
+  } else if(normStatus(o.status) === 'rejected'){
+    actions = `<span style="font-size:12px;color:#ef4444;">✕ Odrzucone ${o.rejectedAt||''}</span>`;
   }
 
   return `<div class="order-card ${cardClass}" id="ocard-${o.id}">
@@ -2149,6 +2155,7 @@ function renderOrderCard(o){
     </div>
     ${itemsHtml}
     <div class="ord-meta">${payment}${deliveryCost}${zone}${dist}${timing}</div>
+    ${coupon}
     ${comment}
     ${invoiceInfo}
     <div class="ord-actions">${actions}</div>
@@ -2383,25 +2390,31 @@ function pruneArchive(arr){
 function setOrdStatus(id, newStatus){
   const o = orders.find(x=>x.id===id);
   if(!o) return;
-  const prev = o.status;
   o.status = newStatus;
   if(newStatus==='done'){
     const idx = orders.findIndex(x=>x.id===id);
     orders.splice(idx,1);
-    archive.unshift({...o, doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})});
-    archive = pruneArchive(archive);
-    W('archive', archive);
-    // Pieczątka dla klienta przy zamknięciu zamówienia
-    if(o.phone&&(o.total||0)>=19){
+
+    // Pieczątka dla klienta przy zamknięciu zamówienia — TYLKO jeśli jeszcze nie przyznano
+    // (np. już przyznana przy przyjęciu zamówienia gotówkowego, albo przez webhook P24
+    // dla płatności online). Bez tego sprawdzenia każde zamówienie dostawało 2 pieczątki.
+    if(!o.stampGranted && o.phone && (o.total||0)>=19){
       let c=customers.find(c=>c.phone.replace(/\s/g,'')===(o.phone||'').replace(/\s/g,''));
       if(!c){c={name:o.customer||('Klient '+o.phone),phone:o.phone,email:'',sms:true,emailMkt:false,stamps:0,totalStamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)};customers.push(c);}
-      const prev=c.stamps||0;c.stamps=prev>=9?1:prev+1;c.totalStamps=(c.totalStamps||0)+1;c.visits=(c.visits||0)+1;c.last=new Date().toLocaleDateString('pl-PL');
+      const prevStamps=c.stamps||0;c.stamps=prevStamps>=9?1:prevStamps+1;c.totalStamps=(c.totalStamps||0)+1;c.visits=(c.visits||0)+1;c.last=new Date().toLocaleDateString('pl-PL');
       c.spent=(c.spent||0)+parseFloat(o.total||0); // dodaj kwotę zamówienia do spent
       saveCustomers();
       saveCustomerToFirebase(c); // ← zapisz do Firebase
+      o.stampGranted = true;
       const hitReward=[3,6,9].includes(c.stamps);
       toast(hitReward?`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek)! Przyznaj nagrodę w Lojalność.`:`⭐ Pieczątka ${c.stamps}/9 dla ${c.name}`);
     }
+
+    // Kopia do archiwum TERAZ — po ewentualnym przyznaniu pieczątki, żeby flaga stampGranted
+    // była poprawnie zapisana w zarchiwizowanym zamówieniu
+    archive.unshift({...o, doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})});
+    archive = pruneArchive(archive);
+    W('archive', archive);
   }
   _ordersLastWrite = Date.now();
   W('orders', orders);
