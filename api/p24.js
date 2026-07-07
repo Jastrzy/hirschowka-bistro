@@ -60,7 +60,7 @@ async function autoGrantLoyaltyReward(phone, stamps) {
     const rewardsResp = await fetch(`${FB_URL}/rewards.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
     const rewardsVal = await rewardsResp.json();
     const rewardsList = rewardsVal ? (Array.isArray(rewardsVal) ? rewardsVal : Object.values(rewardsVal)) : [];
-    const rew = rewardsList.find(r => r && r.stamp === stamps);
+    const rew = rewardsList.find(r => r && Number(r.stamp) === stamps);
     if (!rew) {
       await fbLog('WARN', 'autoGrantLoyaltyReward: brak zdefiniowanej nagrody', { stamps });
       return;
