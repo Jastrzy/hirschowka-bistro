@@ -1272,8 +1272,10 @@ let appliedCoupon=null;
 // MENU_BASE to tylko dane startowe pokazywane przed pierwszym użyciem panelu.
 function getMenu(){
   const adminData=LS('menu');
-  if(adminData&&adminData.length>0) return adminData;
-  return MENU_BASE;  // fallback gdy Firebase niedostępny
+  const raw=(adminData&&adminData.length>0)?adminData:MENU_BASE;
+  // Dania z visible===false są całkowicie ukryte z widoku klienta (nie tylko wyszarzone).
+  // Domyślnie (brak pola / undefined) danie jest widoczne — zachowuje zgodność wsteczną.
+  return raw.filter(d=>d.visible!==false);
 }
 
 // ════ HERO CLOCK ════
@@ -2053,6 +2055,7 @@ async function placeOrder(){
     payment:payType,
     comment:(document.getElementById('order-notes')?.value||'').trim(),
     deliveryCost:dc,
+    packagingCost:pkg,
     couponCode:appliedCoupon?appliedCoupon.code:null,
     couponDiscountPct:appliedCoupon?appliedCoupon.disc:null,
     couponDiscountAmount:appliedCoupon?parseFloat(disc.toFixed(2)):0,
