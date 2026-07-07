@@ -2745,17 +2745,43 @@ function toggleStatusManual(){
     // Pierwsza zmiana — zapytaj czy ręczne
     if(confirm('Chcesz ręcznie zmienić status? Anuluj żeby wrócić do automatycznego.')){
       manualStatusOverride = !isOpen;
+      saveManualOverride(manualStatusOverride);
       applyStatus(manualStatusOverride, true);
       toast(manualStatusOverride?'✅ Otwarto ręcznie':'🔒 Zamknięto ręcznie');
     }
   } else {
     // Toggle lub wyłącz override
     const choice = confirm('Kliknij OK żeby zmienić status, Anuluj żeby wrócić do harmonogramu automatycznego.');
-    if(choice){ manualStatusOverride = !manualStatusOverride; applyStatus(manualStatusOverride, true); toast(manualStatusOverride?'✅ Otwarto ręcznie':'🔒 Zamknięto ręcznie'); }
-    else{ manualStatusOverride = null; checkOpenStatus(); toast('↺ Przywrócono harmonogram automatyczny'); }
+    if(choice){ manualStatusOverride = !manualStatusOverride; saveManualOverride(manualStatusOverride); applyStatus(manualStatusOverride, true); toast(manualStatusOverride?'✅ Otwarto ręcznie':'🔒 Zamknięto ręcznie'); }
+    else{ manualStatusOverride = null; saveManualOverride(null); checkOpenStatus(); toast('↺ Przywrócono harmonogram automatyczny'); }
   }
 }
 setInterval(checkOpenStatus, 60000);
+
+// Zapisz ręczny override do Firebase, żeby WSZYSTKIE panele (tablet, komputer, itd.)
+// respektowały tę samą decyzję. Wcześniej `manualStatusOverride` było zwykłą zmienną
+// lokalną w każdej przeglądarce z osobna — ręczne otwarcie na jednym urządzeniu nie
+// docierało do innych, a ich własny, niezależny cykliczny check (co 60s) potrafił
+// nadpisać status z powrotem na podstawie samego harmonogramu.
+function saveManualOverride(val){
+  const db = window._firebase && window._firebase.db;
+  if(!db) return;
+  db.ref('bistro-manual-override').set(val===null?null:!!val).catch(function(e){
+    console.warn('[bistro-manual-override] błąd zapisu:', e.message);
+  });
+}
+
+// Nasłuchuj na ręczny override z Firebase (real-time) — żeby KAŻDE urządzenie
+// znało aktualną, wspólną decyzję, zamiast liczyć niezależnie tylko z harmonogramu
+(function attachManualOverrideListener(){
+  const db = window._firebase && window._firebase.db;
+  if(!db){ setTimeout(attachManualOverrideListener, 300); return; }
+  db.ref('bistro-manual-override').on('value', function(snap){
+    const val = snap.val();
+    manualStatusOverride = (val===null || val===undefined) ? null : !!val;
+    checkOpenStatus();
+  });
+})();
 
 // ── DASHBOARD ──
 function renderDashboard(){
