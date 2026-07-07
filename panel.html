@@ -3196,10 +3196,13 @@ async function addStamp(idx){
   customers[idx] = c;
   saveCustomers();
   renderCusts(document.getElementById('cust-search').value||'');
-  const msg = [3,6,9].includes(c.stamps)
-    ? `🎉 ${c.name} osiągnął nagrodę (${c.stamps}/9)! Przyznaj w Lojalność.`
-    : `⭐ Pieczątka dodana: ${c.name} (${c.stamps}/9) · +${amt.toFixed(2)} zł`;
-  toast(msg);
+  const hitReward = STAMP_REWARDS.includes(c.stamps);
+  if(hitReward){
+    const r = await createLoyaltyRewardCode(c.phone, c.stamps);
+    toast(r.ok?`🎉 ${c.name} osiągnął ${c.stamps} pieczątek — kod nagrody wysłany SMS-em ✓`:`🎉 ${c.name} osiągnął nagrodę (${c.stamps} pieczątek), ale: ${r.msg}`);
+  } else {
+    toast(`⭐ Pieczątka dodana: ${c.name} (${c.stamps}/9) · +${amt.toFixed(2)} zł`);
+  }
 }
 
 // ── Ręczne scalanie ──
@@ -4088,8 +4091,9 @@ function renderLoyalty(){
   document.getElementById('loy-history-list').innerHTML=hist.length?hist.map(h=>`
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
       <span style="color:var(--muted);min-width:80px;">${h.date}</span>
-      <span style="flex:1;">${h.phone} — ${h.rewardName}</span>
+      <span style="flex:1;">${h.phone||'—'} — ${h.rewardName}</span>
       <code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:12px;letter-spacing:1px;">${h.code}</code>
+      <span style="font-size:11px;color:var(--muted);min-width:90px;">${h.exp?'do '+h.exp:''}</span>
       <span style="font-size:11px;color:${h.used?'var(--muted)':'var(--green2)'};">${h.used?`Zrealizowany${h.usedAt?' '+h.usedAt:''}`:'Aktywny'}</span>
     </div>`).join(''):'<div style="font-size:13px;color:var(--muted);padding:12px 0;">Brak historii nagród</div>';
 }
@@ -4239,14 +4243,14 @@ async function redeemLoyaltyCode(){
 // Współdzielone przez: ręczne przyznanie (Lojalność), automatyczne przyznanie
 // przy osiągnięciu 3/6/9 pieczątek (accept, done, ręczne dodanie pieczątki).
 async function createLoyaltyRewardCode(phone, stampLevel){
-  const rew=rewards.find(r=>r.stamp===stampLevel);
+  const rew=rewards.find(r=>Number(r.stamp)===stampLevel);
   if(!rew) return {ok:false,msg:'Brak zdefiniowanej nagrody dla '+stampLevel+' pieczątek'};
   const code='LOY'+stampLevel+Math.random().toString(36).slice(2,6).toUpperCase();
   const expDate=new Date();expDate.setDate(expDate.getDate()+30);
   const expStr=expDate.toISOString().slice(0,10);
   coupons.push({code,disc:rew.discVal||100,exp:expStr,limit:1,used:0,min:0,loyaltyReward:true,rewardStamp:stampLevel,rewardName:rew.name});
   W('coupons',coupons);
-  loyaltyHistory.push({phone,code,rewardName:rew.name,stampLevel,date:new Date().toLocaleDateString('pl-PL'),used:false});
+  loyaltyHistory.push({phone,code,rewardName:rew.name,stampLevel,date:new Date().toLocaleDateString('pl-PL'),exp:expStr,used:false});
   W('loyalty-history',loyaltyHistory);
   const smsText=stampLevel===3?`Hirschowka: Gratulacje! Masz 3 pieczatki. Twoja nagroda: 50% na kawe lub deser. Kod: ${code}. Wazny 30 dni.`:stampLevel===6?`Hirschowka: Gratulacje! Masz 6 pieczątek. Twoja nagroda: darmowa kawa lub deser. Kod: ${code}. Wazny 30 dni.`:`Hirschowka: Gratulacje! Masz 9 pieczątek. Twoja nagroda: 50% na bajgiel lub danie dnia. Kod: ${code}. Wazny 30 dni.`;
   const hasToken=!!(S('smsapi-token'));
