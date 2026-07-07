@@ -1995,6 +1995,27 @@ async function placeOrder(){
     // Błąd Firebase — nie blokuj zamówienia
     console.warn('[ORDER] Nie można sprawdzić statusu bistro:',e.message);
   }
+  // Sprawdź, czy "danie/zestaw/zupa dnia" w koszyku nie zdążyły się zmienić od momentu
+  // dodania — danie dnia zmienia się rano (ok. 7:30-8:00), a klient mógł dodać
+  // pozycję wcześniej i dokończyć zamówienie po zmianie, z nieaktualną nazwą zapisaną
+  // na stałe w koszyku (koszyk celowo nie aktualizuje się sam po dodaniu pozycji).
+  try{
+    const db=window._firebase&&window._firebase.db;
+    const currentKitchen = db ? (await db.ref('kitchen-day').once('value')).val() : LS('kitchen-day');
+    if(currentKitchen){
+      const staleItem = cart.find(function(ci){
+        if(!ci.dailyType) return false;
+        const cur = currentKitchen[ci.dailyType];
+        return !cur || cur.name !== ci.name;
+      });
+      if(staleItem){
+        toast('⚠️ "'+staleItem.name+'" zmieniło się od czasu dodania do koszyka. Usuń tę pozycję z koszyka i dodaj ją ponownie.');
+        return;
+      }
+    }
+  }catch(e){
+    console.warn('[ORDER] Nie można sprawdzić aktualności dania dnia:', e.message);
+  }
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
   if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
   const firstName=(document.getElementById('c-name')?.value||'').trim();
