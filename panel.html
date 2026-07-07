@@ -1816,14 +1816,30 @@ window._onAuthReady = function(auth){
 const S = key => { try{return JSON.parse(localStorage.getItem(key));}catch{return null;} };
 const W = (key,val) => {
   localStorage.setItem(key,JSON.stringify(val));
-  try{
-    if(window._firebase&&window._firebase.db){
-      window._firebase.db.ref(key).set(val).catch(function(e){
-        console.warn('[W] Firebase set error:',key,e.message);
-      });
-    }
-  }catch(e){}
+  writeToFirebaseWithRetry(key,val);
 };
+
+// Zapisuje do Firebase, czekając (do 5 sekund) aż połączenie będzie gotowe —
+// wcześniej W() cicho pomijało zapis, jeśli Firebase jeszcze się nie załadowało
+// (np. zaraz po otwarciu panelu), pokazując mimo to fałszywy komunikat sukcesu.
+// Teraz: próbuje przez 5s, a jeśli się nie uda — pokazuje WIDOCZNY błąd.
+function writeToFirebaseWithRetry(key, val, attempt){
+  attempt = attempt || 0;
+  const maxAttempts = 20; // 20 × 250ms = 5 sekund
+  if(!(window._firebase && window._firebase.db)){
+    if(attempt >= maxAttempts){
+      toast(`⚠️ Brak połączenia z Firebase — zmiana "${key}" NIE zapisała się na serwerze! Sprawdź internet i spróbuj ponownie.`);
+      console.error('[W] Firebase niedostępne po 5s, zapis pominięty:', key);
+      return;
+    }
+    setTimeout(function(){ writeToFirebaseWithRetry(key, val, attempt+1); }, 250);
+    return;
+  }
+  window._firebase.db.ref(key).set(val).catch(function(e){
+    toast(`⚠️ Błąd zapisu „${key}" do Firebase: ${e.message}. Spróbuj ponownie.`);
+    console.warn('[W] Firebase set error:',key,e.message);
+  });
+}
 
 // ── DEFAULT DATA ──
 let menuData = S('menu') || [
@@ -2189,8 +2205,9 @@ async function grantStampToCustomer(order){
   }
 }
 
-function revokeStamp(orderId){
-  const o=orders.find(x=>x.id===orderId)||archive.find(x=>x.id===orderId);
+async function revokeStamp(orderId){
+  const inOrders = orders.find(x=>x.id===orderId);
+  const o = inOrders || archive.find(x=>x.id===orderId);
   if(!o||!o.phone){toast('Nie znaleziono zamówienia');return;}
   if(!confirm(`Cofnąć pieczątkę dla zamówienia ${orderId}?`)) return;
   const phone=(o.phone||'').replace(/\s/g,'');
@@ -2199,10 +2216,33 @@ function revokeStamp(orderId){
   c.stamps=Math.max(0,(c.stamps||1)-1);
   c.totalStamps=Math.max(0,(c.totalStamps||1)-1);
   saveCustomers();
-  saveCustomerToFirebase(c); // ← zapisz do Firebase
+  saveCustomerToFirebase(c); // ← zapisz do Firebase (bezpieczny, docelowy zapis)
+
+  // Oznacz stampGranted=false NA WŁAŚCIWYM zamówieniu — bezpieczna transakcja
+  // na kluczu, w którym ono faktycznie jest (orders albo archive), zamiast
+  // pełnego nadpisania orders niezależnie od tego gdzie naprawdę leży rekord
+  const key = inOrders ? 'orders' : 'archive';
+  const db = window._firebase && window._firebase.db;
+  if(db){
+    try{
+      const result = await db.ref(key).transaction(function(arr){
+        if(!arr) return arr;
+        const list = Array.isArray(arr)?arr:Object.values(arr);
+        const idx = list.findIndex(x=>x&&x.id===orderId);
+        if(idx===-1) return arr;
+        list[idx] = Object.assign({}, list[idx], {stampGranted:false});
+        return list;
+      });
+      if(result.committed){
+        const val = result.snapshot.val();
+        const freshList = val ? (Array.isArray(val)?val:Object.values(val)).filter(function(x){return x;}) : [];
+        if(key==='orders') orders = freshList; else archive = freshList;
+      }
+    }catch(e){
+      console.warn('[revokeStamp] transaction error', e.message);
+    }
+  }
   o.stampGranted=false;
-  _ordersLastWrite=Date.now();
-  W('orders',orders);
   renderOrders();
   toast(`↩ Pieczątka cofnięta dla ${c.name} (${c.stamps}/9)`);
 }
@@ -2390,25 +2430,67 @@ function pruneArchive(arr){
   });
 }
 
+// Bezpiecznie dopisz wpis do archiwum — transakcja Firebase operuje na AKTUALNYM
+// stanie serwera, nie na potencjalnie starej lokalnej kopii `archive`. To zamyka
+// dokładnie tę lukę, która spowodowała utratę historii archiwum: pełne nadpisanie
+// (W('archive', archive)) starą, lokalną tablicą z nieodświeżonej przeglądarki.
+async function appendToArchive(entry){
+  const db = window._firebase && window._firebase.db;
+  if(!db){
+    // Brak połączenia — zapisz chociaż lokalnie, żeby nic nie zniknęło z widoku,
+    // ale to NIE trafi do Firebase dopóki połączenie nie wróci
+    archive.unshift(entry);
+    localStorage.setItem('archive', JSON.stringify(archive));
+    toast('⚠️ Brak połączenia z Firebase — wpis w archiwum zapisany tylko lokalnie!');
+    return;
+  }
+  try{
+    const result = await db.ref('archive').transaction(function(arr){
+      const list = arr ? (Array.isArray(arr)?arr:Object.values(arr)) : [];
+      list.unshift(entry);
+      return pruneArchive(list);
+    });
+    if(result.committed){
+      const val = result.snapshot.val();
+      archive = val ? (Array.isArray(val)?val.filter(function(o){return o;}):Object.values(val).filter(function(o){return o;})) : [];
+      localStorage.setItem('archive', JSON.stringify(archive));
+    }
+  }catch(e){
+    toast('⚠️ Błąd zapisu do archiwum: '+e.message);
+    console.warn('[archive] transaction error', e.message);
+  }
+}
+
 // ── STATUS TRANSITIONS ──
-function setOrdStatus(id, newStatus){
+async function setOrdStatus(id, newStatus){
   const o = orders.find(x=>x.id===id);
   if(!o) return;
-  o.status = newStatus;
-  if(newStatus==='done'){
-    const idx = orders.findIndex(x=>x.id===id);
-    orders.splice(idx,1);
 
-    // Pieczątka dla klienta przy zamknięciu zamówienia — TYLKO jeśli jeszcze nie przyznano
-    // (np. już przyznana przy przyjęciu zamówienia gotówkowego, albo przez webhook P24
-    // dla płatności online). Bez tego sprawdzenia każde zamówienie dostawało 2 pieczątki.
-    if(!o.stampGranted && o.phone && (o.total||0)>=19){
+  if(newStatus==='done'){
+    // Ustal PRZED transakcją, czy trzeba przyznać pieczątkę (fakty deterministyczne,
+    // niezależne od stanu innych urządzeń) — samą transakcję używamy tylko do
+    // bezpiecznego usunięcia zamówienia z listy aktywnych
+    const willGrantStamp = !o.stampGranted && !!(o.phone && (o.total||0) >= 19);
+
+    const claim = await claimOrderTransition(id, normStatus(o.status), function(list, idx){
+      list.splice(idx,1);
+      return list;
+    });
+    if(!claim.ok){
+      toast('⚠️ '+claim.msg);
+      refreshOrdersFromFirebase();
+      return;
+    }
+
+    orders = orders.filter(x=>x.id!==id);
+
+    if(willGrantStamp){
       let c=customers.find(c=>c.phone.replace(/\s/g,'')===(o.phone||'').replace(/\s/g,''));
       if(!c){c={name:o.customer||('Klient '+o.phone),phone:o.phone,email:'',sms:true,emailMkt:false,stamps:0,totalStamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)};customers.push(c);}
       const prevStamps=c.stamps||0;c.stamps=prevStamps>=9?1:prevStamps+1;c.totalStamps=(c.totalStamps||0)+1;c.visits=(c.visits||0)+1;c.last=new Date().toLocaleDateString('pl-PL');
-      c.spent=(c.spent||0)+parseFloat(o.total||0); // dodaj kwotę zamówienia do spent
+      c.spent=(c.spent||0)+parseFloat(o.total||0);
       saveCustomers();
-      saveCustomerToFirebase(c); // ← zapisz do Firebase
+      saveCustomerToFirebase(c);
       o.stampGranted = true;
       const hitReward=STAMP_REWARDS.includes(c.stamps);
       if(hitReward){
@@ -2420,17 +2502,29 @@ function setOrdStatus(id, newStatus){
       }
     }
 
-    // Kopia do archiwum TERAZ — po ewentualnym przyznaniu pieczątki, żeby flaga stampGranted
-    // była poprawnie zapisana w zarchiwizowanym zamówieniu
-    archive.unshift({...o, doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})});
-    archive = pruneArchive(archive);
-    W('archive', archive);
+    o.status = 'done';
+    await appendToArchive({...o, doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'})});
+
+    _ordersLastWrite = Date.now();
+    renderOrders();
+    toast(`Zamówienie ${id}: Zrealizowane ✓`);
+    return;
   }
+
+  // delivering / ready — proste, bezpieczne przejście statusu przez transakcję
+  const claim = await claimOrderTransition(id, normStatus(o.status), function(list, idx){
+    list[idx] = Object.assign({}, list[idx], {status: newStatus});
+    return list;
+  });
+  if(!claim.ok){
+    toast('⚠️ '+claim.msg);
+    refreshOrdersFromFirebase();
+    return;
+  }
+  o.status = newStatus;
   _ordersLastWrite = Date.now();
-  W('orders', orders);
-  // SMS usunięty przy delivering i ready — wysyłany tylko przy akceptacji i odrzuceniu
   renderOrders();
-  const labels={delivering:'W drodze 🚗',ready:'Gotowe do odbioru 🔔',done:'Zrealizowane ✓'};
+  const labels={delivering:'W drodze 🚗',ready:'Gotowe do odbioru 🔔'};
   toast(`Zamówienie ${id}: ${labels[newStatus]||newStatus}`);
 }
 
@@ -2453,10 +2547,9 @@ async function rejectOrd(id){
   // Transakcja się powiodła — TYLKO to stanowisko ma prawo wysłać SMS o odrzuceniu.
   if(o.phone) sendSmsToCustomer(o, 'rejected');
 
-  // Dodaj do archiwum z adnotacją odrzucenia (osobny klucz Firebase — bezpieczne)
-  archive.unshift({...o, status:'rejected', doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}), rejectedAt: new Date().toLocaleDateString('pl')});
-  archive = pruneArchive(archive);
-  W('archive', archive);
+  // Dodaj do archiwum z adnotacją odrzucenia — bezpieczna transakcja Firebase,
+  // nie pełne nadpisanie starą lokalną kopią
+  await appendToArchive({...o, status:'rejected', doneAt: new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}), rejectedAt: new Date().toLocaleDateString('pl')});
 
   orders = orders.filter(x=>x.id!==id);
   _ordersLastWrite = Date.now();
