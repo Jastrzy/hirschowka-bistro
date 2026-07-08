@@ -2148,6 +2148,12 @@ function renderOrderCard(o){
   const zone = o.zone?`<span class="ord-meta-chip">Strefa: ${o.zone}</span>`:'';
   const dist = o.distance?`<span class="ord-meta-chip">~${o.distance} km</span>`:'';
   const payment = o.payment?`<span class="ord-meta-chip">💳 ${({blik:'BLIK',gpay:'Google Pay',card:'Karta',cash:'Gotówka',card_delivery:'Karta przy odbiorze'})[o.payment]||o.payment}</span>`:'';
+  const isOnlinePayment = ['blik','card','gpay'].includes((o.payment||'').toLowerCase());
+  const paymentBadge = isOnlinePayment
+    ? (o.paymentConfirmed
+        ? `<span class="ord-meta-chip" style="background:rgba(45,74,47,.12);color:var(--green2);font-weight:700;">✓ Opłacone</span>`
+        : `<span class="ord-meta-chip" style="background:rgba(239,68,68,.12);color:#ef4444;font-weight:700;">⏳ Oczekuje na płatność</span>`)
+    : '';
   const timing = o.timing?`<span class="ord-meta-chip">⏰ ${o.timing}</span>`:'';
   const coupon = o.couponCode?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🏷 Rabat:</strong> -${o.couponDiscountAmount!=null?o.couponDiscountAmount.toFixed(2)+' zł':((o.couponDiscountPct||0)+'%')}${o.couponDiscountPct!=null?' ('+o.couponDiscountPct+'%)':''} · kod: <code style="background:var(--bg);padding:1px 6px;border-radius:4px;letter-spacing:1px;">${o.couponCode}</code></div>`:'';
   const comment = o.comment?`<div style="margin-top:8px;padding:8px 10px;background:rgba(200,146,42,.06);border:1px solid rgba(200,146,42,.15);border-radius:var(--r);font-size:12px;"><strong>💬 Uwagi klienta:</strong> ${o.comment}</div>`:'' ;
@@ -2200,7 +2206,7 @@ function renderOrderCard(o){
       </div>
     </div>
     ${itemsHtml}
-    <div class="ord-meta">${payment}${deliveryCost}${packagingCost}${zone}${dist}${timing}</div>
+    <div class="ord-meta">${payment}${paymentBadge}${deliveryCost}${packagingCost}${zone}${dist}${timing}</div>
     ${coupon}
     ${comment}
     ${invoiceInfo}
@@ -4277,7 +4283,7 @@ async function createLoyaltyRewardCode(phone, stampLevel){
   const code='LOY'+stampLevel+Math.random().toString(36).slice(2,6).toUpperCase();
   const expDate=new Date();expDate.setDate(expDate.getDate()+30);
   const expStr=expDate.toISOString().slice(0,10);
-  coupons.push({code,disc:rew.discVal||100,exp:expStr,limit:1,used:0,min:0,loyaltyReward:true,rewardStamp:stampLevel,rewardName:rew.name});
+  coupons.push({code,disc:rew.discVal||100,exp:expStr,limit:1,used:0,min:0,loyaltyReward:true,rewardStamp:stampLevel,rewardName:rew.name,cats:rew.cats||''});
   W('coupons',coupons);
   loyaltyHistory.push({phone,code,rewardName:rew.name,stampLevel,date:new Date().toLocaleDateString('pl-PL'),exp:expStr,used:false});
   W('loyalty-history',loyaltyHistory);
@@ -5652,7 +5658,7 @@ window.onFirebaseOrders = function(freshArr) {
       // Dodaj tylko nowe zamówienia, nie nadpisuj statusów istniejących
       brandNew.forEach(o => orders.push(o));
       renderOrders(); updateAlarm(); renderDashboard();
-      brandNew.filter(o=>['pending','nowe','do akceptacji','new']
+      brandNew.filter(o=>['pending','nowe','do akceptacji','new','awaiting_payment']
         .includes((o.status||'').toLowerCase()))
         .forEach(o => sendOrderEmail(o));
     }
@@ -5663,7 +5669,7 @@ window.onFirebaseOrders = function(freshArr) {
   const prevIds = new Set((orders||[]).map(o=>o.id));
   const newPending = freshArr.filter(o=>
     !prevIds.has(o.id) &&
-    ['pending','nowe','do akceptacji','new'].includes((o.status||'').toLowerCase())
+    ['pending','nowe','do akceptacji','new','awaiting_payment'].includes((o.status||'').toLowerCase())
   );
 
   // Przy mergowaniu — zachowaj lokalny status jeśli jest nowszy
