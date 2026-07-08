@@ -2749,6 +2749,15 @@ async function testEmail(){
 // ── STATUS RESTAURACJI ──
 function checkOpenStatus(){
   const now = new Date();
+  const today = now.toISOString().slice(0,10);
+  // Ręczny override wygasa automatycznie następnego dnia — inaczej zapomniane
+  // ręczne otwarcie/zamknięcie blokowałoby harmonogram bezterminowo, na wszystkich
+  // urządzeniach naraz (od kiedy override jest zsynchronizowany przez Firebase)
+  if(manualStatusOverride !== null && manualOverrideDate !== today){
+    manualStatusOverride = null;
+    manualOverrideDate = null;
+    saveManualOverride(null);
+  }
   const dow = now.getDay(); // 0=nd, 1=pn
   const hhmm = now.getHours()*60 + now.getMinutes();
   // Sprawdź override
@@ -2802,19 +2811,28 @@ setInterval(checkOpenStatus, 60000);
 function saveManualOverride(val){
   const db = window._firebase && window._firebase.db;
   if(!db) return;
-  db.ref('bistro-manual-override').set(val===null?null:!!val).catch(function(e){
+  const payload = val===null ? null : { value: !!val, date: new Date().toISOString().slice(0,10) };
+  db.ref('bistro-manual-override').set(payload).catch(function(e){
     console.warn('[bistro-manual-override] błąd zapisu:', e.message);
   });
 }
 
 // Nasłuchuj na ręczny override z Firebase (real-time) — żeby KAŻDE urządzenie
-// znało aktualną, wspólną decyzję, zamiast liczyć niezależnie tylko z harmonogramu
+// znało aktualną, wspólną decyzję, zamiast liczyć niezależnie tylko z harmonogramu.
+// Override starszy niż dzisiejsza data jest traktowany jako wygasły (patrz checkOpenStatus).
+let manualOverrideDate = null;
 (function attachManualOverrideListener(){
   const db = window._firebase && window._firebase.db;
   if(!db){ setTimeout(attachManualOverrideListener, 300); return; }
   db.ref('bistro-manual-override').on('value', function(snap){
     const val = snap.val();
-    manualStatusOverride = (val===null || val===undefined) ? null : !!val;
+    if(val && typeof val === 'object' && val.date){
+      manualStatusOverride = !!val.value;
+      manualOverrideDate = val.date;
+    } else {
+      manualStatusOverride = null;
+      manualOverrideDate = null;
+    }
     checkOpenStatus();
   });
 })();
