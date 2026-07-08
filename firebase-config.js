@@ -45,6 +45,12 @@
 
     if (isPanelPath) {
       // Panel — Firebase Auth email+hasło
+      // Jawnie wymuś trwałą sesję (przetrwa zamknięcie karty/przeglądarki, usypianie
+      // ekranu) — obronnie, na wypadek gdyby przeglądarka na konkretnym tablecie
+      // z jakiegoś powodu nie stosowała tego domyślnie
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
+        console.warn('[Auth] Nie udało się ustawić trwałości LOCAL:', e.message);
+      });
       // Wywołaj _onAuthReady gdy jest gotowy
       if (typeof window._onAuthReady === 'function') {
         window._onAuthReady(auth);
