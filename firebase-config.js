@@ -93,7 +93,7 @@
       // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
       // (nie nadpisuj gdy obsługa właśnie edytowała menu)
       // Śledź kiedy panel ostatnio zapisał menu lokalnie
-      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons'];
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons','schedule','holidays'];
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
@@ -123,6 +123,41 @@
             if (typeof window.renderMenu === 'function') window.renderMenu();
             console.log('[FB] Menu zaktualizowane z Firebase ✓');
           } catch(e) {}
+        }
+      });
+
+      // Harmonogram (godziny otwarcia) real-time → wcześniej wczytywany TYLKO RAZ przy
+      // starcie strony z localStorage, nigdy się nie odświeżał. Edycja na jednym urządzeniu
+      // nie docierała do innych, które mogły później nadpisać ją z powrotem starą wersją.
+      db.ref('schedule').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['schedule'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('schedule');
+        if (stored === fresh) return;
+        localStorage.setItem('schedule', fresh);
+        if (typeof window.onFirebaseSchedule === 'function') {
+          window.onFirebaseSchedule(arr);
+        }
+      });
+
+      // Przerwy w pracy (holidays) — ta sama luka co schedule, ta sama naprawa
+      db.ref('holidays').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['holidays'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(h){ return h; });
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('holidays');
+        if (stored === fresh) return;
+        localStorage.setItem('holidays', fresh);
+        if (typeof window.onFirebaseHolidays === 'function') {
+          window.onFirebaseHolidays(arr);
         }
       });
 
