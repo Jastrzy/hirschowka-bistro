@@ -477,6 +477,35 @@ window._onAuthReady = function(auth){
     }
   });
 };
+
+// ── WAKE LOCK — nie pozwala ekranowi zasnąć, gdy panel jest otwarty i widoczny ──
+// To bezpośrednia przyczyna częstych wylogowań na tablecie: Android usypia ekran,
+// a wraz z nim przeglądarka zawiesza kartę w tle, tracąc sesję logowania i opóźniając
+// nowe zamówienia. Wake Lock aktywnie mówi systemowi "nie usypiaj ekranu teraz".
+let _wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      _wakeLock = await navigator.wakeLock.request('screen');
+      console.log('[WakeLock] aktywny — ekran nie zaśnie dopóki panel jest otwarty');
+      _wakeLock.addEventListener('release', function(){
+        console.log('[WakeLock] zwolniony (np. zmiana karty/aplikacji)');
+      });
+    } else {
+      console.log('[WakeLock] ta przeglądarka go nie obsługuje');
+    }
+  }catch(e){
+    // Najczęstsza przyczyna błędu: karta nie jest aktywna/widoczna w momencie żądania — spróbujemy ponownie
+    console.warn('[WakeLock] nie udało się aktywować:', e.message);
+  }
+}
+// Odśwież blokadę, gdy karta znów staje się widoczna (np. po przełączeniu i powrocie)
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible'){
+    requestWakeLock();
+  }
+});
+requestWakeLock();
 </script>
 
 
