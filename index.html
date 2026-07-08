@@ -1781,12 +1781,25 @@ function renderCart(){
   renderCartFreeDelBar();
   renderCartSum();
 }
+// Liczy rabat z kuponu — jeśli kupon ma ograniczenie kategorii (np. nagroda lojalnościowa
+// "50% na bajgiel lub danie dnia"), rabat liczy się TYLKO od pasujących pozycji w koszyku,
+// nie od całej sumy zamówienia. Bez ograniczenia (zwykłe kupony rabatowe) — jak dotychczas,
+// od całego koszyka.
+function calcCouponDiscount(sub, cartItems, coupon){
+  if(!coupon) return 0;
+  if(coupon.cats && coupon.cats.trim()){
+    const catList = coupon.cats.split(',').map(c=>c.trim()).filter(Boolean);
+    const eligibleSub = cartItems.reduce((s,c)=>catList.includes(c.cat)?s+c.unitPrice*c.qty:s,0);
+    return Math.min(eligibleSub, eligibleSub*(coupon.disc/100));
+  }
+  return Math.min(sub, sub*(coupon.disc/100));
+}
 function renderCartSum(){
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   const rawDc=delType==='dostawa'?calcDel():0;
   const dc=(rawDc===null)?0:rawDc; // null = poza zasięgiem, nie doliczamy
   const pkg=calcPackaging();
-  const disc=appliedCoupon?Math.min(sub, sub*(appliedCoupon.disc/100)):0;
+  const disc=calcCouponDiscount(sub,cart,appliedCoupon);
   const total=Math.max(0,sub+dc+pkg-disc);
   document.getElementById('cs-sum').innerHTML=
     `<div class="csr"><span>Produkty</span><span>${sub.toFixed(2)} zł</span></div>`+
@@ -2058,7 +2071,7 @@ async function placeOrder(){
   const rawDc=delType==='dostawa'?calcDel():0;
   const dc=(rawDc===null)?0:rawDc;
   const pkg=calcPackaging();
-  const disc=appliedCoupon?sub*(appliedCoupon.disc/100):0;
+  const disc=calcCouponDiscount(sub,cart,appliedCoupon);
   const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));
   const oid='#'+(10000+Math.floor(Math.random()*89999));
   const typeMap={'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
