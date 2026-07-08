@@ -3829,6 +3829,22 @@ function delCoupon(i){coupons.splice(i,1);W('coupons',coupons);renderCoupons();}
 
 // ── Aktualizacja lokalnej tablicy kuponów w czasie rzeczywistym z Firebase ──
 // (potrzebne, żeby licznik "used" zwiększany transakcją — z WWW albo z drugiego tabletu — był widoczny)
+// Harmonogram zaktualizowany z innego urządzenia — odśwież lokalną kopię i,
+// jeśli strona Harmonogramy jest aktywna, przerysuj. Sprawdź też od razu status
+// otwarcia/zamknięcia, bo mógł się zmienić wraz z nowym harmonogramem.
+window.onFirebaseSchedule = function(freshArr){
+  schedule = freshArr;
+  const pg = document.getElementById('page-harmonogramy');
+  if(pg && pg.classList.contains('active')) renderSchedule();
+  if(typeof checkOpenStatus === 'function') checkOpenStatus();
+};
+
+window.onFirebaseHolidays = function(freshArr){
+  holidays = freshArr;
+  const pg = document.getElementById('page-przerwy');
+  if(pg && pg.classList.contains('active')) renderHolidays();
+};
+
 window.onFirebaseCoupons = function(freshArr){
   coupons = freshArr;
   const pg = document.getElementById('page-kupony');
