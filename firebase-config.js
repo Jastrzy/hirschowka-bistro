@@ -161,6 +161,25 @@
         }
       });
 
+      // Historia nagród lojalnościowych — real-time, żeby flaga "zrealizowany" (used)
+      // ustawiana transakcją była widoczna wszędzie, i żeby usunięcie z ryzykownej
+      // pętli 1s (patrz cfg_keys) nie zostawiło panelu z nieaktualną kopią
+      db.ref('loyalty-history').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['loyalty-history'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(h){ return h; });
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('loyalty-history');
+        if (stored === fresh) return;
+        localStorage.setItem('loyalty-history', fresh);
+        if (typeof window.onFirebaseLoyaltyHistory === 'function') {
+          window.onFirebaseLoyaltyHistory(arr);
+        }
+      });
+
       // Kupony real-time → aktualizuj panel z Firebase (źródło prawdy dla licznika użyć)
       // Bez tego nasłuchu licznik "used" zwiększany transakcją (np. przy realizacji kodu
       // przez klienta lub przy kasie) nie trafiał z powrotem do zmiennej `coupons` w panelu
@@ -241,7 +260,10 @@
       // Trzymanie 'coupons' w tej pętli powodowało realny wyścig: pętla potrafiła
       // "odbić" starą, lokalną kopię z powrotem do Firebase i cofnąć świeżo
       // zapisane zwiększenie licznika z innego urządzenia (np. zamówienia klienta).
-      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
+      // UWAGA: 'loyalty-history' CELOWO NIE JEST na tej liście — ten sam powód co 'coupons':
+      // flaga "used" (zrealizowany kod) jest teraz ustawiana bezpieczną transakcją Firebase
+      // (markLoyaltyHistoryUsed), a ta pętla mogła cofnąć tę zmianę starą, lokalną kopią.
+      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -320,6 +342,12 @@
       // Przechwytuj zapis zamówień → dodaj TYLKO nowe zamówienie (push, nie set)
       // set nadpisałby zmiany statusów zrobione przez panel
       var _lastSentOrderIds = new Set();
+      // Udostępnij możliwość ręcznego oznaczenia zamówienia jako "już wysłane" —
+      // używane przez placeOrder() w index.html TUŻ PRZED bezpośrednim db.ref('orders').push(),
+      // żeby ewentualny późniejszy zapasowy zapis do localStorage (na wypadek błędu sieci,
+      // gdy zapis do Firebase w rzeczywistości się udał, tylko obietnica strony klienta
+      // zgłosiła błąd) nie wysłał TEGO SAMEGO zamówienia drugi raz jako duplikat.
+      window._markOrderSent = function(id){ if(id) _lastSentOrderIds.add(id); };
       var _orig = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
         _orig(key, value);
