@@ -3832,6 +3832,12 @@ function delCoupon(i){coupons.splice(i,1);W('coupons',coupons);renderCoupons();}
 // Harmonogram zaktualizowany z innego urządzenia — odśwież lokalną kopię i,
 // jeśli strona Harmonogramy jest aktywna, przerysuj. Sprawdź też od razu status
 // otwarcia/zamknięcia, bo mógł się zmienić wraz z nowym harmonogramem.
+window.onFirebaseLoyaltyHistory = function(freshArr){
+  loyaltyHistory = freshArr;
+  const pg = document.getElementById('page-lojalnosc');
+  if(pg && pg.classList.contains('active')) renderLoyalty();
+};
+
 window.onFirebaseSchedule = function(freshArr){
   schedule = freshArr;
   const pg = document.getElementById('page-harmonogramy');
@@ -3921,6 +3927,30 @@ function logCouponRedemption(code,phone,name,source,orderId){
   });
 }
 
+// Oznacz odpowiedni wpis w historii nagród lojalnościowych jako zrealizowany —
+// bez tego "Historia przyznanych nagród" w zakładce Lojalność nigdy nie pokazywała
+// realizacji, mimo że kod faktycznie został użyty w prawdziwym zamówieniu.
+async function markLoyaltyHistoryUsed(code){
+  const db=window._firebase&&window._firebase.db;
+  if(!db) return;
+  try{
+    const result=await db.ref('loyalty-history').transaction(function(arr){
+      if(!arr) return arr;
+      const list=Array.isArray(arr)?arr:Object.values(arr);
+      const idx=list.findIndex(h=>h&&h.code===code);
+      if(idx===-1) return arr;
+      list[idx]=Object.assign({},list[idx],{used:true,usedAt:new Date().toLocaleString('pl-PL')});
+      return list;
+    });
+    if(result.committed){
+      const val=result.snapshot.val();
+      loyaltyHistory = val?(Array.isArray(val)?val:Object.values(val)).filter(function(h){return h;}):[];
+    }
+  }catch(e){
+    console.warn('[loyalty-history] błąd oznaczania jako zrealizowany:', e.message);
+  }
+}
+
 async function redeemCouponAtKiosk(){
   const code=(document.getElementById('kup-redeem-code').value||'').trim().toUpperCase();
   const phone=(document.getElementById('kup-redeem-phone').value||'').trim();
@@ -3943,6 +3973,9 @@ async function redeemCouponAtKiosk(){
   coupons=r.list;
   const cust=customers.find(c=>c&&(c.phone||'').replace(/\s/g,'')===phone.replace(/\s/g,''));
   logCouponRedemption(code,phone,cust?cust.name:'','panel',null);
+  if(r.coupon && r.coupon.loyaltyReward){
+    markLoyaltyHistoryUsed(code);
+  }
   resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Kupon <strong>${code}</strong> zrealizowany! Rabat: -${r.coupon.disc}%${cust?' · '+cust.name:''}</div>`;
   toast(`✅ Kupon ${code} zrealizowany`);
   document.getElementById('kup-redeem-code').value='';
@@ -5598,6 +5631,27 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
   localStorage.setItem(MIGRATED_KEY, '1');
   console.log('[Hirschówka] Migracja kategorii zakończona ✓');
+})();
+
+// Migracja: uzupełnij brakujące pole 'cats' w starych, już wygenerowanych kodach nagród
+// lojalnościowych — powstały zanim ograniczenie kategorii było kopiowane z definicji
+// nagrody do samego kuponu. Bez tego stare, wciąż aktywne kody rabatowały cały koszyk
+// zamiast tylko kategorii przypisanej do danej nagrody (np. "Bajgle" albo "Kawy").
+(function migrateLoyaltyCouponCats(){
+  let changed = false;
+  coupons.forEach(function(c){
+    if(c && c.loyaltyReward && c.rewardStamp!=null && !c.cats){
+      const rew = rewards.find(r=>Number(r.stamp)===Number(c.rewardStamp));
+      if(rew && rew.cats){
+        c.cats = rew.cats;
+        changed = true;
+      }
+    }
+  });
+  if(changed){
+    W('coupons', coupons);
+    console.log('[Hirschówka] Uzupełniono brakujące kategorie w starych kodach nagród ✓');
+  }
 })();
 
 // ── INIT ──
