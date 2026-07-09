@@ -1263,6 +1263,63 @@ const REVIEWS=[
 function LS(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
 let menuOv=[];
 let cart=[],delType='dostawa',payType='blik';
+
+// ── TRWAŁOŚĆ KOSZYKA ──
+// Zapisuje koszyk, sposób odbioru/płatności i dane klienta do localStorage, żeby
+// przetrwały przypadkowe odświeżenie strony. Wygasa po 24h — dłużej trzymany koszyk
+// mógłby zawierać już nieaktualne ceny/dostępność dań, dlatego stawiamy granicę.
+const CART_TTL_MS = 24*60*60*1000;
+function persistCart(){
+  try{
+    localStorage.setItem('savedCart', JSON.stringify({
+      cart, delType, payType,
+      name:document.getElementById('c-name')?.value||'',
+      surname:document.getElementById('c-surname')?.value||'',
+      phone:document.getElementById('c-phone')?.value||'',
+      email:document.getElementById('c-email')?.value||'',
+      street:document.getElementById('addr-street')?.value||'',
+      city:document.getElementById('addr-city')?.value||'',
+      floor:document.getElementById('addr-floor')?.value||'',
+      apt:document.getElementById('addr-apt')?.value||'',
+      ts:Date.now()
+    }));
+  }catch(e){}
+}
+function restoreCart(){
+  try{
+    const raw=localStorage.getItem('savedCart');
+    if(!raw) return;
+    const data=JSON.parse(raw);
+    if(!data) return;
+    if(Date.now()-(data.ts||0) > CART_TTL_MS){
+      localStorage.removeItem('savedCart');
+      return;
+    }
+    if(Array.isArray(data.cart)) cart=data.cart;
+    if(data.delType) delType=data.delType;
+    if(data.payType) payType=data.payType;
+    // Dane klienta wypełnij dopiero po pełnym załadowaniu strony (pola muszą już istnieć w DOM)
+    setTimeout(function(){
+      const f={ 'c-name':data.name, 'c-surname':data.surname, 'c-phone':data.phone, 'c-email':data.email,
+        'addr-street':data.street, 'addr-city':data.city, 'addr-floor':data.floor, 'addr-apt':data.apt };
+      Object.keys(f).forEach(function(id){
+        const el=document.getElementById(id);
+        if(el && f[id]) el.value=f[id];
+      });
+      // Nasłuchuj na zmiany pól klienta/adresu, żeby też zapisywać (bez edytowania
+      // każdego pojedynczego atrybutu oninput — jeden delegowany nasłuch na cały formularz)
+      const cartOv=document.getElementById('ov-cart');
+      if(cartOv){
+        cartOv.addEventListener('input', function(e){
+          if(['c-name','c-surname','c-phone','c-email','addr-street','addr-city','addr-floor','addr-apt'].includes(e.target.id)){
+            persistCart();
+          }
+        });
+      }
+    }, 300);
+  }catch(e){}
+}
+restoreCart();
 let curItem=null,curQty=1,curSizes=[],selSize=0,curAddons=[];
 let appliedCoupon=null;
 
@@ -1761,6 +1818,7 @@ function updateCartBadge(){
   document.getElementById('cart-cnt').textContent = cnt;
   const bar = document.getElementById('cart-count-bar');
   if(bar) bar.textContent = cnt>0 ? `(${cnt})` : '';
+  persistCart();
 }
 function openCart(){
   ['dostawa','odbior','miejsce'].forEach(t=>{
@@ -2048,6 +2106,27 @@ async function placeOrder(){
     }
   }catch(e){
     console.warn('[ORDER] Nie można sprawdzić aktualności dania dnia:', e.message);
+  }
+  // Sprawdź, czy zwykłe pozycje w koszyku nadal istnieją i są dostępne — ważne
+  // odkąd koszyk przetrwa odświeżenie/zamknięcie karty (do 24h), więc menu mogło
+  // się w międzyczasie zmienić (danie usunięte, ukryte albo oznaczone jako niedostępne).
+  try{
+    const db=window._firebase&&window._firebase.db;
+    const currentMenuRaw = db ? (await db.ref('menu').once('value')).val() : LS('menu');
+    const currentMenu = currentMenuRaw ? (Array.isArray(currentMenuRaw)?currentMenuRaw:Object.values(currentMenuRaw)) : null;
+    if(currentMenu){
+      const staleItem = cart.find(function(ci){
+        if(ci.dailyType || !ci.itemId) return false; // danie dnia sprawdzone osobno wyżej, zestawy bez itemId pomijamy
+        const cur = currentMenu.find(m=>m&&m.id===ci.itemId);
+        return !cur || cur.avail===false || cur.visible===false;
+      });
+      if(staleItem){
+        toast('⚠️ "'+staleItem.name+'" nie jest już dostępne. Usuń tę pozycję z koszyka, aby złożyć zamówienie.');
+        return;
+      }
+    }
+  }catch(e){
+    console.warn('[ORDER] Nie można sprawdzić aktualności menu:', e.message);
   }
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
   if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
