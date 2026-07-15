@@ -405,10 +405,29 @@
     }
 
     // Status połączenia
+    var _disconnectedSince = null;
     db.ref('.info/connected').on('value', function(snap) {
       var online = snap.val() === true;
       console.log('[FB]', online ? '🟢 Online' : '🔴 Offline', '-', isPanel?'PANEL':isApp?'APP':'KLIENT');
+      if (isPanelPath) {
+        if (!online) {
+          if (!_disconnectedSince) _disconnectedSince = Date.now();
+        } else {
+          _disconnectedSince = null;
+        }
+      }
     });
+    // Watchdog — jeśli panel siedzi bez połączenia z Firebase dłużej niż 90 sekund
+    // (np. tablet po dłuższej przerwie, zerwane WiFi bez auto-reconnect), sam się
+    // przeładowuje, zamiast czekać aż ktoś zauważy i ręcznie odświeży stronę.
+    if (isPanelPath) {
+      setInterval(function(){
+        if (_disconnectedSince && (Date.now() - _disconnectedSince > 90000)) {
+          console.warn('[FB] Brak połączenia od ponad 90s — przeładowuję panel');
+          location.reload();
+        }
+      }, 15000);
+    }
 
   });});});
 })();
