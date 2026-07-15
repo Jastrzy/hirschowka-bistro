@@ -93,7 +93,7 @@
       // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
       // (nie nadpisuj gdy obsługa właśnie edytowała menu)
       // Śledź kiedy panel ostatnio zapisał menu lokalnie
-      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons','schedule','holidays'];
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons','schedule','holidays','sms-campaign-history'];
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
@@ -123,6 +123,23 @@
             if (typeof window.renderMenu === 'function') window.renderMenu();
             console.log('[FB] Menu zaktualizowane z Firebase ✓');
           } catch(e) {}
+        }
+      });
+
+      // Historia kampanii SMS — real-time, żeby żadne urządzenie nigdy nie nadpisało
+      // prawdziwej historii swoją nieaktualną/pustą lokalną kopią
+      db.ref('sms-campaign-history').on('value', function(snap) {
+        var val = snap.val();
+        var arr = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+        arr = arr.filter(function(h){ return h; });
+        var lastWrite = _localWriteTs['sms-campaign-history'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('sms-campaign-history');
+        if (stored === fresh) return;
+        localStorage.setItem('sms-campaign-history', fresh);
+        if (typeof window.onFirebaseSmsHistory === 'function') {
+          window.onFirebaseSmsHistory(arr);
         }
       });
 
@@ -263,7 +280,12 @@
       // UWAGA: 'loyalty-history' CELOWO NIE JEST na tej liście — ten sam powód co 'coupons':
       // flaga "used" (zrealizowany kod) jest teraz ustawiana bezpieczną transakcją Firebase
       // (markLoyaltyHistoryUsed), a ta pętla mogła cofnąć tę zmianę starą, lokalną kopią.
-      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
+      // UWAGA: 'sms-campaign-history' CELOWO NIE JEST na tej liście — ten sam powód co
+      // 'coupons'/'loyalty-history': zapis idzie bezpośrednim db.ref(...).set() w
+      // smsMktSaveHistory(), a ta pętla, bez własnego nasłuchu odświeżającego lokalną
+      // kopię, potrafiła nadpisać prawdziwą historię starą/pustą kopią z przeglądarki
+      // (dokładnie to spowodowało utratę historii kampanii SMS).
+      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
