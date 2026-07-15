@@ -1111,6 +1111,18 @@ requestWakeLock();
     <div class="page" id="page-importexport">
       <div class="sect-hdr"><h2>Import / Eksport danych</h2></div>
 
+      <!-- KOPIA ZAPASOWA -->
+      <div class="card card-pad" style="margin-bottom:14px;border-left:4px solid var(--green2);">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">💾 Kopia zapasowa danych</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">
+          Pobiera jeden plik z kluczowymi danymi: klienci (pieczątki, kontakty), kupony, historia nagród lojalnościowych,
+          historia realizacji kodów, historia kampanii SMS, archiwum zamówień, menu i nagrody. Firebase nie robi tego
+          automatycznie — rób to ręcznie co jakiś czas (np. raz w tygodniu) i zachowaj plik u siebie na dysku.
+        </p>
+        <button class="btn bp" onclick="downloadFullBackup()">💾 Pobierz kopię zapasową (JSON)</button>
+        <span id="backup-status" style="font-size:12px;color:var(--muted);margin-left:10px;"></span>
+      </div>
+
       <!-- INFO CARD -->
       <div class="card card-pad" style="margin-bottom:14px;border-left:4px solid var(--gold);">
         <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">💡 Jak działa import z dwóch systemów</div>
@@ -3832,6 +3844,12 @@ function delCoupon(i){coupons.splice(i,1);W('coupons',coupons);renderCoupons();}
 // Harmonogram zaktualizowany z innego urządzenia — odśwież lokalną kopię i,
 // jeśli strona Harmonogramy jest aktywna, przerysuj. Sprawdź też od razu status
 // otwarcia/zamknięcia, bo mógł się zmienić wraz z nowym harmonogramem.
+window.onFirebaseSmsHistory = function(freshArr){
+  localStorage.setItem('sms-campaign-history', JSON.stringify(freshArr));
+  const pg = document.getElementById('page-smsmkt');
+  if(pg && pg.classList.contains('active') && typeof smsMktRenderHistory==='function') smsMktRenderHistory();
+};
+
 window.onFirebaseLoyaltyHistory = function(freshArr){
   loyaltyHistory = freshArr;
   const pg = document.getElementById('page-lojalnosc');
@@ -5631,6 +5649,74 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
   localStorage.setItem(MIGRATED_KEY, '1');
   console.log('[Hirschówka] Migracja kategorii zakończona ✓');
+})();
+
+// Pobiera jeden plik JSON z kluczowymi danymi biznesowymi — Firebase (plan darmowy)
+// nie robi automatycznych backupów, więc to jedyny sposób na zabezpieczenie danych
+// przed przypadkową utratą (jak historia kampanii SMS, którą właśnie odtworzyliśmy).
+async function downloadFullBackup(){
+  const statusEl=document.getElementById('backup-status');
+  const db=window._firebase&&window._firebase.db;
+  if(!db){ statusEl.textContent='⚠️ Brak połączenia z Firebase'; return; }
+  statusEl.textContent='Pobieram dane…';
+  const keys=['customers','coupons','loyalty-history','coupon-redemptions','sms-campaign-history','archive','menu','rewards'];
+  try{
+    const results={};
+    for(const k of keys){
+      const snap=await db.ref(k).once('value');
+      results[k]=snap.val();
+    }
+    const payload={ exportedAt:new Date().toISOString(), data:results };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const dateStr=new Date().toISOString().slice(0,10);
+    a.href=url;
+    a.download=`hirschowka-backup-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    statusEl.textContent='✅ Pobrano '+dateStr;
+    toast('Kopia zapasowa pobrana ✓');
+  }catch(e){
+    statusEl.textContent='⚠️ Błąd: '+e.message;
+    toast('Błąd pobierania kopii zapasowej');
+  }
+}
+
+// Jednorazowe odtworzenie historii kampanii SMS utraconej 14-15.07.2026 (na podstawie
+// zrzutu ekranu od Marcina) — uruchamia się tylko raz i tylko jeśli historia jest pusta,
+// żeby nie dublować wpisów jeśli coś jednak zostało.
+(function restoreSmsCampaignHistory(){
+  const RESTORE_FLAG = 'sms-history-restored-2026-07-15';
+  if(localStorage.getItem(RESTORE_FLAG)) return;
+  const db = window._firebase && window._firebase.db;
+  if(!db){ setTimeout(restoreSmsCampaignHistory, 500); return; }
+  db.ref('sms-campaign-history').once('value').then(function(snap){
+    const val = snap.val();
+    const current = val ? (Array.isArray(val)?val:Object.values(val)).filter(function(h){return h;}) : [];
+    if(current.length > 0){
+      localStorage.setItem(RESTORE_FLAG, '1');
+      return; // coś już tam jest — nie ryzykujemy dublowania
+    }
+    const restored = [
+      {date:'14.07.2026 14:18', segment:'Śpiący', recipients:3, failed:19,
+        msg:'Hej! Dawno Cię nie było w Hirschówce 😊 Mamy dla Ciebie niespodziankę — użyj kodu WRACAM15 przy zamówieniu i odbierz 15% zniżki przy zamówieniu min. 30 zł. Ważny do [DATA +14 DNI]. Czekamy pon-pt 7-16! Hirschówka Bistro Mielec'},
+      {date:'14.07.2026 14:04', segment:'Do odzyskania', recipients:4, failed:0,
+        msg:'Hej! Trochę Cię nie widzieliśmy w Hirschówce 🎉 Wpadnij na śniadanie lub obiad dnia — czekamy pon-pt od 7:00. A jeśli zostawisz opinię na Google, dorzucimy pieczątkę gratis: https://g.page/r/CUwBHSbtGPZZEBM/review Hirschówka Bistro Mielec'},
+      {date:'14.07.2026 14:01', segment:'Aktywni', recipients:30, failed:0,
+        msg:'Hej! Dziękujemy, że wpadasz do Hirschówki 🎉 Masz chwilę? Twoja opinia na Google naprawdę nam pomaga. Zostaw ją tutaj: https://g.page/r/CUwBHSbtGPZZEBM/review — a przy następnej wizycie czeka na Ciebie dodatkowa pieczątka! Do zobaczenia'}
+    ];
+    db.ref('sms-campaign-history').set(restored).then(function(){
+      localStorage.setItem('sms-campaign-history', JSON.stringify(restored));
+      localStorage.setItem(RESTORE_FLAG, '1');
+      console.log('[Hirschówka] Odtworzono historię kampanii SMS ✓');
+      if(typeof smsMktRenderHistory==='function') smsMktRenderHistory();
+    }).catch(function(e){
+      console.warn('[Hirschówka] Nie udało się odtworzyć historii SMS:', e.message);
+    });
+  });
 })();
 
 // Migracja: uzupełnij brakujące pole 'cats' w starych, już wygenerowanych kodach nagród
