@@ -60,7 +60,7 @@ async function autoGrantLoyaltyReward(phone, stamps) {
     const rewardsResp = await fetch(`${FB_URL}/rewards.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
     const rewardsVal = await rewardsResp.json();
     const rewardsList = rewardsVal ? (Array.isArray(rewardsVal) ? rewardsVal : Object.values(rewardsVal)) : [];
-    const rew = rewardsList.find(r => r && r.stamp === stamps);
+    const rew = rewardsList.find(r => r && Number(r.stamp) === stamps);
     if (!rew) {
       await fbLog('WARN', 'autoGrantLoyaltyReward: brak zdefiniowanej nagrody', { stamps });
       return;
@@ -75,7 +75,7 @@ async function autoGrantLoyaltyReward(phone, stamps) {
     const couponsResp = await fetch(`${FB_URL}/coupons.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
     const couponsVal = await couponsResp.json();
     const couponsList = couponsVal ? (Array.isArray(couponsVal) ? couponsVal : Object.values(couponsVal)) : [];
-    couponsList.push({ code, disc: rew.discVal || 100, exp: expStr, limit: 1, used: 0, min: 0, loyaltyReward: true, rewardStamp: stamps, rewardName: rew.name });
+    couponsList.push({ code, disc: rew.discVal || 100, exp: expStr, limit: 1, used: 0, min: 0, loyaltyReward: true, rewardStamp: stamps, rewardName: rew.name, cats: rew.cats || '' });
     await fetch(`${FB_URL}/coupons.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -210,7 +210,7 @@ async function grantStampForOrder(order) {
 }
 
 // Aktualizuj status zamówienia w Firebase — pobierz wszystkie i filtruj w JS
-async function updateOrderStatus(orderId, status) {
+async function updateOrderStatus(orderId, status, extraFields) {
   try {
     const fetchUrl = `${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
     const resp = await fetch(fetchUrl);
@@ -238,7 +238,7 @@ async function updateOrderStatus(orderId, status) {
       const updateResp = await fetch(updateUrl, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(Object.assign({ status }, extraFields || {})),
       });
       await fbLog('INFO', 'Firebase update', { key, status, updateStatus: updateResp.status });
     });
@@ -351,7 +351,7 @@ module.exports = async function handler(req, res) {
         const parts = sessionId.split('-');
         const orderNum = parts.slice(1, -1).join('-');
         await fbLog('INFO', 'orderNum', { parts, orderNum });
-        await updateOrderStatus(orderNum, 'paid');
+        await updateOrderStatus(orderNum, 'paid', { paymentConfirmed: true, paidAt: new Date().toISOString() });
 
         // Przyznaj pieczątkę — pobierz dane zamówienia z Firebase
         try {

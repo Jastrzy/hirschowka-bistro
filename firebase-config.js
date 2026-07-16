@@ -45,6 +45,12 @@
 
     if (isPanelPath) {
       // Panel — Firebase Auth email+hasło
+      // Jawnie wymuś trwałą sesję (przetrwa zamknięcie karty/przeglądarki, usypianie
+      // ekranu) — obronnie, na wypadek gdyby przeglądarka na konkretnym tablecie
+      // z jakiegoś powodu nie stosowała tego domyślnie
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
+        console.warn('[Auth] Nie udało się ustawić trwałości LOCAL:', e.message);
+      });
       // Wywołaj _onAuthReady gdy jest gotowy
       if (typeof window._onAuthReady === 'function') {
         window._onAuthReady(auth);
@@ -87,7 +93,7 @@
       // Menu real-time → aktualizuj panel TYLKO jeśli panel nie ma lokalnych danych
       // (nie nadpisuj gdy obsługa właśnie edytowała menu)
       // Śledź kiedy panel ostatnio zapisał menu lokalnie
-      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons'];
+      var _trackKeys = ['menu','addons','params','rewards','loyalty-history','cross','customers','coupons','schedule','holidays','sms-campaign-history'];
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
@@ -117,6 +123,77 @@
             if (typeof window.renderMenu === 'function') window.renderMenu();
             console.log('[FB] Menu zaktualizowane z Firebase ✓');
           } catch(e) {}
+        }
+      });
+
+      // Historia kampanii SMS — real-time, żeby żadne urządzenie nigdy nie nadpisało
+      // prawdziwej historii swoją nieaktualną/pustą lokalną kopią
+      db.ref('sms-campaign-history').on('value', function(snap) {
+        var val = snap.val();
+        var arr = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+        arr = arr.filter(function(h){ return h; });
+        var lastWrite = _localWriteTs['sms-campaign-history'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('sms-campaign-history');
+        if (stored === fresh) return;
+        localStorage.setItem('sms-campaign-history', fresh);
+        if (typeof window.onFirebaseSmsHistory === 'function') {
+          window.onFirebaseSmsHistory(arr);
+        }
+      });
+
+      // Harmonogram (godziny otwarcia) real-time → wcześniej wczytywany TYLKO RAZ przy
+      // starcie strony z localStorage, nigdy się nie odświeżał. Edycja na jednym urządzeniu
+      // nie docierała do innych, które mogły później nadpisać ją z powrotem starą wersją.
+      db.ref('schedule').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['schedule'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('schedule');
+        if (stored === fresh) return;
+        localStorage.setItem('schedule', fresh);
+        if (typeof window.onFirebaseSchedule === 'function') {
+          window.onFirebaseSchedule(arr);
+        }
+      });
+
+      // Przerwy w pracy (holidays) — ta sama luka co schedule, ta sama naprawa
+      db.ref('holidays').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['holidays'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(h){ return h; });
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('holidays');
+        if (stored === fresh) return;
+        localStorage.setItem('holidays', fresh);
+        if (typeof window.onFirebaseHolidays === 'function') {
+          window.onFirebaseHolidays(arr);
+        }
+      });
+
+      // Historia nagród lojalnościowych — real-time, żeby flaga "zrealizowany" (used)
+      // ustawiana transakcją była widoczna wszędzie, i żeby usunięcie z ryzykownej
+      // pętli 1s (patrz cfg_keys) nie zostawiło panelu z nieaktualną kopią
+      db.ref('loyalty-history').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['loyalty-history'] || 0;
+        if (Date.now() - lastWrite < 5000) return;
+        var arr = Array.isArray(val) ? val : Object.values(val);
+        arr = arr.filter(function(h){ return h; });
+        var fresh = JSON.stringify(arr);
+        var stored = localStorage.getItem('loyalty-history');
+        if (stored === fresh) return;
+        localStorage.setItem('loyalty-history', fresh);
+        if (typeof window.onFirebaseLoyaltyHistory === 'function') {
+          window.onFirebaseLoyaltyHistory(arr);
         }
       });
 
@@ -200,7 +277,15 @@
       // Trzymanie 'coupons' w tej pętli powodowało realny wyścig: pętla potrafiła
       // "odbić" starą, lokalną kopię z powrotem do Firebase i cofnąć świeżo
       // zapisane zwiększenie licznika z innego urządzenia (np. zamówienia klienta).
-      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','loyalty-history','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email','sms-campaign-history'];
+      // UWAGA: 'loyalty-history' CELOWO NIE JEST na tej liście — ten sam powód co 'coupons':
+      // flaga "used" (zrealizowany kod) jest teraz ustawiana bezpieczną transakcją Firebase
+      // (markLoyaltyHistoryUsed), a ta pętla mogła cofnąć tę zmianę starą, lokalną kopią.
+      // UWAGA: 'sms-campaign-history' CELOWO NIE JEST na tej liście — ten sam powód co
+      // 'coupons'/'loyalty-history': zapis idzie bezpośrednim db.ref(...).set() w
+      // smsMktSaveHistory(), a ta pętla, bez własnego nasłuchu odświeżającego lokalną
+      // kopię, potrafiła nadpisać prawdziwą historię starą/pustą kopią z przeglądarki
+      // (dokładnie to spowodowało utratę historii kampanii SMS).
+      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 
@@ -279,6 +364,12 @@
       // Przechwytuj zapis zamówień → dodaj TYLKO nowe zamówienie (push, nie set)
       // set nadpisałby zmiany statusów zrobione przez panel
       var _lastSentOrderIds = new Set();
+      // Udostępnij możliwość ręcznego oznaczenia zamówienia jako "już wysłane" —
+      // używane przez placeOrder() w index.html TUŻ PRZED bezpośrednim db.ref('orders').push(),
+      // żeby ewentualny późniejszy zapasowy zapis do localStorage (na wypadek błędu sieci,
+      // gdy zapis do Firebase w rzeczywistości się udał, tylko obietnica strony klienta
+      // zgłosiła błąd) nie wysłał TEGO SAMEGO zamówienia drugi raz jako duplikat.
+      window._markOrderSent = function(id){ if(id) _lastSentOrderIds.add(id); };
       var _orig = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
         _orig(key, value);
@@ -336,10 +427,29 @@
     }
 
     // Status połączenia
+    var _disconnectedSince = null;
     db.ref('.info/connected').on('value', function(snap) {
       var online = snap.val() === true;
       console.log('[FB]', online ? '🟢 Online' : '🔴 Offline', '-', isPanel?'PANEL':isApp?'APP':'KLIENT');
+      if (isPanelPath) {
+        if (!online) {
+          if (!_disconnectedSince) _disconnectedSince = Date.now();
+        } else {
+          _disconnectedSince = null;
+        }
+      }
     });
+    // Watchdog — jeśli panel siedzi bez połączenia z Firebase dłużej niż 90 sekund
+    // (np. tablet po dłuższej przerwie, zerwane WiFi bez auto-reconnect), sam się
+    // przeładowuje, zamiast czekać aż ktoś zauważy i ręcznie odświeży stronę.
+    if (isPanelPath) {
+      setInterval(function(){
+        if (_disconnectedSince && (Date.now() - _disconnectedSince > 90000)) {
+          console.warn('[FB] Brak połączenia od ponad 90s — przeładowuję panel');
+          location.reload();
+        }
+      }, 15000);
+    }
 
   });});});
 })();
