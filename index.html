@@ -1847,8 +1847,16 @@ function calcCouponDiscount(sub, cartItems, coupon){
   if(!coupon) return 0;
   if(coupon.cats && coupon.cats.trim()){
     const catList = coupon.cats.split(',').map(c=>c.trim()).filter(Boolean);
-    const eligibleSub = cartItems.reduce((s,c)=>catList.includes(c.cat)?s+c.unitPrice*c.qty:s,0);
-    return Math.min(eligibleSub, eligibleSub*(coupon.disc/100));
+    // Rabat obejmuje TYLKO JEDNĄ SZTUKĘ — najdroższą pasującą pozycję z kategorii —
+    // a nie całą linię (ilość) ani sumę wszystkich pasujących pozycji w koszyku.
+    let bestUnitPrice = 0;
+    cartItems.forEach(function(c){
+      if(catList.includes(c.cat) && c.unitPrice > bestUnitPrice){
+        bestUnitPrice = c.unitPrice;
+      }
+    });
+    if(bestUnitPrice <= 0) return 0;
+    return Math.min(bestUnitPrice, bestUnitPrice*(coupon.disc/100));
   }
   return Math.min(sub, sub*(coupon.disc/100));
 }
