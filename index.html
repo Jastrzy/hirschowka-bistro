@@ -1847,16 +1847,16 @@ function calcCouponDiscount(sub, cartItems, coupon){
   if(!coupon) return 0;
   if(coupon.cats && coupon.cats.trim()){
     const catList = coupon.cats.split(',').map(c=>c.trim()).filter(Boolean);
-    // Rabat obejmuje TYLKO JEDNĄ SZTUKĘ — najdroższą pasującą pozycję z kategorii —
+    // Rabat obejmuje TYLKO JEDNĄ SZTUKĘ — najtańszą pasującą pozycję z kategorii —
     // a nie całą linię (ilość) ani sumę wszystkich pasujących pozycji w koszyku.
-    let bestUnitPrice = 0;
+    let cheapestUnitPrice = null;
     cartItems.forEach(function(c){
-      if(catList.includes(c.cat) && c.unitPrice > bestUnitPrice){
-        bestUnitPrice = c.unitPrice;
+      if(catList.includes(c.cat) && (cheapestUnitPrice===null || c.unitPrice < cheapestUnitPrice)){
+        cheapestUnitPrice = c.unitPrice;
       }
     });
-    if(bestUnitPrice <= 0) return 0;
-    return Math.min(bestUnitPrice, bestUnitPrice*(coupon.disc/100));
+    if(!cheapestUnitPrice || cheapestUnitPrice <= 0) return 0;
+    return Math.min(cheapestUnitPrice, cheapestUnitPrice*(coupon.disc/100));
   }
   return Math.min(sub, sub*(coupon.disc/100));
 }
