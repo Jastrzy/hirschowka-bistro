@@ -2777,6 +2777,12 @@ function checkOpenStatus(){
     applyStatus(manualStatusOverride, true);
     return;
   }
+  // Sprawdź przerwy w pracy (urlopy itp.) — mają pierwszeństwo przed cotygodniowym
+  // harmonogramem. Wcześniej to pole było całkowicie ignorowane przy liczeniu statusu.
+  const onHoliday = (holidays||[]).some(function(h){
+    return h && h.from && h.to && today >= h.from && today <= h.to;
+  });
+  if(onHoliday){ applyStatus(false); return; }
   // Sprawdź harmonogram
   const dayIdx = dow===0?6:dow-1; // harmonogram: 0=pon
   const day = schedule[dayIdx];
@@ -3867,6 +3873,7 @@ window.onFirebaseHolidays = function(freshArr){
   holidays = freshArr;
   const pg = document.getElementById('page-przerwy');
   if(pg && pg.classList.contains('active')) renderHolidays();
+  if(typeof checkOpenStatus === 'function') checkOpenStatus();
 };
 
 window.onFirebaseCoupons = function(freshArr){

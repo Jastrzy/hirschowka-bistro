@@ -1335,23 +1335,59 @@ function getMenu(){
 }
 
 // ════ HERO CLOCK ════
+function formatDayHours(day){
+  if(!day || day.closed) return 'Nieczynne';
+  return `${day.from}–${day.to}`;
+}
 function updateClock(){
   const now=new Date();const h=now.getHours(),m=now.getMinutes(),dow=now.getDay();
   const pad=n=>String(n).padStart(2,'0');
   document.getElementById('hero-clock').textContent=`${pad(h)}:${pad(m)}`;
-  const open=dow>=1&&dow<=5&&h>=7&&h<16;
+
+  // Prawdziwy status z panelu — uwzględnia harmonogram, ręczny override i przerwy w
+  // pracy (wcześniej to pole było sztywno wpisanym wzorem pon-pt 7:00-16:00, całkowicie
+  // niezależnym od tego, co ustawiał Marcin w panelu)
+  const open = LS('bistro-open') === true;
+
   const chip=document.getElementById('open-chip');
   chip.textContent=open?'● Otwarte':'● Zamknięte';chip.style.background=open?'rgba(45,74,47,.1)':'rgba(184,76,43,.1)';chip.style.color=open?'var(--green2)':'var(--rust)';chip.style.borderColor=open?'rgba(45,74,47,.2)':'rgba(184,76,43,.2)';
+
+  const schedule = LS('schedule');
+  const dayIdx = dow===0?6:dow-1; // harmonogram w panelu: 0=pon ... 6=nd
+  const todayHours = schedule && schedule[dayIdx];
+  const holidays = LS('holidays')||[];
+  const todayStr = now.toISOString().slice(0,10);
+  const onHoliday = holidays.some(hd=>hd && hd.from && hd.to && todayStr>=hd.from && todayStr<=hd.to);
+
   const tag=document.getElementById('hero-open-tag');
-  if(dow===0||dow===6)tag.textContent='Weekend — nieczynne';
-  else if(h>=16)tag.textContent='Dziś zamknięte — jutro od 7:00';
-  else tag.textContent='Dziś gotujemy od 7:00 do 16:00';
+  if(onHoliday){
+    tag.textContent='Chwilowo nieczynne — przerwa w pracy';
+  } else if(open && todayHours && !todayHours.closed){
+    tag.textContent=`Dziś gotujemy od ${todayHours.from} do ${todayHours.to}`;
+  } else if(!open && todayHours && !todayHours.closed){
+    tag.textContent='Dziś już zamknięte';
+  } else {
+    tag.textContent='Dziś nieczynne';
+  }
+
   const cardStatus=document.getElementById('card-open-status');
   if(cardStatus){cardStatus.textContent=open?'Teraz otwarte':'Teraz zamknięte';cardStatus.style.color=open?'var(--green2)':'var(--rust)';}
+
+  // Zaktualizuj listę godzin prawdziwym harmonogramem (Pon-Pt reprezentowane godzinami
+  // poniedziałku — w typowym przypadku dni robocze mają te same godziny)
+  if(schedule && schedule.length>=7){
+    const hr0=document.getElementById('hr-0'), hr1=document.getElementById('hr-1'), hr2=document.getElementById('hr-2');
+    if(hr0){const t=hr0.querySelector('.time'); if(t) t.textContent=formatDayHours(schedule[0]);}
+    if(hr1){const t=hr1.querySelector('.time'); if(t) t.textContent=formatDayHours(schedule[5]);}
+    if(hr2){const t=hr2.querySelector('.time'); if(t) t.textContent=formatDayHours(schedule[6]);}
+  }
+
   // Highlight today's hours row
   const rows=[document.getElementById('hr-0'),document.getElementById('hr-1'),document.getElementById('hr-2')];
   rows.forEach(r=>{if(r)r.classList.remove('today');});
   if(dow>=1&&dow<=5&&rows[0])rows[0].classList.add('today');
+  else if(dow===6&&rows[1])rows[1].classList.add('today');
+  else if(dow===0&&rows[2])rows[2].classList.add('today');
 }
 setInterval(updateClock,1000);updateClock();
 

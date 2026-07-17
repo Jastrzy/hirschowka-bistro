@@ -349,7 +349,9 @@
         'rewards':     null,
         'zones':       null,
         'delivery-zones': null,
-        'geo-api-key': null
+        'geo-api-key': null,
+        'schedule':    function() { if(window.updateClock) window.updateClock(); },
+        'holidays':    function() { if(window.updateClock) window.updateClock(); }
       };
 
       Object.keys(read_keys).forEach(function(k) {
