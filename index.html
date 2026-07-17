@@ -156,8 +156,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   border:1px solid rgba(200,146,42,.15);
 }
 .hero-card-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
-.hero-card-open{font-size:11px;font-weight:600;letter-spacing:.5px;color:#4ade80;margin-bottom:16px;display:flex;align-items:center;gap:6px;}
-.hero-card-open::before{content:'●';font-size:8px;}
+.hero-card-clock{font-size:28px;font-weight:700;color:rgba(249,245,238,.95);margin-bottom:8px;font-variant-numeric:tabular-nums;}
+.hero-card-open{font-size:20px;font-weight:700;letter-spacing:.3px;color:#4ade80;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.hero-card-open::before{content:'●';font-size:13px;}
 .hours-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
 .hours-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
 .hours-row .day{color:rgba(249,245,238,.5);}.hours-row .time{font-weight:600;color:rgba(249,245,238,.9);}
@@ -765,13 +766,8 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   <div class="food-float">🍵</div>
   <div class="food-float">🥗</div>
   <div class="hero-content">
-    <div class="hero-tag"><span class="live-dot"></span><span id="hero-open-tag">Dziś gotujemy od 7:00</span></div>
     <h1>Domowa kuchnia,<br>do której <em>chce się wracać</em></h1>
     <p class="hero-sub">Śniadania, obiady dnia, wypieki i kawy. Zamów online z dowozem lub wpadnij do nas na Mickiewicza 17 w Mielcu.</p>
-    <div class="hero-clock-row">
-      ⏰ <span class="clock-val" id="hero-clock">07:00</span>
-      <span class="open-chip" id="open-chip">● Otwarte</span>
-    </div>
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🛒 Zamów teraz</button>
       <button class="btn-ghost" onclick="document.getElementById('daily-section').scrollIntoView({behavior:'smooth'})">Danie dnia →</button>
@@ -783,6 +779,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
   </div>
   <div class="hero-card">
     <div class="hero-card-title">Godziny otwarcia</div>
+    <div class="hero-card-clock" id="hero-clock">07:00</div>
     <div class="hero-card-open" id="card-open-status">Teraz otwarte</div>
     <div class="hours-list">
       <div class="hours-row" id="hr-0"><span class="day">Pon–Pt</span><span class="time">7:00–16:00</span></div>
@@ -1344,34 +1341,26 @@ function updateClock(){
   const pad=n=>String(n).padStart(2,'0');
   document.getElementById('hero-clock').textContent=`${pad(h)}:${pad(m)}`;
 
-  // Prawdziwy status z panelu — uwzględnia harmonogram, ręczny override i przerwy w
-  // pracy (wcześniej to pole było sztywno wpisanym wzorem pon-pt 7:00-16:00, całkowicie
-  // niezależnym od tego, co ustawiał Marcin w panelu)
-  const open = LS('bistro-open') === true;
-
-  const chip=document.getElementById('open-chip');
-  chip.textContent=open?'● Otwarte':'● Zamknięte';chip.style.background=open?'rgba(45,74,47,.1)':'rgba(184,76,43,.1)';chip.style.color=open?'var(--green2)':'var(--rust)';chip.style.borderColor=open?'rgba(45,74,47,.2)':'rgba(184,76,43,.2)';
-
-  const schedule = LS('schedule');
-  const dayIdx = dow===0?6:dow-1; // harmonogram w panelu: 0=pon ... 6=nd
-  const todayHours = schedule && schedule[dayIdx];
+  // Sprawdź przerwy w pracy NIEZALEŻNIE od panelu — strona klienta sama weryfikuje
+  // datę względem `holidays`, więc nie czeka aż panel przeliczy bistro-open (co dzieje
+  // się tylko co 60s i tylko jeśli panel jest akurat otwarty na jakimś urządzeniu)
   const holidays = LS('holidays')||[];
   const todayStr = now.toISOString().slice(0,10);
   const onHoliday = holidays.some(hd=>hd && hd.from && hd.to && todayStr>=hd.from && todayStr<=hd.to);
 
-  const tag=document.getElementById('hero-open-tag');
-  if(onHoliday){
-    tag.textContent='Chwilowo nieczynne — przerwa w pracy';
-  } else if(open && todayHours && !todayHours.closed){
-    tag.textContent=`Dziś gotujemy od ${todayHours.from} do ${todayHours.to}`;
-  } else if(!open && todayHours && !todayHours.closed){
-    tag.textContent='Dziś już zamknięte';
-  } else {
-    tag.textContent='Dziś nieczynne';
-  }
+  // Prawdziwy status z panelu — uwzględnia harmonogram i ręczny override — plus
+  // niezależna weryfikacja przerwy w pracy tuż powyżej (wcześniej to pole było sztywno
+  // wpisanym wzorem pon-pt 7:00-16:00, całkowicie niezależnym od tego, co ustawiał
+  // Marcin w panelu)
+  const open = LS('bistro-open') === true && !onHoliday;
+
+  const schedule = LS('schedule');
 
   const cardStatus=document.getElementById('card-open-status');
-  if(cardStatus){cardStatus.textContent=open?'Teraz otwarte':'Teraz zamknięte';cardStatus.style.color=open?'var(--green2)':'var(--rust)';}
+  if(cardStatus){
+    cardStatus.textContent = open ? 'Teraz otwarte' : (onHoliday ? 'Teraz zamknięte (przerwa)' : 'Teraz zamknięte');
+    cardStatus.style.color = open ? 'var(--green2)' : 'var(--rust)';
+  }
 
   // Zaktualizuj listę godzin prawdziwym harmonogramem (Pon-Pt reprezentowane godzinami
   // poniedziałku — w typowym przypadku dni robocze mają te same godziny)
