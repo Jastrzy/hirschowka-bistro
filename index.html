@@ -2447,6 +2447,23 @@ async function placeOrder(){
       }catch(e){}
 
       if(attempts >= maxAttempts){
+        // Oznacz zamówienie jako nieudane — TYLKO jeśli nadal oczekuje na płatność
+        // (transakcja chroni przed nadpisaniem, gdyby webhook P24 zdążył je w
+        // międzyczasie potwierdzić). Bez tego zamówienie zostawało "widmowym"
+        // wpisem w kolejce Do akceptacji w panelu na zawsze.
+        try{
+          if(window._firebase && window._firebase.db){
+            await window._firebase.db.ref('orders').transaction(function(arr){
+              if(!arr) return arr;
+              var list = Array.isArray(arr)?arr:Object.values(arr);
+              var idx = list.findIndex(function(o){return o && String(o.id)===String(oid);});
+              if(idx===-1) return arr;
+              if((list[idx].status||'')!=='awaiting_payment') return arr;
+              list[idx] = Object.assign({}, list[idx], {status:'payment_failed', paymentFailedAt:new Date().toISOString()});
+              return list;
+            });
+          }
+        }catch(e){ console.warn('[P24] Nie udało się oznaczyć zamówienia jako nieudane:', e.message); }
         showModal(false);
       } else {
         setTimeout(checkStatus, 1000);

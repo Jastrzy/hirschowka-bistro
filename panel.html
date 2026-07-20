@@ -2062,6 +2062,7 @@ function normStatus(s){
   if(v==='ready'||v==='gotowe') return 'ready';
   if(v==='done'||v==='zrealizowane'||v==='completed') return 'done';
   if(v==='rejected'||v==='odrzucone') return 'rejected';
+  if(v==='payment_failed'||v==='nieudana platnosc') return 'payment_failed';
   return 'pending';
 }
 
@@ -2136,9 +2137,9 @@ function renderOrders(){
 function renderOrderCard(o){
   const typeLabel = o.type==='delivery'?'🚗 Dostawa':o.type==='pickup'?'🧍 Odbiór osobisty':'🍽 Na miejscu';
   const typeClass = o.type==='delivery'?'ot-del':o.type==='pickup'?'ot-pick':'ot-dine';
-  const statusLabel = {pending:'⏳ Do akceptacji',accepted:'✅ Przyjęte',delivering:'🚗 W drodze',ready:'🔔 Gotowe do odbioru',done:'✓ Zrealizowane',rejected:'✕ Odrzucone'}[normStatus(o.status)]||o.status;
-  const statusClass = {pending:'os-pending',accepted:'os-accepted',delivering:'os-delivering',ready:'os-ready',done:'os-done',rejected:'os-rejected'}[normStatus(o.status)]||'os-pending';
-  const cardClass = {pending:'ord-pending',accepted:'ord-accepted',delivering:'ord-delivering',ready:'ord-ready',done:'ord-done',rejected:'ord-rejected'}[normStatus(o.status)]||'ord-pending';
+  const statusLabel = {pending:'⏳ Do akceptacji',accepted:'✅ Przyjęte',delivering:'🚗 W drodze',ready:'🔔 Gotowe do odbioru',done:'✓ Zrealizowane',rejected:'✕ Odrzucone',payment_failed:'✕ Płatność nieudana'}[normStatus(o.status)]||o.status;
+  const statusClass = {pending:'os-pending',accepted:'os-accepted',delivering:'os-delivering',ready:'os-ready',done:'os-done',rejected:'os-rejected',payment_failed:'os-rejected'}[normStatus(o.status)]||'os-pending';
+  const cardClass = {pending:'ord-pending',accepted:'ord-accepted',delivering:'ord-delivering',ready:'ord-ready',done:'ord-done',rejected:'ord-rejected',payment_failed:'ord-rejected'}[normStatus(o.status)]||'ord-pending';
 
   // Items list
   let itemsHtml = '';
@@ -2194,6 +2195,8 @@ function renderOrderCard(o){
     actions = `<span style="font-size:12px;color:var(--muted2);">✓ Zrealizowane ${o.doneAt||''}</span>`;
   } else if(normStatus(o.status) === 'rejected'){
     actions = `<span style="font-size:12px;color:#ef4444;">✕ Odrzucone ${o.rejectedAt||''}</span>`;
+  } else if(normStatus(o.status) === 'payment_failed'){
+    actions = `<span style="font-size:12px;color:#ef4444;">✕ Płatność nie doszła do skutku</span>`;
   }
 
   return `<div class="order-card ${cardClass}" id="ocard-${o.id}">
@@ -2508,6 +2511,36 @@ async function appendToArchive(entry){
     console.warn('[archive] transaction error', e.message);
   }
 }
+
+// Automatyczne czyszczenie "widmowych" zamówień, których płatność online nigdy nie
+// doszła do skutku (klient zamknął kartę Przelewy24 i nie wrócił na stronę, albo
+// wrócił i strona sama oznaczyła zamówienie jako nieudane). Bez tego takie zamówienia
+// zostawały w "Do akceptacji" bezterminowo, jakby czekały na realną obsługę.
+async function sweepStalePaymentOrders(){
+  const THRESHOLD_MS = 20*60*1000; // 20 minut
+  const now = Date.now();
+  const stale = orders.filter(function(o){
+    const st = (o.status||'').toLowerCase();
+    return (st==='awaiting_payment' || st==='payment_failed') && o.timestamp && (now - o.timestamp > THRESHOLD_MS);
+  });
+  for(const o of stale){
+    const claim = await claimOrderTransition(o.id, normStatus(o.status), function(list, idx){
+      list.splice(idx,1);
+      return list;
+    });
+    if(claim.ok){
+      orders = orders.filter(x=>x.id!==o.id);
+      await appendToArchive(Object.assign({}, o, {
+        status:'payment_failed',
+        doneAt:new Date().toLocaleTimeString('pl',{hour:'2-digit',minute:'2-digit'}),
+        rejectedAt:new Date().toLocaleDateString('pl'),
+        note:'Płatność nie została potwierdzona — zamówienie usunięte automatycznie po 20 min oczekiwania'
+      }));
+    }
+  }
+  if(stale.length>0) renderOrders();
+}
+setInterval(sweepStalePaymentOrders, 5*60*1000); // sprawdzaj co 5 minut
 
 // ── STATUS TRANSITIONS ──
 async function setOrdStatus(id, newStatus){
