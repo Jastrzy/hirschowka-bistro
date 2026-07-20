@@ -384,9 +384,12 @@
               if (!order || !order.id) return;
               if (_lastSentOrderIds.has(order.id)) return;
               _lastSentOrderIds.add(order.id);
-              // Push dodaje zamówienie bez nadpisywania reszty
-              db.ref('orders').push(order).then(function() {
-                console.log('[FB] Zamowienie wyslane (push):', order.id);
+              // set() na kluczu z ID zamówienia (nie push()) — idempotentne: nawet
+              // jeśli ten zapis wystrzeli dwa razy, drugi nadpisze pierwszy tymi
+              // samymi danymi, zamiast tworzyć zdublowany rekord
+              var orderKey = String(order.id).replace('#','');
+              db.ref('orders/'+orderKey).set(order).then(function() {
+                console.log('[FB] Zamowienie wyslane (set):', order.id);
               }).catch(function(e) {
                 console.warn('[FB] Blad zapisu:', e.message);
               });
@@ -419,7 +422,8 @@
               if (!order || !order.id) return;
               if (_sentAppOrderIds.has(order.id)) return;
               _sentAppOrderIds.add(order.id);
-              db.ref('orders').push(order).catch(function(){});
+              var orderKey = String(order.id).replace('#','');
+              db.ref('orders/'+orderKey).set(order).catch(function(){});
             });
           } catch(e) {}
         }

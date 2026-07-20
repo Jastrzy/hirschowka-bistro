@@ -2205,6 +2205,7 @@ async function placeOrder(){
   const disc=calcCouponDiscount(sub,cart,appliedCoupon);
   const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));
   const oid='#'+(10000+Math.floor(Math.random()*89999));
+  const orderKey=oid.replace('#',''); // Firebase nie pozwala na '#' w kluczu
   const typeMap={'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
   const newOrder={
     id:oid,
@@ -2278,11 +2279,14 @@ async function placeOrder(){
     const btn=document.querySelector('.order-btn');
     if(btn){btn.disabled=true;btn.textContent='Przekierowuję do płatności…';}
     try{
-      // 1. Najpierw zapisz zamówienie do Firebase
+      // 1. Najpierw zapisz zamówienie do Firebase — set() na kluczu z numeru zamówienia
+      // (nie push()) — jeśli ten zapis z jakiegokolwiek powodu "wystrzeli" dwa razy
+      // (podwójne kliknięcie, retry po zerwaniu połączenia), drugi zapis NADPISZE
+      // pierwszy tymi samymi danymi, zamiast tworzyć zdublowany rekord.
       const db=window._firebase&&window._firebase.db;
       if(db){
         if(window._markOrderSent) window._markOrderSent(oid);
-        await db.ref('orders').push(newOrder);
+        await db.ref('orders/'+orderKey).set(newOrder);
         console.log('[ORDER] ✅ Zamówienie online zapisane do Firebase:', oid);
       } else {
         console.warn('[ORDER] Firebase niedostępny przy płatności online');
@@ -2327,7 +2331,7 @@ async function placeOrder(){
     const db=window._firebase&&window._firebase.db;
     if(db){
       if(window._markOrderSent) window._markOrderSent(oid);
-      await db.ref('orders').push(newOrder);
+      await db.ref('orders/'+orderKey).set(newOrder);
       console.log('[ORDER] ✅ Zapisano do Firebase:', oid);
     } else {
       // Fallback — przez localStorage (stara ścieżka)
