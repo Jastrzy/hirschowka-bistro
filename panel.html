@@ -378,6 +378,7 @@ window.doLogin = function(){
 localStorage.removeItem('hb_panel_auth');
 
 function showPanel(){
+  window._panelAuthed = true; // flaga: user faktycznie zalogowany (Storage rules tego wymagają)
   var ls = document.getElementById('login-screen');
   if(ls) ls.style.display = 'none';
   // Sprawdź przypomnienie o haśle — timestamp z Firebase (node: pwd_changed_ts)
@@ -3714,12 +3715,15 @@ async function migrateMenuPhotosToStorage(){
 }
 (function waitAndMigratePhotos(attempt){
   attempt=attempt||0;
-  if(window._firebase&&window._firebase.storage){
+  // Czekamy na Storage ORAZ na faktyczne zalogowanie — reguły Storage wymagają
+  // zalogowanego użytkownika (request.auth != null), a Storage bywa gotowe
+  // zanim ktoś zdąży się zalogować na ekranie logowania.
+  if(window._firebase&&window._firebase.storage&&window._panelAuthed){
     migrateMenuPhotosToStorage();
-  } else if(attempt<20){
+  } else if(attempt<120){
     setTimeout(function(){waitAndMigratePhotos(attempt+1);},500);
   } else {
-    console.warn('[Migracja zdjęć] Storage niedostępny po 10s — pomijam');
+    console.warn('[Migracja zdjęć] Storage/logowanie niegotowe po 60s — pomijam');
   }
 })();
 
