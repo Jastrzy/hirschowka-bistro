@@ -32,12 +32,18 @@
   load('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', function() {
   load('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', function() {
   load('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js', function() {
+  load('https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js', function() {
 
     if (!firebase.apps.length) firebase.initializeApp(CFG);
     var db = firebase.database();
     var auth = firebase.auth();
+    var storage = firebase.storage();
 
-    window._firebase = { db: db };
+    // Zdjęcia dań w Firebase Storage — używane przez panel przy zapisie/edycji
+    // dania, żeby w tablicy 'menu' trzymać tylko link do zdjęcia, a nie całe
+    // dane obrazu (base64). Patrz ARCHITECTURE.md — problem z wolnym/nieudanym
+    // zapisem menu przy rosnącej liczbie dań ze zdjęciami.
+    window._firebase = { db: db, storage: storage };
     window._firebaseReady = true;
 
     var path = window.location.pathname;
@@ -457,5 +463,5 @@
       }, 15000);
     }
 
-  });});});
+  });});});});
 })();

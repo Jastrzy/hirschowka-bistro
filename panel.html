@@ -3649,15 +3649,87 @@ function previewDishPhoto(inp){
   r.readAsDataURL(f);
 }
 let _dishSaving=false;
-function saveDish(){
+
+// ── ZDJĘCIA DAŃ W FIREBASE STORAGE ──
+// Wcześniej zdjęcie dania (skompresowane, ale wciąż kilkadziesiąt-kilkaset KB)
+// było zapisywane WPROST w tablicy 'menu'. Ponieważ KAŻDY zapis jednego dania
+// wysyłał do Firebase całą tablicę menu (wszystkie dania + wszystkie zdjęcia),
+// im więcej dań ze zdjęciami, tym większy i wolniejszy — a czasem nieudany —
+// był zapis. Teraz zdjęcie ląduje w Firebase Storage, a w 'menu' zostaje
+// zapisany tylko krótki link do niego.
+
+// Zamienia data-URL (base64) na Blob gotowy do wgrania
+function dataURLtoBlob(dataUrl){
+  const arr=dataUrl.split(',');
+  const mimeMatch=arr[0].match(/:(.*?);/);
+  const mime=mimeMatch?mimeMatch[1]:'image/jpeg';
+  const bstr=atob(arr[1]);
+  let n=bstr.length;
+  const u8arr=new Uint8Array(n);
+  while(n--){u8arr[n]=bstr.charCodeAt(n);}
+  return new Blob([u8arr],{type:mime});
+}
+
+// Wgrywa zdjęcie dania (data-URL) do Storage i zwraca link do pobrania
+async function uploadDishPhoto(dishId, dataUrl){
+  const storage=window._firebase&&window._firebase.storage;
+  if(!storage) throw new Error('Firebase Storage niedostępny — sprawdź połączenie i odśwież panel');
+  const blob=dataURLtoBlob(dataUrl);
+  // Nazwa pliku ze znacznikiem czasu — żeby przy podmianie zdjęcia klienci
+  // z zapisaną w przeglądarce starą wersją na pewno zobaczyli nową
+  const path='menu-photos/dish-'+dishId+'-'+Date.now()+'.jpg';
+  const ref=storage.ref().child(path);
+  await ref.put(blob);
+  return await ref.getDownloadURL();
+}
+
+// Usuwa stare zdjęcie z Storage przy podmianie (best-effort — błąd nie przerywa zapisu)
+function deleteOldDishPhoto(url){
+  const storage=window._firebase&&window._firebase.storage;
+  if(!storage||!url||!url.startsWith('http')) return;
+  try{ storage.refFromURL(url).delete().catch(function(){}); }catch(e){}
+}
+
+// Migracja jednorazowa: dania które mają jeszcze zdjęcie zapisane po staremu
+// (jako base64 wprost w 'menu') zostają automatycznie wgrane do Storage przy
+// najbliższym otwarciu panelu, a w 'menu' zostaje już tylko link.
+async function migrateMenuPhotosToStorage(){
+  const toMigrate=menuData.filter(d=>d&&d.photo&&d.photo.indexOf('data:')===0);
+  if(!toMigrate.length) return;
+  console.log('[Migracja zdjęć] Do wgrania:',toMigrate.length);
+  let migrated=0;
+  for(const d of toMigrate){
+    try{
+      d.photo=await uploadDishPhoto(d.id,d.photo);
+      migrated++;
+    }catch(e){
+      console.warn('[Migracja zdjęć] Błąd dla dania',d.name,e.message);
+    }
+  }
+  if(migrated>0){
+    W('menu',menuData);
+    renderMenu();
+    toast('📷 Zmigrowano zdjęć dań do Storage: '+migrated+'/'+toMigrate.length+' ✓');
+  }
+}
+(function waitAndMigratePhotos(attempt){
+  attempt=attempt||0;
+  if(window._firebase&&window._firebase.storage){
+    migrateMenuPhotosToStorage();
+  } else if(attempt<20){
+    setTimeout(function(){waitAndMigratePhotos(attempt+1);},500);
+  } else {
+    console.warn('[Migracja zdjęć] Storage niedostępny po 10s — pomijam');
+  }
+})();
+
+async function saveDish(){
   if(_dishSaving)return;
   const name=(document.getElementById('d-name').value||'').trim();
   const desc=(document.getElementById('d-desc').value||'').trim();
   if(!name){toast('Podaj nazwę dania — pole "Nazwa dania" jest wymagane');return;}
   const imgEl=document.getElementById('dish-photo-img');
   const hasPhoto=document.getElementById('dish-photo-prev').style.display!=='none';
-  // Zdjęcie już skompresowane przez previewDishPhoto
-  const photo=hasPhoto?imgEl.src:'';
   const selParam=document.getElementById('d-param').value;
   let savePrice=parseFloat(document.getElementById('d-price').value)||0;
   let saveParamName='',saveParamPrices=[];
@@ -3666,6 +3738,30 @@ function saveDish(){
     saveParamPrices=Array.from(pRows).map(inp=>parseFloat(inp.value)||0);
     saveParamName=selParam;savePrice=saveParamPrices[0]||0;
   }
+
+  _dishSaving=true;
+  const saveBtn=document.getElementById('dish-save-btn');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Zapisuję…';}
+
+  const existingDish=editDishId!==null?menuData.find(x=>x.id===editDishId):null;
+  const dishId=editDishId!==null?editDishId:Math.max(0,...menuData.map(x=>x.id))+1;
+
+  // Zdjęcie: jeśli wybrano nowe/zmienione (jeszcze jako dane obrazu) — wgraj do
+  // Storage i zapisz w daniu tylko link. Jeśli zdjęcie się nie zmieniło (już
+  // jest linkiem) albo go nie ma — nic nie wgrywaj.
+  let photo=hasPhoto?imgEl.src:'';
+  if(photo&&photo.indexOf('data:')===0){
+    try{
+      photo=await uploadDishPhoto(dishId,photo);
+      if(existingDish&&existingDish.photo&&existingDish.photo.startsWith('http')){
+        deleteOldDishPhoto(existingDish.photo);
+      }
+    }catch(e){
+      toast('⚠️ Nie udało się wgrać zdjęcia dania: '+e.message+'. Danie zapisano bez zmiany zdjęcia.');
+      photo=existingDish?.photo||'';
+    }
+  }
+
   const obj={
     name,desc,price:savePrice,
     cat:document.getElementById('d-cat').value,
@@ -3676,19 +3772,14 @@ function saveDish(){
     paramName:saveParamName,paramPrices:saveParamPrices,
   };
   if(editDishId){
-    const existing=menuData.find(x=>x.id===editDishId);
-    Object.assign(existing,obj);
+    Object.assign(existingDish,obj);
     curMenuCat=obj.cat;
   } else {
-    obj.id=Math.max(0,...menuData.map(x=>x.id))+1;
+    obj.id=dishId;
     menuData.push(obj);
     curMenuCat=obj.cat;
   }
-  _dishSaving=true;
-  const saveBtn=document.getElementById('dish-save-btn');
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Zapisuję…';}
   W('menu',menuData);
-  if(window._firebase&&window._firebase.db){try{window._firebase.db.ref('menu').set(menuData).catch(function(){});}catch(e){}}
   const savedCat=obj.cat;
   closeModal('mo-dish');
   curMenuCat=savedCat;
