@@ -29,10 +29,21 @@
     return a;
   }
 
+  // firebase-app-compat.js MUSI wczytać się jako pierwszy — definiuje globalny
+  // obiekt 'firebase', do którego doczepiają się pozostałe moduły. Reszta
+  // (database/auth/storage) nie zależy od siebie nawzajem, więc ładujemy je
+  // RÓWNOLEGLE zamiast po kolei — skraca to czas startu Firebase, co ma
+  // znaczenie zwłaszcza na słabszym WiFi w bistro (mniej czasu = mniejsza
+  // szansa na zerwanie połączenia w trakcie startu panelu).
   load('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', function() {
-  load('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', function() {
-  load('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js', function() {
-  load('https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js', function() {
+    var _pending = 3;
+    function _ready(){ _pending--; if (_pending === 0) init(); }
+    load('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', _ready);
+    load('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js', _ready);
+    load('https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js', _ready);
+  });
+
+  function init() {
 
     if (!firebase.apps.length) firebase.initializeApp(CFG);
     var db = firebase.database();
@@ -452,16 +463,25 @@
       }
     });
     // Watchdog — jeśli panel siedzi bez połączenia z Firebase dłużej niż 90 sekund
-    // (np. tablet po dłuższej przerwie, zerwane WiFi bez auto-reconnect), sam się
-    // przeładowuje, zamiast czekać aż ktoś zauważy i ręcznie odświeży stronę.
+    // (np. tablet po dłuższej przerwie, zerwane WiFi bez auto-reconnect), wymuś
+    // ponowne połączenie. WCZEŚNIEJ robiliśmy to przez location.reload() — działało,
+    // ale pełne przeładowanie strony czasem gubiło sesję logowania jako efekt uboczny
+    // (stąd częste ekrany logowania). goOffline()+goOnline() to oficjalna metoda
+    // Firebase na "wymuś reconnect" — naprawia połączenie, w ogóle nie dotykając
+    // sesji logowania ani stanu strony.
     if (isPanelPath) {
+      var _lastReconnectAttempt = 0;
       setInterval(function(){
-        if (_disconnectedSince && (Date.now() - _disconnectedSince > 90000)) {
-          console.warn('[FB] Brak połączenia od ponad 90s — przeładowuję panel');
-          location.reload();
+        if (_disconnectedSince && (Date.now() - _disconnectedSince > 90000) && (Date.now() - _lastReconnectAttempt > 90000)) {
+          console.warn('[FB] Brak połączenia od ponad 90s — wymuszam reconnect (bez przeładowania strony)');
+          _lastReconnectAttempt = Date.now();
+          try {
+            db.goOffline();
+            setTimeout(function(){ db.goOnline(); }, 800);
+          } catch(e) {}
         }
       }, 15000);
     }
 
-  });});});});
+  }
 })();

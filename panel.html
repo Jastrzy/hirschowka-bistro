@@ -4,6 +4,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Przeglądarka nawiązuje połączenie z serwerem SDK Firebase wcześniej,
+     zanim jeszcze poprosi o same pliki — skraca czas startu Firebase,
+     zwłaszcza gdy WiFi jest wolniejsze -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://www.gstatic.com">
 <!-- EmailJS — wysyłka emaili bez serwera -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <title>Hirschówka Bistro — Panel Restauratora</title>
