@@ -4,6 +4,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA — pozwala zainstalować panel jako samodzielną aplikację (Menu ⋮ → Dodaj do ekranu głównego) -->
+<link rel="manifest" href="panel-manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hirschówka Panel">
+<link rel="apple-touch-icon" href="logo-round.png">
+<meta name="theme-color" content="#3B2512">
 <!-- Przeglądarka nawiązuje połączenie z serwerem SDK Firebase wcześniej,
      zanim jeszcze poprosi o same pliki — skraca czas startu Firebase,
      zwłaszcza gdy WiFi jest wolniejsze -->
@@ -6112,6 +6119,12 @@ document.addEventListener('visibilitychange', function(){
     setTimeout(fetchOrdersNow, 800);
   }
 });
+
+// Rejestracja Service Workera — wymagana, żeby Chrome zaproponował
+// "Dodaj do ekranu głównego" (instalację panelu jako samodzielnej aplikacji)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>
