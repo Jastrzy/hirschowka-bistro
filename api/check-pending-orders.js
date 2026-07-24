@@ -90,7 +90,9 @@ export default async function handler(req, res) {
     let alerted = 0;
     for (const [key, o] of stuck) {
       const minutes = Math.round((now - o.timestamp) / 60000);
-      const smsText = `Hirschowka: zamowienie ${o.id} czeka na akceptacje juz ${minutes} min! Sprawdz panel.`;
+      const customerName = o.customer || ('Klient ' + (o.phone || ''));
+      const totalStr = (o.total !== undefined && o.total !== null) ? `${o.total} zl` : 'b/d';
+      const smsText = `Hirschowka: zamowienie ${o.id} - ${customerName}, ${totalStr} - czeka na akceptacje juz ${minutes} min! Sprawdz panel.`;
 
       for (const rawPhone of phones) {
         const cleanPhone = '48' + String(rawPhone).replace(/\s/g, '').replace(/^\+48/, '').replace(/\D/g, '');
