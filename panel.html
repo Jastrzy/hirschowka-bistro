@@ -479,13 +479,25 @@ window._onAuthReady = function(auth){
           }
         }, 30000);
       } else {
-        // Pierwsze wejście — pokaż logowanie od razu
-        var ls = document.getElementById('login-screen');
-        if(ls) ls.style.display = 'flex';
-        setTimeout(function(){
-          var inp = document.getElementById('login-input');
-          if(inp) inp.focus();
-        }, 100);
+        // Pierwsze wejście w tej sesji JS — ale to niekoniecznie oznacza, że
+        // user naprawdę nigdy się nie logował. Na urządzeniach z małą ilością
+        // wolnego RAM-u (np. tablet) Android potrafi ubić CAŁY proces karty,
+        // żeby odzyskać pamięć — dane logowania nadal bezpiecznie leżą na
+        // dysku, ale trzeba dać Firebase chwilę na ich odczytanie zanim
+        // uznamy, że logowania faktycznie brakuje. Stąd krótkie oczekiwanie
+        // (2,5 s) zamiast pokazywania ekranu logowania od razu.
+        if(window._showLoginTimer) clearTimeout(window._showLoginTimer);
+        window._showLoginTimer = setTimeout(function(){
+          var cur = auth.currentUser;
+          if(!cur || cur.isAnonymous || !cur.email){
+            var ls = document.getElementById('login-screen');
+            if(ls) ls.style.display = 'flex';
+            setTimeout(function(){
+              var inp = document.getElementById('login-input');
+              if(inp) inp.focus();
+            }, 100);
+          }
+        }, 2500);
       }
     }
   });
@@ -6124,6 +6136,18 @@ document.addEventListener('visibilitychange', function(){
 // "Dodaj do ekranu głównego" (instalację panelu jako samodzielnej aplikacji)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+
+// Poproś przeglądarkę, żeby traktowała dane panelu (m.in. sesję logowania
+// Firebase, zapisaną w IndexedDB) jako "trwałe" — przeglądarki potrafią same,
+// pod presją mało wolnego miejsca na urządzeniu, kasować dane rzadziej
+// używanych stron, co gubi zapamiętane logowanie. To nie jest gwarancja
+// (system i tak może odmówić przy naprawdę krytycznym braku miejsca), ale
+// znacząco zmniejsza ryzyko. Bezpieczne — nic nie zmienia, jeśli się nie uda.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().then(function(granted){
+    console.log('[Storage] Trwałe przechowywanie danych:', granted ? 'przyznane ✓' : 'odmówione');
+  }).catch(function(){});
 }
 </script>
 </body>
