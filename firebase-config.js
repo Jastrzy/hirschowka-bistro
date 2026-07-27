@@ -60,6 +60,10 @@
     var path = window.location.pathname;
     var isPanelPath = path.indexOf('panel') >= 0;
 
+    var isPanel  = isPanelPath;
+    var isApp    = path.indexOf('app') >= 0;
+    var isClient = !isPanel && !isApp;
+
     if (isPanelPath) {
       // Panel — Firebase Auth email+hasło
       // Jawnie wymuś trwałą sesję (przetrwa zamknięcie karty/przeglądarki, usypianie
@@ -83,13 +87,30 @@
       }
     } else {
       // Strona klienta i app — loguj anonimowo
-      auth.signInAnonymously().catch(function(){});
+      auth.signInAnonymously().catch(function(e){
+        console.warn('[Auth] Logowanie anonimowe nieudane:', e.message);
+      });
     }
 
-    var path = window.location.pathname;
-    var isPanel  = path.indexOf('panel') >= 0;
-    var isApp    = path.indexOf('app') >= 0;
-    var isClient = !isPanel && !isApp;
+    // WAŻNE: reguły bazy Firebase wymagają zalogowania (auth != null) do
+    // KAŻDEGO odczytu i zapisu. Logowanie (anonimowe na stronie klienta,
+    // e-mail/hasło w panelu) kończy się ASYNCHRONICZNIE — jeśli podłączymy
+    // nasłuchiwanie danych (menu, zamówienia, itd.) ZANIM się zakończy,
+    // Firebase odrzuci próbę ("permission_denied"), a co gorsza SAM SIĘ NIE
+    // PONAWIA później, nawet po udanym zalogowaniu chwilę potem. Efekt: menu
+    // czasem w ogóle się nie ładuje (zostaje "zawieszone" na szkielecie
+    // ładowania) — zwłaszcza gdy logowanie trwa nieco dłużej (wolniejsze
+    // połączenie). Dlatego całe właściwe nasłuchiwanie danych odpalamy
+    // dopiero, gdy onAuthStateChanged potwierdzi, że user faktycznie istnieje.
+    var _listenersStarted = false;
+    auth.onAuthStateChanged(function(user) {
+      if (user && !_listenersStarted) {
+        _listenersStarted = true;
+        startDataListeners();
+      }
+    });
+
+    function startDataListeners() {
 
     // ═══ PANEL ═══
     if (isPanel) {
@@ -449,7 +470,10 @@
       console.log('[FB] App OK');
     }
 
-    // Status połączenia
+    } // koniec startDataListeners()
+
+    // Status połączenia (.info/connected to specjalna, wbudowana ścieżka Firebase,
+    // zawsze dostępna niezależnie od reguł bezpieczeństwa — nie wymaga logowania)
     var _disconnectedSince = null;
     db.ref('.info/connected').on('value', function(snap) {
       var online = snap.val() === true;
