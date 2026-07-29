@@ -433,6 +433,7 @@ function showPanel(){
 }
 
 window.doLogout = function(){
+  window._explicitLogout = true; // celowe wylogowanie — pomiń okres ochronny, pokaż ekran logowania od razu
   if(window._fbAuth) window._fbAuth.signOut();
   localStorage.removeItem('hb_login_email');
 };
@@ -455,6 +456,19 @@ window._onAuthReady = function(auth){
       // Niezalogowany lub anonimowy
       if(user && user.isAnonymous){
         auth.signOut();
+      }
+      if(window._explicitLogout){
+        // Celowe wylogowanie (kliknięcie "Wyloguj") — bez czekania, pokaż od razu
+        window._explicitLogout = false;
+        window._wasLoggedIn = false;
+        if(window._showLoginTimer){ clearTimeout(window._showLoginTimer); window._showLoginTimer = null; }
+        var lsNow = document.getElementById('login-screen');
+        if(lsNow) lsNow.style.display = 'flex';
+        setTimeout(function(){
+          var inpNow = document.getElementById('login-input');
+          if(inpNow) inpNow.focus();
+        }, 100);
+        return;
       }
       // Jeśli byliśmy wcześniej zalogowani (powrót z uśpienia/tła) —
       // NIE pokazuj od razu ekranu logowania. Firebase zwykle sam przywróci
@@ -567,7 +581,6 @@ requestWakeLock();
     <div class="ni" onclick="go('przerwy',this)"><span class="ic">⏸</span><span>Przerwy w pracy</span></div>
     <div class="ni" onclick="go('ustawienia',this)"><span class="ic">🔧</span><span>Ustawienia</span></div>
     <div class="ni" onclick="go('importexport',this)"><span class="ic">↕</span><span>Import / Eksport</span></div>
-    <div class="ni" onclick="doLogout()" style="margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;"><span class="ic">🚪</span><span>Wyloguj</span></div>
   </nav>
 </aside>
 
@@ -584,6 +597,7 @@ requestWakeLock();
         <span class="sdot"></span><span id="sp-txt">Restauracja otwarta</span>
       </button>
       <div class="avatar">H</div>
+      <button onclick="doLogout()" title="Wyloguj" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;font-size:18px;color:var(--brown,#3B2512);transition:background .2s;" onmouseover="this.style.background='rgba(0,0,0,.06)'" onmouseout="this.style.background='transparent'">🚪</button>
     </div>
   </header>
   <!-- ALARM BAR — nowe zamówienia -->
