@@ -2101,6 +2101,15 @@ function logCouponRedemption(code,name,phone,orderId,amount){
 
 // ════ ORDER ════
 async function placeOrder(){
+  // Blokada przed wielokrotnym, prawie jednoczesnym kliknięciem — bez tego
+  // szybkie podwójne/potrójne kliknięcie (np. na wolniejszym łączu, niecierpliwy
+  // klient) tworzyło kilka osobnych, w pełni niezależnych zamówień z tym samym
+  // koszykiem, zanim przycisk zdążył się zablokować (co następowało dopiero po
+  // kilku kolejnych sprawdzeniach w Firebase).
+  if(window._placingOrder) return;
+  window._placingOrder = true;
+  try{
+
   if(!cart.length){toast('Koszyk jest pusty');return;}
   // Sprawdź czy bistro jest otwarte (klucz bistro-open w Firebase)
   try{
@@ -2347,6 +2356,10 @@ async function placeOrder(){
   cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
   document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
+
+  } finally {
+    window._placingOrder = false;
+  }
 }
 
 // Obsłuż powrót z Przelewy24
