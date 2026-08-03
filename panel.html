@@ -381,6 +381,17 @@ window.doLogin = function(){
           document.getElementById('login-input').value = '';
           document.getElementById('login-input').focus();
         });
+      // Zabezpieczenie: jeśli logowanie utknie (np. karta obudzona z zamrożenia
+      // przez przeglądarkę i połączenie sieciowe nie wznowiło się poprawnie),
+      // po 10s pokaż jasny komunikat zamiast wiszącego bez końca przycisku
+      setTimeout(function(){
+        if(_loginAttempting){
+          _loginAttempting = false;
+          err.textContent = '❌ Logowanie trwa zbyt długo — odśwież stronę (F5) i spróbuj ponownie';
+          btn.disabled = false;
+          btn.textContent = 'Zaloguj się →';
+        }
+      }, 10000);
     } else { setTimeout(waitForAuth, 200); }
   };
   waitForAuth();
