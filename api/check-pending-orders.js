@@ -30,9 +30,37 @@ async function fbLog(level, msg, data) {
   } catch (e) { /* logowanie nie może wywrócić głównej logiki */ }
 }
 
+// UWAGA: ta funkcja MUSI dokładnie odzwierciedlać normStatus() z panel.html —
+// wcześniejsza, niepełna wersja (bez domyślnego "return 'pending'" na końcu)
+// była przyczyną przegapionego zamówienia: webhook Przelewy24 ustawia status
+// na "paid" po potwierdzeniu płatności, a ta funkcja nie rozpoznawała "paid"
+// jako "wymaga uwagi" — po prostu je pomijała, bez żadnego ostrzeżenia.
 function normStatus(v) {
-  if (!v || v === 'pending' || v === 'new' || v === 'nowe' || v === 'do akceptacji' || v === 'awaiting_payment') return 'pending';
-  return v;
+  const s = (v || '').toLowerCase().trim();
+  if (!s || s === 'pending' || s === 'new' || s === 'nowe' || s === 'do akceptacji' || s === 'awaiting_payment') return 'pending';
+  if (s === 'accepted' || s === 'przyjete' || s === 'przyjęte' || s === 'w realizacji') return 'accepted';
+  if (s === 'delivering' || s === 'w drodze') return 'delivering';
+  if (s === 'ready' || s === 'gotowe') return 'ready';
+  if (s === 'done' || s === 'zrealizowane' || s === 'completed') return 'done';
+  if (s === 'rejected' || s === 'odrzucone') return 'rejected';
+  if (s === 'payment_failed' || s === 'nieudana platnosc') return 'payment_failed';
+  // Domyślnie: nieznany status = wciąż wymaga uwagi (tak samo jak w panelu)
+  return 'pending';
+}
+
+// Prosta odporność na przejściowe zerwania sieci (np. "fetch failed") —
+// jedna ponowna próba po krótkiej chwili, zanim uznamy to za prawdziwy błąd
+async function fetchWithRetry(url, opts, retries) {
+  retries = retries === undefined ? 1 : retries;
+  try {
+    return await fetch(url, opts);
+  } catch (e) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 800));
+      return fetchWithRetry(url, opts, retries - 1);
+    }
+    throw e;
+  }
 }
 
 export default async function handler(req, res) {
@@ -49,7 +77,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const ordersResp = await fetch(`${FB_URL}/orders.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+    const ordersResp = await fetchWithRetry(`${FB_URL}/orders.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
     const ordersVal = await ordersResp.json();
 
     if (!ordersVal || typeof ordersVal !== 'object') {
