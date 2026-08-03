@@ -17,15 +17,17 @@ const FB_SECRET   = process.env.FIREBASE_SECRET;
 
 // Logowanie do Firebase — widoczne w panelu admina i Firebase Console
 async function fbLog(level, msg, data) {
+  const now = new Date();
+  const dateKey = now.toISOString().slice(0,10); // np. '2026-07-31' — osobny folder na każdy dzień, żeby dało się łatwo znaleźć konkretną datę zamiast przeszukiwać jedną wielką, płaską listę
   const entry = {
-    ts: new Date().toISOString(),
+    ts: now.toISOString(),
     level,
     msg,
     data: data || null,
   };
   console.log(`[P24][${level}]`, msg, data ? JSON.stringify(data) : '');
   try {
-    await fetch(`${FB_URL}/p24-logs.json${FB_SECRET?'?auth='+FB_SECRET:''}`, {
+    await fetch(`${FB_URL}/p24-logs/${dateKey}.json${FB_SECRET?'?auth='+FB_SECRET:''}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
@@ -278,6 +280,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Brak: orderId, amount lub email' });
     }
 
+    await fbLog('INFO', 'register: proba rejestracji platnosci', { orderId, amount, email, phone });
+
     const amountGrosze = Math.round(parseFloat(amount) * 100);
     const sessionId    = `HB-${orderId}-${Date.now()}`;
     const sign         = signRegister(sessionId, amountGrosze, 'PLN');
@@ -306,14 +310,17 @@ module.exports = async function handler(req, res) {
       let data; try { data = JSON.parse(text); } catch(e) { data = { raw: text }; }
 
       if (data.data && data.data.token) {
+        await fbLog('INFO', 'register: sukces — token otrzymany', { orderId, sessionId, amount: amountGrosze });
         return res.status(200).json({
           token: data.data.token, sessionId,
           payUrl: `${BASE_URL}/trnRequest/${data.data.token}`,
           sandbox: SANDBOX,
         });
       }
+      await fbLog('WARN', 'register: P24 nie zwrocilo tokenu', { orderId, sessionId, status: resp.status, raw: data });
       return res.status(500).json({ error: data.error||'Blad rejestracji', code: resp.status, raw: data });
     } catch(e) {
+      await fbLog('ERROR', 'register: wyjatek podczas rejestracji', { orderId, message: e.message });
       return res.status(500).json({ error: e.message });
     }
   }

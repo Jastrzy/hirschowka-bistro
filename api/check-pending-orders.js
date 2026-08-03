@@ -19,10 +19,12 @@ const THRESHOLD_MS = THRESHOLD_MINUTES * 60 * 1000;
 // Logowanie do Firebase — widoczne w panelu admina i Firebase Console (ten sam
 // wzorzec co w p24.js, żeby diagnostyka była w jednym miejscu: p24-logs)
 async function fbLog(level, msg, data) {
-  const entry = { ts: new Date().toISOString(), level, msg, data: data || null };
+  const now = new Date();
+  const dateKey = now.toISOString().slice(0,10); // osobny folder na każdy dzień — łatwiej znaleźć konkretną datę
+  const entry = { ts: now.toISOString(), level, msg, data: data || null };
   console.log(`[ALERT][${level}]`, msg, data ? JSON.stringify(data) : '');
   try {
-    await fetch(`${FB_URL}/p24-logs.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
+    await fetch(`${FB_URL}/p24-logs/${dateKey}.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
