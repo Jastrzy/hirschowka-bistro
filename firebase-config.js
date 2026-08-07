@@ -35,12 +35,12 @@
   // RÓWNOLEGLE zamiast po kolei — skraca to czas startu Firebase, co ma
   // znaczenie zwłaszcza na słabszym WiFi w bistro (mniej czasu = mniejsza
   // szansa na zerwanie połączenia w trakcie startu panelu).
-  load('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', function() {
+  load('https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js', function() {
     var _pending = 3;
     function _ready(){ _pending--; if (_pending === 0) init(); }
-    load('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', _ready);
-    load('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js', _ready);
-    load('https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js', _ready);
+    load('https://www.gstatic.com/firebasejs/12.17.1/firebase-database-compat.js', _ready);
+    load('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth-compat.js', _ready);
+    load('https://www.gstatic.com/firebasejs/12.17.1/firebase-storage-compat.js', _ready);
   });
 
   function init() {
