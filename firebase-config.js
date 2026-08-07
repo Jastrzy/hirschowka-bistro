@@ -389,13 +389,18 @@
         'delivery-zones': null,
         'geo-api-key': null,
         'schedule':    function() { if(window.updateClock) window.updateClock(); },
-        'holidays':    function() { if(window.updateClock) window.updateClock(); }
+        'holidays':    function() { if(window.updateClock) window.updateClock(); },
+        'bistro-manual-override': function() { if(window.updateClock) window.updateClock(); }
       };
 
       Object.keys(read_keys).forEach(function(k) {
         db.ref(k).on('value', function(snap) {
           var val = snap.val();
-          if (!val) return;
+          // bistro-manual-override może zasadnie być "null" (brak ręcznego
+          // przełącznika, wróć do harmonogramu) — to musi się zapisać, w
+          // przeciwieństwie do pozostałych kluczy, gdzie "null" zwykle oznacza
+          // błąd/pustkę do zignorowania, a nie prawdziwą wartość
+          if (!val && k !== 'bistro-manual-override') return;
           localStorage.setItem(k, JSON.stringify(val));
           if (read_keys[k]) read_keys[k]();
         });

@@ -1336,6 +1336,40 @@ function formatDayHours(day){
   if(!day || day.closed) return 'Nieczynne';
   return `${day.from}–${day.to}`;
 }
+// Niezależne liczenie statusu otwarcia — NIE ufa wyłącznie fladze bistro-open
+// zapisywanej przez panel (przeliczana tylko co 60s i tylko gdy ktoś ma akurat
+// otwarty i zalogowany panel — po zamknięciu, gdy nikt go nie ma otwartego,
+// flaga zostaje "zamrożona" na starej wartości). Liczy to samodzielnie z tych
+// samych danych (harmonogram, przerwy, ręczny override), zsynchronizowanych
+// bezpośrednio z Firebase. Używana zarówno do wyświetlania statusu na stronie,
+// jak i do blokowania składania zamówień — żeby oba miejsca były zawsze spójne.
+function isBistroOpenNow(){
+  const now = new Date();
+  const dow = now.getDay();
+  const h = now.getHours(), m = now.getMinutes();
+  const todayStr = now.toISOString().slice(0,10);
+  const holidays = LS('holidays')||[];
+  const onHoliday = holidays.some(hd=>hd && hd.from && hd.to && todayStr>=hd.from && todayStr<=hd.to);
+  const schedule = LS('schedule');
+  const manualOverride = LS('bistro-manual-override');
+
+  if(manualOverride && manualOverride.date === todayStr){
+    return !!manualOverride.value;
+  }
+  if(onHoliday) return false;
+  if(schedule && schedule.length>=7){
+    const dayIdx = dow===0?6:dow-1; // harmonogram: 0=pon
+    const day = schedule[dayIdx];
+    if(!day || day.closed) return false;
+    const [fh,fm] = day.from.split(':').map(Number);
+    const [th,tm] = day.to.split(':').map(Number);
+    const hhmm = h*60+m;
+    return hhmm >= fh*60+fm && hhmm < th*60+tm;
+  }
+  // Harmonogram jeszcze się nie zsynchronizował — awaryjnie użyj bistro-open
+  return LS('bistro-open') === true && !onHoliday;
+}
+
 function updateClock(){
   const now=new Date();const h=now.getHours(),m=now.getMinutes(),dow=now.getDay();
   const pad=n=>String(n).padStart(2,'0');
@@ -1347,14 +1381,10 @@ function updateClock(){
   const holidays = LS('holidays')||[];
   const todayStr = now.toISOString().slice(0,10);
   const onHoliday = holidays.some(hd=>hd && hd.from && hd.to && todayStr>=hd.from && todayStr<=hd.to);
-
-  // Prawdziwy status z panelu — uwzględnia harmonogram i ręczny override — plus
-  // niezależna weryfikacja przerwy w pracy tuż powyżej (wcześniej to pole było sztywno
-  // wpisanym wzorem pon-pt 7:00-16:00, całkowicie niezależnym od tego, co ustawiał
-  // Marcin w panelu)
-  const open = LS('bistro-open') === true && !onHoliday;
-
   const schedule = LS('schedule');
+
+  // Niezależne liczenie statusu — patrz komentarz przy isBistroOpenNow()
+  const open = isBistroOpenNow();
 
   const cardStatus=document.getElementById('card-open-status');
   if(cardStatus){
@@ -2101,31 +2131,13 @@ function logCouponRedemption(code,name,phone,orderId,amount){
 
 // ════ ORDER ════
 async function placeOrder(){
-  // Blokada przed wielokrotnym, prawie jednoczesnym kliknięciem — bez tego
-  // szybkie podwójne/potrójne kliknięcie (np. na wolniejszym łączu, niecierpliwy
-  // klient) tworzyło kilka osobnych, w pełni niezależnych zamówień z tym samym
-  // koszykiem, zanim przycisk zdążył się zablokować (co następowało dopiero po
-  // kilku kolejnych sprawdzeniach w Firebase).
-  if(window._placingOrder) return;
-  window._placingOrder = true;
-  try{
-
   if(!cart.length){toast('Koszyk jest pusty');return;}
-  // Sprawdź czy bistro jest otwarte (klucz bistro-open w Firebase)
-  try{
-    const db=window._firebase&&window._firebase.db;
-    if(db){
-      const snap=await db.ref('bistro-open').once('value');
-      const bistroOpen=snap.val();
-      // null = klucz nie istnieje jeszcze = traktuj jako otwarte (backward compat)
-      if(bistroOpen===false){
-        toast('🔒 Restauracja jest teraz zamknięta. Zadzwoń: 511 707 232');
-        return;
-      }
-    }
-  }catch(e){
-    // Błąd Firebase — nie blokuj zamówienia
-    console.warn('[ORDER] Nie można sprawdzić statusu bistro:',e.message);
+  // Sprawdź czy bistro jest otwarte — ta sama funkcja co przy wyświetlaniu
+  // statusu na stronie (patrz isBistroOpenNow), więc nie zależy od tego, czy
+  // ktoś akurat ma otwarty panel do przeliczenia bistro-open
+  if(!isBistroOpenNow()){
+    toast('🔒 Restauracja jest teraz zamknięta. Zadzwoń: 511 707 232');
+    return;
   }
   // Sprawdź, czy "danie/zestaw/zupa dnia" w koszyku nie zdążyły się zmienić od momentu
   // dodania — danie dnia zmienia się rano (ok. 7:30-8:00), a klient mógł dodać
@@ -2356,10 +2368,6 @@ async function placeOrder(){
   cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
   document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});
-
-  } finally {
-    window._placingOrder = false;
-  }
 }
 
 // Obsłuż powrót z Przelewy24
