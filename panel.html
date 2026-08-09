@@ -592,7 +592,6 @@ requestWakeLock();
     <div class="ni" onclick="go('przerwy',this)"><span class="ic">⏸</span><span>Przerwy w pracy</span></div>
     <div class="ni" onclick="go('ustawienia',this)"><span class="ic">🔧</span><span>Ustawienia</span></div>
     <div class="ni" onclick="go('importexport',this)"><span class="ic">↕</span><span>Import / Eksport</span></div>
-    <div class="ni" onclick="doLogout()" style="margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;"><span class="ic">🚪</span><span>Wyloguj</span></div>
   </nav>
 </aside>
 
@@ -605,10 +604,11 @@ requestWakeLock();
         <span id="fb-conn-dot" style="width:7px;height:7px;border-radius:50%;background:#D97706;flex-shrink:0;"></span>
         <span id="fb-conn-txt">Łączenie…</span>
       </div>
-      <button class="status-pill sp-open" id="sp-btn" onclick="toggleStatusManual()">
-        <span class="sdot"></span><span id="sp-txt">Restauracja otwarta</span>
+      <button class="status-pill" id="sp-btn" onclick="toggleStatusManual()" style="opacity:.6;">
+        <span class="sdot"></span><span id="sp-txt">Sprawdzam…</span>
       </button>
       <div class="avatar">H</div>
+      <button onclick="doLogout()" title="Wyloguj" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;font-size:18px;color:var(--brown,#3B2512);transition:background .2s;" onmouseover="this.style.background='rgba(0,0,0,.06)'" onmouseout="this.style.background='transparent'">🚪</button>
     </div>
   </header>
   <!-- ALARM BAR — nowe zamówienia -->
@@ -2910,6 +2910,7 @@ function applyStatus(open, isManual=false){
   const txt = document.getElementById('sp-txt');
   if(!btn) return;
   btn.className = 'status-pill '+(open?'sp-open':'sp-closed');
+  btn.style.opacity = ''; // usuń efekt "ładowania" (Sprawdzam…), jeśli był ustawiony
   txt.textContent = open ? 'Restauracja otwarta' : (isManual?'🔒 Zamknięta (ręcznie)':'Restauracja zamknięta');
   // Zapisz status do Firebase — strona klienta go sprawdza przed zamówieniem
   const db = window._firebase && window._firebase.db;
@@ -2968,6 +2969,19 @@ window._overrideLoaded = false; // czy dotarła już PRAWDZIWA wartość overrid
     checkOpenStatus();
   });
 })();
+
+// Zabezpieczenie: jeśli z jakiegokolwiek powodu dane o ręcznym przełączniku
+// NIGDY nie dotrą (np. te same, wciąż badane problemy z sesją/połączeniem),
+// nie zostawiaj statusu zablokowanego na sztywnym "Sprawdzam…"/domyślnym stanie
+// w nieskończoność. Po 5s przelicz i tak, na podstawie samego harmonogramu —
+// dużo bezpieczniejsze niż utknięcie w błędnym stanie na wiele minut.
+setTimeout(function(){
+  if(!window._overrideLoaded){
+    console.warn('[Status] Ręczny override nie dotarł po 5s — liczę status z samego harmonogramu');
+    window._overrideLoaded = true;
+    checkOpenStatus();
+  }
+}, 5000);
 
 // ── DASHBOARD ──
 function renderDashboard(){
