@@ -5782,14 +5782,7 @@ async function downloadFullBackup(){
 
 // ── INIT ──
 window._panelMenuReady = true; // sygnał dla Firebase że panel jest gotowy
-// checkOpenStatus() NIE jest już wywoływane bezpośrednio tutaj — wcześniej
-// uruchamiało się od razu przy starcie, zanim zdążyła dotrzeć wartość
-// bistro-manual-override z Firebase (osobny, asynchroniczny listener), co
-// powodowało krótkie, ale realne nadpisanie statusu w Firebase samym
-// harmonogramem, ignorując aktywny ręczny override. Listener override
-// (attachManualOverrideListener, niżej w pliku) sam wywołuje checkOpenStatus()
-// zaraz po dostarczeniu prawdziwej wartości — więc to jedyne miejsce, gdzie
-// to się teraz dzieje, bez ryzyka wyścigu.
+checkOpenStatus();
 renderDashboard();
 renderOrders();
 renderQR();
@@ -5871,7 +5864,7 @@ var _ordersLastWrite = 0;
 window.onFirebaseOrders = function(freshArr) {
   // Nie nadpisuj jeśli panel właśnie zmienił status zamówienia
   if(Date.now() - _ordersLastWrite < 8000) {
-    console.log('[FB] Orders: pomijam nadpisanie — lokalny zapis jest świeży');
+    console.log('[FB] Orders: pomijam nadpisanie — lokalny zapis jest świeży (', Date.now() - _ordersLastWrite, 'ms temu)');
     // Ale sprawdź czy są nowe zamówienia (nowe ID)
     const prevIds = new Set((orders||[]).map(o=>o.id));
     const brandNew = freshArr.filter(o=>!prevIds.has(o.id));
@@ -5901,6 +5894,16 @@ window.onFirebaseOrders = function(freshArr) {
     const statusRank = {pending:0,nowe:0,'do akceptacji':0,new:0,paid:1,accepted:1,ready:2,delivering:3,done:4,rejected:5};
     const fbRank = statusRank[(fbOrder.status||'').toLowerCase()]??0;
     const localRank = statusRank[(localOrder.status||'').toLowerCase()]??0;
+    if(localRank >= fbRank && localOrder.status !== fbOrder.status){
+      // Diagnostyka: to jest dokładnie ten moment, w którym mogłoby dojść do
+      // zignorowania świeższej zmiany z innego urządzenia. Logujemy, żeby przy
+      // następnym niezsynchronizowanym zamówieniu widzieć dokładnie, co się stało.
+      console.log('[FB] Orders merge — zachowuję lokalny status zamiast przychodzącego:', {
+        id: fbOrder.id,
+        lokalnyStatus: localOrder.status, lokalnaRanga: localRank,
+        firebaseStatus: fbOrder.status, firebaseRanga: fbRank,
+      });
+    }
     if(localRank >= fbRank) {
       // Zachowaj lokalny status ale przenieś paymentStatus z Firebase jeśli jest
       const merged = {...localOrder};
