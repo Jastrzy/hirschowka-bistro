@@ -2865,6 +2865,13 @@ async function testEmail(){
 
 // ── STATUS RESTAURACJI ──
 function checkOpenStatus(){
+  // Bez względu na to, co dokładnie wywołało tę funkcję (start panelu, powrót
+  // po rozłączeniu, odświeżenie harmonogramu/przerw) — jeśli PRAWDZIWA wartość
+  // ręcznego przełącznika jeszcze nie dotarła z Firebase, NIE licz statusu wcale.
+  // Wcześniej liczenie "na czuja" (traktując brak informacji jako "brak
+  // override") potrafiło na chwilę nadpisać Firebase samym harmonogramem,
+  // gubiąc aktywny ręczny override — dokładnie to zdarzenie zaobserwowaliśmy.
+  if(!window._overrideLoaded) return;
   const now = new Date();
   const today = now.toISOString().slice(0,10);
   // Ręczny override wygasa automatycznie następnego dnia — inaczej zapomniane
@@ -2944,6 +2951,7 @@ function saveManualOverride(val){
 // znało aktualną, wspólną decyzję, zamiast liczyć niezależnie tylko z harmonogramu.
 // Override starszy niż dzisiejsza data jest traktowany jako wygasły (patrz checkOpenStatus).
 let manualOverrideDate = null;
+window._overrideLoaded = false; // czy dotarła już PRAWDZIWA wartość override z Firebase
 (function attachManualOverrideListener(){
   const db = window._firebase && window._firebase.db;
   if(!db){ setTimeout(attachManualOverrideListener, 300); return; }
@@ -2956,6 +2964,7 @@ let manualOverrideDate = null;
       manualStatusOverride = null;
       manualOverrideDate = null;
     }
+    window._overrideLoaded = true;
     checkOpenStatus();
   });
 })();
