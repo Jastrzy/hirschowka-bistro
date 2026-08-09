@@ -620,9 +620,6 @@ requestWakeLock();
           <button class="ord-tab" onclick="switchOrdTab('current',this)">
             Bieżące <span class="ord-tab-badge" id="tab-badge-current"></span>
           </button>
-          <button class="ord-tab" onclick="switchOrdTab('planned',this)">
-            Zaplanowane <span class="ord-tab-badge" id="tab-badge-planned"></span>
-          </button>
           <button class="ord-tab" onclick="switchOrdTab('archive',this)">
             Archiwum
           </button>
@@ -2103,7 +2100,6 @@ function renderOrders(){
   let source;
   if(ordTab==='pending')   source = orders.filter(o=>normStatus(o.status)==='pending');
   else if(ordTab==='current')  source = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned; });
-  else if(ordTab==='planned')  source = orders.filter(o=>o.planned&&normStatus(o.status)!=='done');
   else                          source = [...archive].concat(orders.filter(o=>normStatus(o.status)==='done'));
 
   // Filtr typu
@@ -2113,11 +2109,8 @@ function renderOrders(){
 
   // Odznaki zakładek
   const cBadge = document.getElementById('tab-badge-current');
-  const pBadge = document.getElementById('tab-badge-planned');
   const cur = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned; }).length;
-  const pla = orders.filter(o=>o.planned&&normStatus(o.status)!=='done').length;
   if(cBadge){ cBadge.textContent=cur||''; cBadge.className='ord-tab-badge'+(cur?' show':''); }
-  if(pBadge){ pBadge.textContent=pla||''; pBadge.className='ord-tab-badge'+(pla?' show':''); }
   updateAlarm();
 
   if(!source.length){
@@ -2498,7 +2491,16 @@ async function appendToArchive(entry){
   try{
     const result = await db.ref('archive').transaction(function(arr){
       const list = arr ? (Array.isArray(arr)?arr:Object.values(arr)) : [];
-      list.unshift(entry);
+      // Zabezpieczenie przed duplikatem — jeśli to zamówienie już jest w archiwum
+      // (np. dwa urządzenia niezależnie "zrealizowały" to samo, bo jedno z nich
+      // miało nieaktualny widok), nie dodawaj drugi raz, tylko zaktualizuj istniejący
+      // wpis nowszymi danymi.
+      const existingIdx = list.findIndex(function(o){ return o && o.id === entry.id; });
+      if(existingIdx >= 0){
+        list[existingIdx] = entry;
+      } else {
+        list.unshift(entry);
+      }
       return pruneArchive(list);
     });
     if(result.committed){
