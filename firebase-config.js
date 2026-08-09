@@ -141,15 +141,28 @@
         }
       };
 
-      db.ref('menu').on('value', function(snap) {
-        var val = snap.val();
+      // WAŻNE: gdy poniższe nasłuchiwania POMIJAJĄ przychodzącą aktualizację
+      // (bo panel właśnie coś zapisał lokalnie), to pominięcie było wcześniej
+      // OSTATECZNE — .on('value') odpala się tylko przy faktycznej zmianie
+      // danych w Firebase, nie cyklicznie, więc pominięta aktualizacja
+      // zostawała nieaktualna aż do zupełnie innej, kolejnej zmiany (czasem
+      // wiele minut później). Ta funkcja planuje jednorazowe "dogonienie" —
+      // świeży odczyt tuż po wygaśnięciu okna ochronnego, żeby żadna pominięta
+      // zmiana nie została zgubiona na dłużej niż samo okno ochronne + chwila.
+      function scheduleCatchUp(key, protectionMs, processFn) {
+        setTimeout(function(){
+          var lastWrite = _localWriteTs[key] || 0;
+          if (Date.now() - lastWrite >= protectionMs) {
+            db.ref(key).once('value').then(function(snap){ processFn(snap.val()); }).catch(function(){});
+          } else {
+            // Ktoś zapisał lokalnie znowu w międzyczasie — spróbuj ponownie później
+            scheduleCatchUp(key, protectionMs, processFn);
+          }
+        }, protectionMs + 500);
+      }
+
+      function processMenu(val) {
         if (!val) return;
-        // Nie nadpisuj jeśli panel zapisywał menu w ostatnich 10 sekundach
-        var lastWrite = _localWriteTs['menu'] || 0;
-        if (Date.now() - lastWrite < 10000) {
-          console.log('[FB] Menu: pomijam nadpisanie — lokalny zapis jest świeży');
-          return;
-        }
         var fresh = JSON.stringify(val);
         var stored = localStorage.getItem('menu');
         if (stored === fresh) return;
@@ -162,16 +175,25 @@
             console.log('[FB] Menu zaktualizowane z Firebase ✓');
           } catch(e) {}
         }
+      }
+      db.ref('menu').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        // Nie nadpisuj jeśli panel zapisywał menu w ostatnich 10 sekundach
+        var lastWrite = _localWriteTs['menu'] || 0;
+        if (Date.now() - lastWrite < 10000) {
+          console.log('[FB] Menu: pomijam nadpisanie — lokalny zapis jest świeży (dogonię za chwilę)');
+          scheduleCatchUp('menu', 10000, processMenu);
+          return;
+        }
+        processMenu(val);
       });
 
       // Historia kampanii SMS — real-time, żeby żadne urządzenie nigdy nie nadpisało
       // prawdziwej historii swoją nieaktualną/pustą lokalną kopią
-      db.ref('sms-campaign-history').on('value', function(snap) {
-        var val = snap.val();
+      function processSmsHistory(val) {
         var arr = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
         arr = arr.filter(function(h){ return h; });
-        var lastWrite = _localWriteTs['sms-campaign-history'] || 0;
-        if (Date.now() - lastWrite < 5000) return;
         var fresh = JSON.stringify(arr);
         var stored = localStorage.getItem('sms-campaign-history');
         if (stored === fresh) return;
@@ -179,16 +201,19 @@
         if (typeof window.onFirebaseSmsHistory === 'function') {
           window.onFirebaseSmsHistory(arr);
         }
+      }
+      db.ref('sms-campaign-history').on('value', function(snap) {
+        var val = snap.val();
+        var lastWrite = _localWriteTs['sms-campaign-history'] || 0;
+        if (Date.now() - lastWrite < 5000) { scheduleCatchUp('sms-campaign-history', 5000, processSmsHistory); return; }
+        processSmsHistory(val);
       });
 
       // Harmonogram (godziny otwarcia) real-time → wcześniej wczytywany TYLKO RAZ przy
       // starcie strony z localStorage, nigdy się nie odświeżał. Edycja na jednym urządzeniu
       // nie docierała do innych, które mogły później nadpisać ją z powrotem starą wersją.
-      db.ref('schedule').on('value', function(snap) {
-        var val = snap.val();
+      function processSchedule(val) {
         if (!val) return;
-        var lastWrite = _localWriteTs['schedule'] || 0;
-        if (Date.now() - lastWrite < 5000) return;
         var arr = Array.isArray(val) ? val : Object.values(val);
         var fresh = JSON.stringify(arr);
         var stored = localStorage.getItem('schedule');
@@ -197,14 +222,18 @@
         if (typeof window.onFirebaseSchedule === 'function') {
           window.onFirebaseSchedule(arr);
         }
+      }
+      db.ref('schedule').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['schedule'] || 0;
+        if (Date.now() - lastWrite < 5000) { scheduleCatchUp('schedule', 5000, processSchedule); return; }
+        processSchedule(val);
       });
 
       // Przerwy w pracy (holidays) — ta sama luka co schedule, ta sama naprawa
-      db.ref('holidays').on('value', function(snap) {
-        var val = snap.val();
+      function processHolidays(val) {
         if (!val) return;
-        var lastWrite = _localWriteTs['holidays'] || 0;
-        if (Date.now() - lastWrite < 5000) return;
         var arr = Array.isArray(val) ? val : Object.values(val);
         arr = arr.filter(function(h){ return h; });
         var fresh = JSON.stringify(arr);
@@ -214,16 +243,20 @@
         if (typeof window.onFirebaseHolidays === 'function') {
           window.onFirebaseHolidays(arr);
         }
+      }
+      db.ref('holidays').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['holidays'] || 0;
+        if (Date.now() - lastWrite < 5000) { scheduleCatchUp('holidays', 5000, processHolidays); return; }
+        processHolidays(val);
       });
 
       // Historia nagród lojalnościowych — real-time, żeby flaga "zrealizowany" (used)
       // ustawiana transakcją była widoczna wszędzie, i żeby usunięcie z ryzykownej
       // pętli 1s (patrz cfg_keys) nie zostawiło panelu z nieaktualną kopią
-      db.ref('loyalty-history').on('value', function(snap) {
-        var val = snap.val();
+      function processLoyaltyHistory(val) {
         if (!val) return;
-        var lastWrite = _localWriteTs['loyalty-history'] || 0;
-        if (Date.now() - lastWrite < 5000) return;
         var arr = Array.isArray(val) ? val : Object.values(val);
         arr = arr.filter(function(h){ return h; });
         var fresh = JSON.stringify(arr);
@@ -233,17 +266,20 @@
         if (typeof window.onFirebaseLoyaltyHistory === 'function') {
           window.onFirebaseLoyaltyHistory(arr);
         }
+      }
+      db.ref('loyalty-history').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        var lastWrite = _localWriteTs['loyalty-history'] || 0;
+        if (Date.now() - lastWrite < 5000) { scheduleCatchUp('loyalty-history', 5000, processLoyaltyHistory); return; }
+        processLoyaltyHistory(val);
       });
 
       // Kupony real-time → aktualizuj panel z Firebase (źródło prawdy dla licznika użyć)
       // Bez tego nasłuchu licznik "used" zwiększany transakcją (np. przy realizacji kodu
       // przez klienta lub przy kasie) nie trafiał z powrotem do zmiennej `coupons` w panelu
-      db.ref('coupons').on('value', function(snap) {
-        var val = snap.val();
+      function processCoupons(val) {
         if (!val) return;
-        // Nie nadpisuj jeśli panel zapisywał kupony w ostatnich 5 sekundach (np. dodawanie/usuwanie)
-        var lastWrite = _localWriteTs['coupons'] || 0;
-        if (Date.now() - lastWrite < 5000) return;
         var arr = Array.isArray(val) ? val : Object.values(val);
         arr = arr.filter(function(c){ return c; });
         var fresh = JSON.stringify(arr);
@@ -253,6 +289,14 @@
         if (typeof window.onFirebaseCoupons === 'function') {
           window.onFirebaseCoupons(arr);
         }
+      }
+      db.ref('coupons').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        // Nie nadpisuj jeśli panel zapisywał kupony w ostatnich 5 sekundach (np. dodawanie/usuwanie)
+        var lastWrite = _localWriteTs['coupons'] || 0;
+        if (Date.now() - lastWrite < 5000) { scheduleCatchUp('coupons', 5000, processCoupons); return; }
+        processCoupons(val);
       });
 
       // Historia realizacji kodów (WWW + kasa) real-time → tylko odczyt, zapis przez push()
@@ -267,13 +311,8 @@
       });
 
       // Customers real-time → zawsze aktualizuj z Firebase (źródło prawdy)
-      db.ref('customers').on('value', function(snap) {
-        var val = snap.val();
+      function processCustomers(val) {
         if (!val) return;
-        // Nie nadpisuj jeśli panel właśnie zapisywał (np. addStampByPhone) — 60s ochrona
-        // 60s daje czas na propagację Firebase między urządzeniami bez ryzyka nadpisania świeżej pieczątki
-        var lastWrite = _localWriteTs['customers'] || 0;
-        if (Date.now() - lastWrite < 60000) return;
         // Zawsze konwertuj na tablicę — Firebase zwraca obiekt z kluczami
         var arr = Array.isArray(val) ? val : Object.values(val);
         arr = arr.filter(function(c){ return c; });
@@ -302,6 +341,15 @@
             }
           }, 250);
         }
+      }
+      db.ref('customers').on('value', function(snap) {
+        var val = snap.val();
+        if (!val) return;
+        // Nie nadpisuj jeśli panel właśnie zapisywał (np. addStampByPhone) — 60s ochrona
+        // 60s daje czas na propagację Firebase między urządzeniami bez ryzyka nadpisania świeżej pieczątki
+        var lastWrite = _localWriteTs['customers'] || 0;
+        if (Date.now() - lastWrite < 60000) { scheduleCatchUp('customers', 60000, processCustomers); return; }
+        processCustomers(val);
       });
 
       // Synchronizuj localStorage → Firebase co 1s (tylko zmiany lokalne)
