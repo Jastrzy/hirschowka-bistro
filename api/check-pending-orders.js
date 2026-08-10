@@ -100,7 +100,20 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, checked: entries.length, alerted: 0 });
     }
 
-    const phones = [ALERT_PHONE_1, ALERT_PHONE_2].filter(Boolean);
+    // Numery alertowe — od teraz ustawiane w panelu (Ustawienia → Alert SMS),
+    // zapisane w Firebase pod 'alert-phones'. Zmienne środowiskowe ALERT_PHONE_1/2
+    // zostają jako zapasowe rozwiązanie, gdyby w Firebase nic jeszcze nie było
+    // ustawione — ale docelowo panel jest teraz źródłem prawdy.
+    let phones = [];
+    try {
+      const phonesResp = await fetch(`${FB_URL}/alert-phones.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
+      const phonesVal = await phonesResp.json();
+      if (Array.isArray(phonesVal)) phones = phonesVal.filter(Boolean);
+      else if (phonesVal && typeof phonesVal === 'object') phones = Object.values(phonesVal).filter(Boolean);
+    } catch (e) { /* spadnij do zmiennych środowiskowych poniżej */ }
+    if (!phones.length) {
+      phones = [ALERT_PHONE_1, ALERT_PHONE_2].filter(Boolean);
+    }
 
     // Ten sam token/nadawca SMS co reszta systemu (zapisany w Firebase,
     // ustawiany w panelu — nie duplikujemy konfiguracji SMSAPI)

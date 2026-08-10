@@ -1089,17 +1089,12 @@ requestWakeLock();
         </div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Danie dnia — strona główna</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">To danie wyświetla się na stronie głównej z dużym zdjęciem. Zmień je codziennie rano.</p>
-        <div class="photo-drop" onclick="document.getElementById('daily-photo-upload').click()" style="padding:16px;margin-bottom:10px;">
-          <input type="file" id="daily-photo-upload" accept="image/*" onchange="previewDailyPhoto(this)">
-          <div id="daily-photo-preview" style="display:none;margin-bottom:8px;"><img id="daily-photo-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:6px;"></div>
-          <div class="drop-icon" id="daily-drop-icon">📷</div>
-          <p id="daily-drop-txt">Kliknij aby dodać zdjęcie dania dnia</p>
-        </div>
-        <div class="frow"><div class="field"><label>Nazwa dania dnia</label><input id="daily-name" value="Żurek + Polędwiczki wieprzowe"></div><div class="field"><label>Cena zestawu (zł)</label><input type="number" id="daily-price" value="22"></div></div>
-        <div class="field"><label>Opis</label><textarea rows="2" id="daily-desc">Domowy żurek na zakwasie z jajkiem + polędwiczki z sosem chrzanowym i ziemniakami puree</textarea></div>
-        <button class="btn bp bsm" onclick="saveDaily()">Zapisz danie dnia</button>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Alert SMS — niezaakceptowane zamówienia</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Jeśli zamówienie nie zostanie zaakceptowane w panelu na czas, SMS z ostrzeżeniem trafi na poniższe numery. Zmiana tutaj działa od razu, bez wgrywania nowego kodu.</p>
+        <div class="field" style="margin-bottom:10px;"><label>Telefon 1</label><input id="alert-phone-1" placeholder="np. 511707232" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field" style="margin-bottom:10px;"><label>Telefon 2 <span style="font-weight:400;color:var(--muted);">(opcjonalnie)</span></label><input id="alert-phone-2" placeholder="zostaw puste, jeśli nieużywany" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <div class="field" style="margin-bottom:14px;"><label>Telefon 3 <span style="font-weight:400;color:var(--muted);">(opcjonalnie)</span></label><input id="alert-phone-3" placeholder="zostaw puste, jeśli nieużywany" style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+        <button class="btn bp bsm" onclick="saveAlertPhones()">Zapisz numery alertowe</button>
       </div>
       <button class="btn bp" onclick="toast('Ustawienia zapisane ✓')">Zapisz wszystkie zmiany</button>
     </div>
@@ -2670,7 +2665,11 @@ async function sendSmsToCustomer(order, tplKey){
   };
   const msg = tpls[tplKey];
   if(!msg) return;
-  sendSmsRaw(order.phone, msg, r=>{ if(!r.ok) console.warn('SMS error:', r.err); });
+  fbLog('INFO', 'SMS: próba wysyłki', {orderId: order.id, tplKey, phone: order.phone});
+  sendSmsRaw(order.phone, msg, r=>{
+    if(!r.ok) console.warn('SMS error:', r.err);
+    fbLog(r.ok?'INFO':'WARN', 'SMS: wynik wysyłki', {orderId: order.id, tplKey, ok: r.ok, err: r.err||null});
+  });
 }
 async function sendSmsRaw(phone, msg, cb){
   const token = S('smsapi-token');
@@ -2703,6 +2702,21 @@ function saveSmsSettings(){
 }
 
 // ── EMAIL POWIADOMIENIA ──
+// Logowanie zdarzeń do Firebase (ten sam wzorzec co w p24.js/check-pending-orders.js:
+// p24-logs pogrupowane po dacie) — w przeciwieństwie do console.log to zostaje
+// widoczne w Firebase Console nawet po zamknięciu karty, więc pozwala sprawdzić
+// WSTECZ, co się naprawdę wydarzyło (np. czy SMS/email poszedł, czy nie, i dlaczego).
+async function fbLog(level, msg, data){
+  try{
+    const db = window._firebase && window._firebase.db;
+    if(!db) return;
+    const now = new Date();
+    const dateKey = now.toISOString().slice(0,10);
+    const device = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 'tablet/mobile' : 'desktop';
+    await db.ref('p24-logs/'+dateKey).push({ ts: now.toISOString(), level, msg, data: data||null, device });
+  }catch(e){ /* logowanie nie może wywrócić głównej logiki */ }
+}
+
 async function sendOrderEmail(order){
   // Wyślij email na adres restauracji przez EmailJS
   // Klucze EmailJS — najpierw localStorage, potem próba z Firebase
@@ -2726,8 +2740,10 @@ async function sendOrderEmail(order){
 
   if(!publicKey || !serviceId || !templateId) {
     console.log('[Email] Brak konfiguracji EmailJS — pomijam');
+    fbLog('WARN', 'Email: brak konfiguracji EmailJS — pomijam', {orderId: order.id, type: order.type});
     return;
   }
+  fbLog('INFO', 'Email: próba wysyłki', {orderId: order.id, type: order.type, customer: order.customer||null});
   try {
     if(typeof emailjs !== 'undefined') emailjs.init({publicKey});
     // items może być stringiem lub tablicą — obsłuż oba formaty
@@ -2753,8 +2769,10 @@ async function sendOrderEmail(order){
       to_email: 'kontakt@hirschowkabistro.pl',
     });
     console.log('[Email] Powiadomienie wysłane ✓');
+    fbLog('INFO', 'Email: sukces', {orderId: order.id, type: order.type});
   } catch(e) {
     console.warn('[Email] Błąd wysyłki:', e);
+    fbLog('ERROR', 'Email: błąd wysyłki', {orderId: order.id, type: order.type, message: e && e.text || e && e.message || String(e)});
   }
 }
 async function testSms(){
@@ -4107,10 +4125,39 @@ function savePackaging(){
   W('packaging',pkg);toast('Stawki opakowań zapisane ✓');
 }
 function loadPackaging(){
-  const pkg=S('packaging');if(!pkg)return;
-  if(document.getElementById('pkg-soup'))document.getElementById('pkg-soup').value=pkg.soup||'';
-  if(document.getElementById('pkg-main'))document.getElementById('pkg-main').value=pkg.main||'';
-  if(document.getElementById('pkg-set'))document.getElementById('pkg-set').value=pkg.set||'';
+  const pkg=S('packaging');if(pkg){
+    if(document.getElementById('pkg-soup'))document.getElementById('pkg-soup').value=pkg.soup||'';
+    if(document.getElementById('pkg-main'))document.getElementById('pkg-main').value=pkg.main||'';
+    if(document.getElementById('pkg-set'))document.getElementById('pkg-set').value=pkg.set||'';
+  }
+  loadAlertPhones();
+}
+
+// ── NUMERY ALERTOWE (SMS o niezaakceptowanym zamówieniu) ──
+// Zapisywane w Firebase pod 'alert-phones' — czyta je bezpośrednio funkcja
+// serwerowa check-pending-orders.js, więc zmiana tutaj działa od razu,
+// bez potrzeby wgrywania nowego kodu ani ustawień w Vercel.
+async function loadAlertPhones(){
+  let phones = S('alert-phones');
+  if((!phones || !phones.length) && window._firebase && window._firebase.db){
+    try{
+      const snap = await window._firebase.db.ref('alert-phones').once('value');
+      const val = snap.val();
+      if(val){ phones = Array.isArray(val) ? val : Object.values(val); localStorage.setItem('alert-phones', JSON.stringify(phones)); }
+    }catch(e){ console.warn('[Ustawienia] Błąd pobierania numerów alertowych:', e); }
+  }
+  phones = phones || [];
+  [1,2,3].forEach(function(n){
+    const el = document.getElementById('alert-phone-'+n);
+    if(el) el.value = phones[n-1] || '';
+  });
+}
+function saveAlertPhones(){
+  const phones = [1,2,3]
+    .map(function(n){ return (document.getElementById('alert-phone-'+n).value||'').trim(); })
+    .filter(function(p){ return p; });
+  W('alert-phones', phones);
+  toast(phones.length ? '✅ Numery alertowe zapisane ('+phones.length+')' : '⚠️ Zapisano — brak numerów, alert SMS nie będzie wysyłany');
 }
 
 // ── CROSS ──
@@ -5878,18 +5925,9 @@ window.onFirebaseOrders = function(freshArr) {
         .includes((o.status||'').toLowerCase()))
         .forEach(o => sendOrderEmail(o));
     }
-    // WAŻNE: zmiany statusu ISTNIEJĄCYCH zamówień (np. zaakceptowane na innym
-    // urządzeniu) zostały tu pominięte — .on('value') nie odpali się ponownie
-    // samo z siebie, dopóki coś jeszcze się nie zmieni, więc bez tego
-    // pominięta zmiana zostałaby nieaktualna aż do zupełnie innego zdarzenia.
-    // Zaplanuj jednorazowe dogonienie tuż po wygaśnięciu okna ochronnego.
-    scheduleOrdersCatchUp();
     return;
   }
-  processFreshOrders(freshArr);
-};
 
-function processFreshOrders(freshArr) {
   // Wykryj nowe zamówienia (pending) których wcześniej nie było
   const prevIds = new Set((orders||[]).map(o=>o.id));
   const newPending = freshArr.filter(o=>
@@ -5930,30 +5968,7 @@ function processFreshOrders(freshArr) {
   updateAlarm();
   renderDashboard();
   newPending.forEach(o => sendOrderEmail(o));
-}
-
-// Jednorazowe "dogonienie" zamówień pominiętych przez okno ochronne (patrz
-// wyżej) — świeży odczyt z Firebase tuż po wygaśnięciu okna, żeby żadna
-// zmiana statusu z innego urządzenia nie została zgubiona na dłużej niż
-// samo okno ochronne + chwila.
-function scheduleOrdersCatchUp(){
-  if(window._ordersCatchUpScheduled) return; // już zaplanowane, nie dubluj
-  window._ordersCatchUpScheduled = true;
-  setTimeout(function(){
-    window._ordersCatchUpScheduled = false;
-    if(Date.now() - _ordersLastWrite < 8000){
-      scheduleOrdersCatchUp(); // ktoś znów zapisał lokalnie w międzyczasie — spróbuj później
-      return;
-    }
-    const db = window._firebase && window._firebase.db;
-    if(!db) return;
-    db.ref('orders').once('value').then(function(snap){
-      const val = snap.val();
-      const arr = (val ? (Array.isArray(val) ? val : Object.values(val)) : []).filter(function(o){ return o; });
-      processFreshOrders(arr);
-    }).catch(function(){});
-  }, 8500);
-}
+};
 
 // ══════════════════════════════════════════════════════════════
 // WATCHDOG POŁĄCZENIA FIREBASE + KEEP-ALIVE
