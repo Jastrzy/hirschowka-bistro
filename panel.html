@@ -4,18 +4,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- PWA — pozwala zainstalować panel jako samodzielną aplikację (Menu ⋮ → Dodaj do ekranu głównego) -->
-<link rel="manifest" href="panel-manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Hirschówka Panel">
-<link rel="apple-touch-icon" href="logo-round.png">
-<meta name="theme-color" content="#3B2512">
-<!-- Przeglądarka nawiązuje połączenie z serwerem SDK Firebase wcześniej,
-     zanim jeszcze poprosi o same pliki — skraca czas startu Firebase,
-     zwłaszcza gdy WiFi jest wolniejsze -->
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-<link rel="dns-prefetch" href="https://www.gstatic.com">
 <!-- EmailJS — wysyłka emaili bez serwera -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <title>Hirschówka Bistro — Panel Restauratora</title>
@@ -381,17 +369,6 @@ window.doLogin = function(){
           document.getElementById('login-input').value = '';
           document.getElementById('login-input').focus();
         });
-      // Zabezpieczenie: jeśli logowanie utknie (np. karta obudzona z zamrożenia
-      // przez przeglądarkę i połączenie sieciowe nie wznowiło się poprawnie),
-      // po 10s pokaż jasny komunikat zamiast wiszącego bez końca przycisku
-      setTimeout(function(){
-        if(_loginAttempting){
-          _loginAttempting = false;
-          err.textContent = '❌ Logowanie trwa zbyt długo — odśwież stronę (F5) i spróbuj ponownie';
-          btn.disabled = false;
-          btn.textContent = 'Zaloguj się →';
-        }
-      }, 10000);
     } else { setTimeout(waitForAuth, 200); }
   };
   waitForAuth();
@@ -401,7 +378,6 @@ window.doLogin = function(){
 localStorage.removeItem('hb_panel_auth');
 
 function showPanel(){
-  window._panelAuthed = true; // flaga: user faktycznie zalogowany (Storage rules tego wymagają)
   var ls = document.getElementById('login-screen');
   if(ls) ls.style.display = 'none';
   // Sprawdź przypomnienie o haśle — timestamp z Firebase (node: pwd_changed_ts)
@@ -444,7 +420,6 @@ function showPanel(){
 }
 
 window.doLogout = function(){
-  window._explicitLogout = true; // celowe wylogowanie — pomiń okres ochronny, pokaż ekran logowania od razu
   if(window._fbAuth) window._fbAuth.signOut();
   localStorage.removeItem('hb_login_email');
 };
@@ -467,19 +442,6 @@ window._onAuthReady = function(auth){
       // Niezalogowany lub anonimowy
       if(user && user.isAnonymous){
         auth.signOut();
-      }
-      if(window._explicitLogout){
-        // Celowe wylogowanie (kliknięcie "Wyloguj") — bez czekania, pokaż od razu
-        window._explicitLogout = false;
-        window._wasLoggedIn = false;
-        if(window._showLoginTimer){ clearTimeout(window._showLoginTimer); window._showLoginTimer = null; }
-        var lsNow = document.getElementById('login-screen');
-        if(lsNow) lsNow.style.display = 'flex';
-        setTimeout(function(){
-          var inpNow = document.getElementById('login-input');
-          if(inpNow) inpNow.focus();
-        }, 100);
-        return;
       }
       // Jeśli byliśmy wcześniej zalogowani (powrót z uśpienia/tła) —
       // NIE pokazuj od razu ekranu logowania. Firebase zwykle sam przywróci
@@ -504,25 +466,13 @@ window._onAuthReady = function(auth){
           }
         }, 30000);
       } else {
-        // Pierwsze wejście w tej sesji JS — ale to niekoniecznie oznacza, że
-        // user naprawdę nigdy się nie logował. Na urządzeniach z małą ilością
-        // wolnego RAM-u (np. tablet) Android potrafi ubić CAŁY proces karty,
-        // żeby odzyskać pamięć — dane logowania nadal bezpiecznie leżą na
-        // dysku, ale trzeba dać Firebase chwilę na ich odczytanie zanim
-        // uznamy, że logowania faktycznie brakuje. Stąd krótkie oczekiwanie
-        // (2,5 s) zamiast pokazywania ekranu logowania od razu.
-        if(window._showLoginTimer) clearTimeout(window._showLoginTimer);
-        window._showLoginTimer = setTimeout(function(){
-          var cur = auth.currentUser;
-          if(!cur || cur.isAnonymous || !cur.email){
-            var ls = document.getElementById('login-screen');
-            if(ls) ls.style.display = 'flex';
-            setTimeout(function(){
-              var inp = document.getElementById('login-input');
-              if(inp) inp.focus();
-            }, 100);
-          }
-        }, 2500);
+        // Pierwsze wejście — pokaż logowanie od razu
+        var ls = document.getElementById('login-screen');
+        if(ls) ls.style.display = 'flex';
+        setTimeout(function(){
+          var inp = document.getElementById('login-input');
+          if(inp) inp.focus();
+        }, 100);
       }
     }
   });
@@ -592,6 +542,7 @@ requestWakeLock();
     <div class="ni" onclick="go('przerwy',this)"><span class="ic">⏸</span><span>Przerwy w pracy</span></div>
     <div class="ni" onclick="go('ustawienia',this)"><span class="ic">🔧</span><span>Ustawienia</span></div>
     <div class="ni" onclick="go('importexport',this)"><span class="ic">↕</span><span>Import / Eksport</span></div>
+    <div class="ni" onclick="doLogout()" style="margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;"><span class="ic">🚪</span><span>Wyloguj</span></div>
   </nav>
 </aside>
 
@@ -604,11 +555,10 @@ requestWakeLock();
         <span id="fb-conn-dot" style="width:7px;height:7px;border-radius:50%;background:#D97706;flex-shrink:0;"></span>
         <span id="fb-conn-txt">Łączenie…</span>
       </div>
-      <button class="status-pill" id="sp-btn" onclick="toggleStatusManual()" style="opacity:.6;">
-        <span class="sdot"></span><span id="sp-txt">Sprawdzam…</span>
+      <button class="status-pill sp-open" id="sp-btn" onclick="toggleStatusManual()">
+        <span class="sdot"></span><span id="sp-txt">Restauracja otwarta</span>
       </button>
       <div class="avatar">H</div>
-      <button onclick="doLogout()" title="Wyloguj" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;font-size:18px;color:var(--brown,#3B2512);transition:background .2s;" onmouseover="this.style.background='rgba(0,0,0,.06)'" onmouseout="this.style.background='transparent'">🚪</button>
     </div>
   </header>
   <!-- ALARM BAR — nowe zamówienia -->
@@ -1386,13 +1336,13 @@ requestWakeLock();
 
   <!-- PODGLĄD -->
     <div class="page" id="page-podglad">
-      <div class="sect-hdr"><h2>Podgląd strony klienta</h2><div style="display:flex;gap:8px;align-items:center;"><button class="btn bp bsm" onclick="document.getElementById('pf').src+=''">🔄 Odśwież</button><button class="btn bo bsm" onclick="window.open('index.html','_blank')">↗ Pełny ekran</button></div></div>
+      <div class="sect-hdr"><h2>Podgląd strony klienta</h2><div style="display:flex;gap:8px;align-items:center;"><button class="btn bp bsm" onclick="document.getElementById('pf').src+=''">🔄 Odśwież</button><button class="btn bo bsm" onclick="window.open('strona-klienta.html','_blank')">↗ Pełny ekran</button></div></div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
         <div style="background:var(--bg);padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);">
           <div style="display:flex;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div><div style="width:10px;height:10px;border-radius:50%;background:#f5a623;"></div><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;"></div></div>
           <div style="flex:1;background:var(--card);border:1px solid var(--border2);border-radius:4px;padding:4px 10px;font-size:11px;color:var(--muted);">hirschowkabistro.pl/zamow</div>
         </div>
-        <div style="display:flex;justify-content:center;background:#111;padding:20px;"><iframe id="pf" src="index.html" style="border:none;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);" width="390" height="700" title="Podgląd"></iframe></div>
+        <div style="display:flex;justify-content:center;background:#111;padding:20px;"><iframe id="pf" src="strona-klienta.html" style="border:none;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);" width="390" height="700" title="Podgląd"></iframe></div>
       </div>
       <div class="card card-pad" style="margin-top:14px;"><div style="font-size:13px;color:var(--muted);line-height:1.7;">✅ Strona klienta czyta dane z panelu na żywo — zmiany w menu, cenach, dostępności są widoczne natychmiast.<br>✅ Zamówienia złożone przez klientów pojawiają się w zakładce Zamówienia.<br>✅ Cross-selling działa na podstawie reguł z panelu.<br>✅ Grupy dodatków (mleko do kawy, kubeczek, rodzaj herbaty) automatycznie podpinają się do kategorii.</div></div>
     </div>
@@ -2709,22 +2659,6 @@ function sendSmsModal(){
     toast(r.ok?'📱 SMS wysłany ✓':'⚠ Błąd SMS: '+r.err);
   });
 }
-// Logowanie zdarzeń do Firebase (ten sam wzorzec co w p24.js/check-pending-orders.js:
-// p24-logs pogrupowane po dacie) — w przeciwieństwie do console.log to zostaje
-// widoczne w Firebase Console nawet po zamknięciu karty, więc pozwala sprawdzić
-// WSTECZ, co się naprawdę wydarzyło (np. czy SMS o przyjęciu poszedł z dwóch
-// urządzeń naraz dla tego samego zamówienia).
-async function fbLog(level, msg, data){
-  try{
-    const db = window._firebase && window._firebase.db;
-    if(!db) return;
-    const now = new Date();
-    const dateKey = now.toISOString().slice(0,10);
-    const device = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 'tablet/mobile' : 'desktop';
-    await db.ref('p24-logs/'+dateKey).push({ ts: now.toISOString(), level, msg, data: data||null, device });
-  }catch(e){ /* logowanie nie może wywrócić głównej logiki */ }
-}
-
 async function sendSmsToCustomer(order, tplKey){
   const token = S('smsapi-token');
   if(!token || !order.phone) return;
@@ -2736,11 +2670,7 @@ async function sendSmsToCustomer(order, tplKey){
   };
   const msg = tpls[tplKey];
   if(!msg) return;
-  fbLog('INFO', 'SMS: próba wysyłki', {orderId: order.id, tplKey, phone: order.phone});
-  sendSmsRaw(order.phone, msg, r=>{
-    if(!r.ok) console.warn('SMS error:', r.err);
-    fbLog(r.ok?'INFO':'WARN', 'SMS: wynik wysyłki', {orderId: order.id, tplKey, ok: r.ok, err: r.err||null});
-  });
+  sendSmsRaw(order.phone, msg, r=>{ if(!r.ok) console.warn('SMS error:', r.err); });
 }
 async function sendSmsRaw(phone, msg, cb){
   const token = S('smsapi-token');
@@ -2865,13 +2795,6 @@ async function testEmail(){
 
 // ── STATUS RESTAURACJI ──
 function checkOpenStatus(){
-  // Bez względu na to, co dokładnie wywołało tę funkcję (start panelu, powrót
-  // po rozłączeniu, odświeżenie harmonogramu/przerw) — jeśli PRAWDZIWA wartość
-  // ręcznego przełącznika jeszcze nie dotarła z Firebase, NIE licz statusu wcale.
-  // Wcześniej liczenie "na czuja" (traktując brak informacji jako "brak
-  // override") potrafiło na chwilę nadpisać Firebase samym harmonogramem,
-  // gubiąc aktywny ręczny override — dokładnie to zdarzenie zaobserwowaliśmy.
-  if(!window._overrideLoaded) return;
   const now = new Date();
   const today = now.toISOString().slice(0,10);
   // Ręczny override wygasa automatycznie następnego dnia — inaczej zapomniane
@@ -2910,7 +2833,6 @@ function applyStatus(open, isManual=false){
   const txt = document.getElementById('sp-txt');
   if(!btn) return;
   btn.className = 'status-pill '+(open?'sp-open':'sp-closed');
-  btn.style.opacity = ''; // usuń efekt "ładowania" (Sprawdzam…), jeśli był ustawiony
   txt.textContent = open ? 'Restauracja otwarta' : (isManual?'🔒 Zamknięta (ręcznie)':'Restauracja zamknięta');
   // Zapisz status do Firebase — strona klienta go sprawdza przed zamówieniem
   const db = window._firebase && window._firebase.db;
@@ -2952,7 +2874,6 @@ function saveManualOverride(val){
 // znało aktualną, wspólną decyzję, zamiast liczyć niezależnie tylko z harmonogramu.
 // Override starszy niż dzisiejsza data jest traktowany jako wygasły (patrz checkOpenStatus).
 let manualOverrideDate = null;
-window._overrideLoaded = false; // czy dotarła już PRAWDZIWA wartość override z Firebase
 (function attachManualOverrideListener(){
   const db = window._firebase && window._firebase.db;
   if(!db){ setTimeout(attachManualOverrideListener, 300); return; }
@@ -2965,23 +2886,9 @@ window._overrideLoaded = false; // czy dotarła już PRAWDZIWA wartość overrid
       manualStatusOverride = null;
       manualOverrideDate = null;
     }
-    window._overrideLoaded = true;
     checkOpenStatus();
   });
 })();
-
-// Zabezpieczenie: jeśli z jakiegokolwiek powodu dane o ręcznym przełączniku
-// NIGDY nie dotrą (np. te same, wciąż badane problemy z sesją/połączeniem),
-// nie zostawiaj statusu zablokowanego na sztywnym "Sprawdzam…"/domyślnym stanie
-// w nieskończoność. Po 5s przelicz i tak, na podstawie samego harmonogramu —
-// dużo bezpieczniejsze niż utknięcie w błędnym stanie na wiele minut.
-setTimeout(function(){
-  if(!window._overrideLoaded){
-    console.warn('[Status] Ręczny override nie dotarł po 5s — liczę status z samego harmonogramu');
-    window._overrideLoaded = true;
-    checkOpenStatus();
-  }
-}, 5000);
 
 // ── DASHBOARD ──
 function renderDashboard(){
@@ -3744,90 +3651,15 @@ function previewDishPhoto(inp){
   r.readAsDataURL(f);
 }
 let _dishSaving=false;
-
-// ── ZDJĘCIA DAŃ W FIREBASE STORAGE ──
-// Wcześniej zdjęcie dania (skompresowane, ale wciąż kilkadziesiąt-kilkaset KB)
-// było zapisywane WPROST w tablicy 'menu'. Ponieważ KAŻDY zapis jednego dania
-// wysyłał do Firebase całą tablicę menu (wszystkie dania + wszystkie zdjęcia),
-// im więcej dań ze zdjęciami, tym większy i wolniejszy — a czasem nieudany —
-// był zapis. Teraz zdjęcie ląduje w Firebase Storage, a w 'menu' zostaje
-// zapisany tylko krótki link do niego.
-
-// Zamienia data-URL (base64) na Blob gotowy do wgrania
-function dataURLtoBlob(dataUrl){
-  const arr=dataUrl.split(',');
-  const mimeMatch=arr[0].match(/:(.*?);/);
-  const mime=mimeMatch?mimeMatch[1]:'image/jpeg';
-  const bstr=atob(arr[1]);
-  let n=bstr.length;
-  const u8arr=new Uint8Array(n);
-  while(n--){u8arr[n]=bstr.charCodeAt(n);}
-  return new Blob([u8arr],{type:mime});
-}
-
-// Wgrywa zdjęcie dania (data-URL) do Storage i zwraca link do pobrania
-async function uploadDishPhoto(dishId, dataUrl){
-  const storage=window._firebase&&window._firebase.storage;
-  if(!storage) throw new Error('Firebase Storage niedostępny — sprawdź połączenie i odśwież panel');
-  const blob=dataURLtoBlob(dataUrl);
-  // Nazwa pliku ze znacznikiem czasu — żeby przy podmianie zdjęcia klienci
-  // z zapisaną w przeglądarce starą wersją na pewno zobaczyli nową
-  const path='menu-photos/dish-'+dishId+'-'+Date.now()+'.jpg';
-  const ref=storage.ref().child(path);
-  await ref.put(blob);
-  return await ref.getDownloadURL();
-}
-
-// Usuwa stare zdjęcie z Storage przy podmianie (best-effort — błąd nie przerywa zapisu)
-function deleteOldDishPhoto(url){
-  const storage=window._firebase&&window._firebase.storage;
-  if(!storage||!url||!url.startsWith('http')) return;
-  try{ storage.refFromURL(url).delete().catch(function(){}); }catch(e){}
-}
-
-// Migracja jednorazowa: dania które mają jeszcze zdjęcie zapisane po staremu
-// (jako base64 wprost w 'menu') zostają automatycznie wgrane do Storage przy
-// najbliższym otwarciu panelu, a w 'menu' zostaje już tylko link.
-async function migrateMenuPhotosToStorage(){
-  const toMigrate=menuData.filter(d=>d&&d.photo&&d.photo.indexOf('data:')===0);
-  if(!toMigrate.length) return;
-  console.log('[Migracja zdjęć] Do wgrania:',toMigrate.length);
-  let migrated=0;
-  for(const d of toMigrate){
-    try{
-      d.photo=await uploadDishPhoto(d.id,d.photo);
-      migrated++;
-    }catch(e){
-      console.warn('[Migracja zdjęć] Błąd dla dania',d.name,e.message);
-    }
-  }
-  if(migrated>0){
-    W('menu',menuData);
-    renderMenu();
-    toast('📷 Zmigrowano zdjęć dań do Storage: '+migrated+'/'+toMigrate.length+' ✓');
-  }
-}
-(function waitAndMigratePhotos(attempt){
-  attempt=attempt||0;
-  // Czekamy na Storage ORAZ na faktyczne zalogowanie — reguły Storage wymagają
-  // zalogowanego użytkownika (request.auth != null), a Storage bywa gotowe
-  // zanim ktoś zdąży się zalogować na ekranie logowania.
-  if(window._firebase&&window._firebase.storage&&window._panelAuthed){
-    migrateMenuPhotosToStorage();
-  } else if(attempt<120){
-    setTimeout(function(){waitAndMigratePhotos(attempt+1);},500);
-  } else {
-    console.warn('[Migracja zdjęć] Storage/logowanie niegotowe po 60s — pomijam');
-  }
-})();
-
-async function saveDish(){
+function saveDish(){
   if(_dishSaving)return;
   const name=(document.getElementById('d-name').value||'').trim();
   const desc=(document.getElementById('d-desc').value||'').trim();
   if(!name){toast('Podaj nazwę dania — pole "Nazwa dania" jest wymagane');return;}
   const imgEl=document.getElementById('dish-photo-img');
   const hasPhoto=document.getElementById('dish-photo-prev').style.display!=='none';
+  // Zdjęcie już skompresowane przez previewDishPhoto
+  const photo=hasPhoto?imgEl.src:'';
   const selParam=document.getElementById('d-param').value;
   let savePrice=parseFloat(document.getElementById('d-price').value)||0;
   let saveParamName='',saveParamPrices=[];
@@ -3836,30 +3668,6 @@ async function saveDish(){
     saveParamPrices=Array.from(pRows).map(inp=>parseFloat(inp.value)||0);
     saveParamName=selParam;savePrice=saveParamPrices[0]||0;
   }
-
-  _dishSaving=true;
-  const saveBtn=document.getElementById('dish-save-btn');
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Zapisuję…';}
-
-  const existingDish=editDishId!==null?menuData.find(x=>x.id===editDishId):null;
-  const dishId=editDishId!==null?editDishId:Math.max(0,...menuData.map(x=>x.id))+1;
-
-  // Zdjęcie: jeśli wybrano nowe/zmienione (jeszcze jako dane obrazu) — wgraj do
-  // Storage i zapisz w daniu tylko link. Jeśli zdjęcie się nie zmieniło (już
-  // jest linkiem) albo go nie ma — nic nie wgrywaj.
-  let photo=hasPhoto?imgEl.src:'';
-  if(photo&&photo.indexOf('data:')===0){
-    try{
-      photo=await uploadDishPhoto(dishId,photo);
-      if(existingDish&&existingDish.photo&&existingDish.photo.startsWith('http')){
-        deleteOldDishPhoto(existingDish.photo);
-      }
-    }catch(e){
-      toast('⚠️ Nie udało się wgrać zdjęcia dania: '+e.message+'. Danie zapisano bez zmiany zdjęcia.');
-      photo=existingDish?.photo||'';
-    }
-  }
-
   const obj={
     name,desc,price:savePrice,
     cat:document.getElementById('d-cat').value,
@@ -3870,14 +3678,19 @@ async function saveDish(){
     paramName:saveParamName,paramPrices:saveParamPrices,
   };
   if(editDishId){
-    Object.assign(existingDish,obj);
+    const existing=menuData.find(x=>x.id===editDishId);
+    Object.assign(existing,obj);
     curMenuCat=obj.cat;
   } else {
-    obj.id=dishId;
+    obj.id=Math.max(0,...menuData.map(x=>x.id))+1;
     menuData.push(obj);
     curMenuCat=obj.cat;
   }
+  _dishSaving=true;
+  const saveBtn=document.getElementById('dish-save-btn');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Zapisuję…';}
   W('menu',menuData);
+  if(window._firebase&&window._firebase.db){try{window._firebase.db.ref('menu').set(menuData).catch(function(){});}catch(e){}}
   const savedCat=obj.cat;
   closeModal('mo-dish');
   curMenuCat=savedCat;
@@ -5971,14 +5784,7 @@ async function downloadFullBackup(){
 
 // ── INIT ──
 window._panelMenuReady = true; // sygnał dla Firebase że panel jest gotowy
-// checkOpenStatus() NIE jest już wywoływane bezpośrednio tutaj — wcześniej
-// uruchamiało się od razu przy starcie, zanim zdążyła dotrzeć wartość
-// bistro-manual-override z Firebase (osobny, asynchroniczny listener), co
-// powodowało krótkie, ale realne nadpisanie statusu w Firebase samym
-// harmonogramem, ignorując aktywny ręczny override. Listener override
-// (attachManualOverrideListener, niżej w pliku) sam wywołuje checkOpenStatus()
-// zaraz po dostarczeniu prawdziwej wartości — więc to jedyne miejsce, gdzie
-// to się teraz dzieje, bez ryzyka wyścigu.
+checkOpenStatus();
 renderDashboard();
 renderOrders();
 renderQR();
@@ -6072,9 +5878,18 @@ window.onFirebaseOrders = function(freshArr) {
         .includes((o.status||'').toLowerCase()))
         .forEach(o => sendOrderEmail(o));
     }
+    // WAŻNE: zmiany statusu ISTNIEJĄCYCH zamówień (np. zaakceptowane na innym
+    // urządzeniu) zostały tu pominięte — .on('value') nie odpali się ponownie
+    // samo z siebie, dopóki coś jeszcze się nie zmieni, więc bez tego
+    // pominięta zmiana zostałaby nieaktualna aż do zupełnie innego zdarzenia.
+    // Zaplanuj jednorazowe dogonienie tuż po wygaśnięciu okna ochronnego.
+    scheduleOrdersCatchUp();
     return;
   }
+  processFreshOrders(freshArr);
+};
 
+function processFreshOrders(freshArr) {
   // Wykryj nowe zamówienia (pending) których wcześniej nie było
   const prevIds = new Set((orders||[]).map(o=>o.id));
   const newPending = freshArr.filter(o=>
@@ -6115,7 +5930,30 @@ window.onFirebaseOrders = function(freshArr) {
   updateAlarm();
   renderDashboard();
   newPending.forEach(o => sendOrderEmail(o));
-};
+}
+
+// Jednorazowe "dogonienie" zamówień pominiętych przez okno ochronne (patrz
+// wyżej) — świeży odczyt z Firebase tuż po wygaśnięciu okna, żeby żadna
+// zmiana statusu z innego urządzenia nie została zgubiona na dłużej niż
+// samo okno ochronne + chwila.
+function scheduleOrdersCatchUp(){
+  if(window._ordersCatchUpScheduled) return; // już zaplanowane, nie dubluj
+  window._ordersCatchUpScheduled = true;
+  setTimeout(function(){
+    window._ordersCatchUpScheduled = false;
+    if(Date.now() - _ordersLastWrite < 8000){
+      scheduleOrdersCatchUp(); // ktoś znów zapisał lokalnie w międzyczasie — spróbuj później
+      return;
+    }
+    const db = window._firebase && window._firebase.db;
+    if(!db) return;
+    db.ref('orders').once('value').then(function(snap){
+      const val = snap.val();
+      const arr = (val ? (Array.isArray(val) ? val : Object.values(val)) : []).filter(function(o){ return o; });
+      processFreshOrders(arr);
+    }).catch(function(){});
+  }, 8500);
+}
 
 // ══════════════════════════════════════════════════════════════
 // WATCHDOG POŁĄCZENIA FIREBASE + KEEP-ALIVE
@@ -6218,24 +6056,6 @@ document.addEventListener('visibilitychange', function(){
     setTimeout(fetchOrdersNow, 800);
   }
 });
-
-// Rejestracja Service Workera — wymagana, żeby Chrome zaproponował
-// "Dodaj do ekranu głównego" (instalację panelu jako samodzielnej aplikacji)
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function(){});
-}
-
-// Poproś przeglądarkę, żeby traktowała dane panelu (m.in. sesję logowania
-// Firebase, zapisaną w IndexedDB) jako "trwałe" — przeglądarki potrafią same,
-// pod presją mało wolnego miejsca na urządzeniu, kasować dane rzadziej
-// używanych stron, co gubi zapamiętane logowanie. To nie jest gwarancja
-// (system i tak może odmówić przy naprawdę krytycznym braku miejsca), ale
-// znacząco zmniejsza ryzyko. Bezpieczne — nic nie zmienia, jeśli się nie uda.
-if (navigator.storage && navigator.storage.persist) {
-  navigator.storage.persist().then(function(granted){
-    console.log('[Storage] Trwałe przechowywanie danych:', granted ? 'przyznane ✓' : 'odmówione');
-  }).catch(function(){});
-}
 </script>
 </body>
 </html>
