@@ -1,5 +1,5 @@
 // Hirschówka Bistro — Service Worker
-const CACHE = 'hirschowka-v3';
+const CACHE = 'hirschowka-v4';
 const ASSETS = ['/', '/index.html', '/logo-round.png', '/firebase-config.js'];
 
 self.addEventListener('install', e => {
