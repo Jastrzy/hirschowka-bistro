@@ -807,6 +807,22 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     onerror="this.style.display='none'">
 </div>
 
+<!-- TICKER — edytuj w panelu admina → Promocje → +Dodaj promocję -->
+<div class="ticker-bar">
+  <div class="ticker-inner" id="ticker-inner">
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
+    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = 50% na bajgla lub danie dnia</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
+    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
+    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = 50% na bajgla lub danie dnia</a>
+  </div>
+</div>
+
 <!-- ═══ DANIE DNIA ═══ -->
 
 <!-- ═══ TRZY KATEGORIE ═══ -->
@@ -859,20 +875,20 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
         </div>
       </a>
 
-      <!-- Napary Premium -->
-      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-napary-premium');if(el)el.click();},600);"
+      <!-- Kawy -->
+      <a href="#menu" onclick="event.preventDefault();document.getElementById('menu').scrollIntoView({behavior:'smooth'});setTimeout(()=>{const el=document.getElementById('ctab-kawy-i-gorce-napoje-z-mlekiem');if(el)el.click();},600);"
         style="text-decoration:none;border:0.5px solid rgba(59,37,18,.12);border-radius:0;overflow:hidden;background:#fff;display:block;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(59,37,18,.12)'">
-        <div style="height:280px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#2D5A1B;">
-          <img src="napary.jpg" alt="Napary Premium" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
-          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(27,58,15,.7) 0%,transparent 60%);"></div>
-          <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">03 / Napary Premium</span>
+        <div style="height:280px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:12px;background:#4A2F1D;">
+          <img src="kawa.jpg" alt="Kawy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(42,26,14,.7) 0%,transparent 60%);"></div>
+          <span style="position:relative;z-index:1;background:rgba(0,0,0,.4);color:#F9F5EE;font-size:10px;padding:4px 10px;border-radius:4px;letter-spacing:1px;">03 / Kawy</span>
         </div>
         <div style="padding:18px;">
-          <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Napary <em style="color:var(--gold)">premium</em></h3>
-          <p style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:14px;">Starannie dobrane herbaty i napary ziołowe — idealne do każdej pory dnia.</p>
+          <h3 style="font-family:var(--serif);font-size:16px;color:var(--brown);margin-bottom:8px;">Kawy <em style="color:var(--gold)">z sercem</em></h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:14px;">Cappuccino, latte, mokka i klasyka — parzone ze starannie wybranych ziaren, z aksamitną pianką.</p>
           <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-family:var(--serif);font-size:17px;color:var(--gold)"><span style="font-size:11px;color:var(--muted2);font-family:var(--sans)">od </span>9 zł</span>
+            <span style="font-family:var(--serif);font-size:17px;color:var(--gold)"><span style="font-size:11px;color:var(--muted2);font-family:var(--sans)">od </span>10 zł</span>
             <span style="font-size:12px;color:var(--gold);font-weight:600;">→ przejdź do menu</span>
           </div>
         </div>
@@ -1050,7 +1066,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <footer class="footer">
   <div class="footer-grid">
     <div>
-      <img src="logorect.png" alt="Hirschówka Bistro" class="footer-logo-img" onerror="this.style.display='none'">
+      <img src="logo-rect.png" alt="Hirschówka Bistro" class="footer-logo-img" onerror="this.style.display='none'">
       <div class="footer-col">
         <h4>Dane firmy</h4>
         <p>Fresh Marcin Jastrzębski</p>
@@ -1064,8 +1080,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       <a href="mailto:kontakt@hirschowkabistro.pl">✉ kontakt@hirschowkabistro.pl</a>
       <a href="https://maps.google.com/?q=Mickiewicza+17,+Mielec" target="_blank">📍 ul. Mickiewicza 17, 39-300 Mielec →</a>
       <h4 style="margin-top:16px">Godziny otwarcia</h4>
-      <p>Pon – Pt: 7:00 – 16:00</p>
-      <p style="color:rgba(249,245,238,.3)">Sobota – Niedziela: nieczynne</p>
+      <p>Pon – Pt: 7:00 – 17:00</p>
+      <p>Sobota: 8:00 – 14:00</p>
+      <p style="color:rgba(249,245,238,.3)">Niedziela: nieczynne</p>
     </div>
     <div class="footer-col">
       <h4>Nawigacja</h4>
@@ -1398,12 +1415,23 @@ setInterval(updateClock,1000);updateClock();
 // ════ INIT ════
 function init(){
   renderAdminPromos();
+  renderAdminTicker();
   renderDaily();
   renderKitchen();
   // Pokaż skeleton zamiast MENU_BASE — Firebase zaraz nadpisze menu prawdziwymi danymi
   buildMenuSkeleton();
   renderReviews();
   renderLoyaltyStamps();
+}
+
+// ════ TICKER — ładuje promocje z panelu, fallback na domyślne ════
+function renderAdminTicker(){
+  const ap=(LS('promos')||[]).filter(p=>p.active);
+  if(!ap.length) return; // zostaw domyślne
+  const items = ap.map(p=>`<span class="ticker-item"><span class="ticker-dot">★</span> ${p.name}${p.val?' — '+p.val+(p.type?.includes('%')?'% rabatu':' zł'):''}</span>`);
+  // Duplikuj żeby pętla się nie urywała
+  const doubled = [...items,...items].join('');
+  document.getElementById('ticker-inner').innerHTML = doubled;
 }
 
 function renderAdminPromos(){
