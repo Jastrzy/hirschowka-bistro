@@ -215,11 +215,11 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .daily-plate-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);margin-bottom:6px;}
 .daily-plate-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
 .daily-plate-price{display:flex;align-items:center;justify-content:center;gap:12px;}
-.daily-set-banner{background:linear-gradient(135deg,rgba(200,146,42,.14),rgba(200,146,42,.05));border:1px solid rgba(200,146,42,.35);border-radius:var(--r2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.daily-set-text{font-size:14px;color:var(--brown);}
-.daily-set-old{font-size:12px;color:var(--muted);text-decoration:line-through;margin-right:8px;}
-.daily-set-value{font-family:var(--serif);font-weight:700;color:var(--gold);font-size:16px;}
-.daily-set-btn{background:var(--gold);color:var(--brown);border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;white-space:nowrap;}
+.daily-set-banner{background:linear-gradient(135deg,rgba(200,146,42,.14),rgba(200,146,42,.05));border:1px solid rgba(200,146,42,.35);border-radius:var(--r2);padding:16px 18px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;}
+.daily-set-text{font-size:18px;color:var(--brown);}
+.daily-set-old{font-size:14px;color:var(--muted);text-decoration:line-through;margin-right:8px;}
+.daily-set-value{font-family:var(--serif);font-weight:700;color:var(--gold);font-size:20px;}
+.daily-set-btn{background:var(--gold);color:var(--brown);border:none;border-radius:var(--r);padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;white-space:nowrap;width:100%;}
 .daily-set-btn:hover{opacity:.9;}
 .dpp{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--gold);}
 .dpp-tag{background:var(--green);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:var(--r);}
@@ -900,7 +900,6 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
         <div class="daily-feat"><span class="feat-dot"></span>Dostępne od 11:00 do wyczerpania</div>
         <div class="daily-feat"><span class="feat-dot"></span>Dostawa lub odbiór osobisty</div>
       </div>
-      <button class="btn-primary" id="daily-btn" onclick="addDefaultDaily()">🛒 Zamów zestaw dnia</button>
     </div>
     <div class="daily-plate reveal" id="daily-cards-wrap">
       <div class="daily-plate-badge">Dziś gotujemy</div>
@@ -1472,13 +1471,7 @@ function renderDailySetBanner(k){
   const oldPriceHtml=(normalPrice>setPrice)?`<span class="daily-set-old">${normalPrice.toFixed(2)} zł</span>`:'';
   el.innerHTML=`
     <div class="daily-set-text">${oldPriceHtml}W zestawie <span class="daily-set-value">${setPrice.toFixed(2)} zł</span></div>
-    <button class="daily-set-btn" onclick="addKitchenSet()">🛒 Dodaj zestaw</button>`;
-}
-function addDefaultDaily(){
-  const k=LS('kitchen-day');
-  if(k?.soup?.name&&k?.main?.name&&parseFloat(k?.setPrice)>0){addKitchenSet();return;}
-  if(k?.main?.name){addDailyItem('main');return;}
-  if(k?.soup?.name){addDailyItem('soup');return;}
+    <button class="daily-set-btn" onclick="addKitchenSet()">🛒 Zamów zestaw dnia</button>`;
 }
 
 // ════ KUCHNIA DNIA — przeniesiona do daily-section ════
