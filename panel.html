@@ -954,25 +954,6 @@ requestWakeLock();
       <div class="card card-pad" style="margin-bottom:20px;border-left:4px solid var(--gold);">
         <p style="font-size:13px;color:var(--muted);line-height:1.6;">Uzupełnij poniższe trzy pozycje. Każda pojawi się na stronie klienta z przyciskiem "Dodaj do koszyka". <strong>Zmieniaj każdego ranka.</strong></p>
       </div>
-      <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--gold);">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">⭐ Zestaw dnia</h3>
-        <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('dd-set-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="dd-set-photo" accept="image/*" onchange="previewDdPhoto(this,'set')">
-            <div id="dd-set-prev" style="display:none;position:relative;">
-              <img id="dd-set-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearDdPhoto('set')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
-            </div>
-            <div id="dd-set-drop" style="font-size:28px;margin-bottom:4px;">⭐</div>
-            <p style="font-size:11px;color:var(--muted);">Zdjęcie</p>
-          </div>
-          <div>
-            <div class="field"><label>Nazwa</label><input id="dd-set-name" placeholder="np. Zupa + Filet z indyka" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="dd-set-desc" rows="2" placeholder="np. Pełny zestaw obiadowy" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena (zł)</label><input type="number" id="dd-set-price" placeholder="np. 32" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-          </div>
-        </div>
-      </div>
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid #3b82f6;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍲 Zupa dnia</h3>
         <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
@@ -1010,6 +991,11 @@ requestWakeLock();
             <div class="field"><label>Cena (zł)</label><input type="number" id="dd-main-price" placeholder="np. 26" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
           </div>
         </div>
+      </div>
+      <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--gold);">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;">⭐ Zestaw dnia (zupa + danie główne)</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Bez zdjęcia i opisu — wpisz tylko promocyjną cenę za komplet. Na stronie klienta pojawi się jako „W zestawie X zł" pod kartami zupy i dania.</p>
+        <div class="field"><label>Cena zestawu (zł)</label><input type="number" id="dd-set-price" placeholder="np. 32" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
       </div>
       <button class="btn bp" onclick="saveDanieDnia()" style="width:100%;padding:14px;font-size:15px;">⭐ Zapisz danie dnia</button>
       <div id="daily-preview-card" style="display:none;margin-top:14px;"></div>
@@ -4551,17 +4537,17 @@ function clearDdPhoto(type){
 function saveDanieDnia(){
   const getSrc=(t)=>{const prev=document.getElementById('dd-'+t+'-prev');const img=document.getElementById('dd-'+t+'-img');return(prev&&prev.style.display!=='none')?img.src:'';};
   const getField=(t,f)=>(document.getElementById('dd-'+t+'-'+f)?.value||'').trim();
-  const set={name:getField('set','name'),desc:getField('set','desc'),price:getField('set','price'),photo:getSrc('set')};
   const soup={name:getField('soup','name'),desc:getField('soup','desc'),price:getField('soup','price'),photo:getSrc('soup')};
   const main={name:getField('main','name'),desc:getField('main','desc'),price:getField('main','price'),photo:getSrc('main')};
-  if(!set.name&&!soup.name&&!main.name){toast('Wpisz co najmniej jedną pozycję');return;}
-  W('kitchen-day',{set,soup,main,date:new Date().toISOString().slice(0,10)});
+  const setPrice=(document.getElementById('dd-set-price')?.value||'').trim();
+  if(!soup.name&&!main.name){toast('Wpisz co najmniej jedną pozycję');return;}
+  W('kitchen-day',{soup,main,setPrice,date:new Date().toISOString().slice(0,10)});
   toast('⭐ Danie dnia zapisane ✓ — strona zaktualizowana');
 }
 function renderDanieDnia(){
   const k=S('kitchen-day');
   if(!k)return;
-  ['set','soup','main'].forEach(t=>{
+  ['soup','main'].forEach(t=>{
     const d=k[t];if(!d)return;
     if(d.name&&document.getElementById('dd-'+t+'-name'))document.getElementById('dd-'+t+'-name').value=d.name;
     if(d.desc&&document.getElementById('dd-'+t+'-desc'))document.getElementById('dd-'+t+'-desc').value=d.desc;
@@ -4572,6 +4558,7 @@ function renderDanieDnia(){
       document.getElementById('dd-'+t+'-drop').style.display='none';
     }
   });
+  if(k.setPrice&&document.getElementById('dd-set-price'))document.getElementById('dd-set-price').value=k.setPrice;
 }
 
 

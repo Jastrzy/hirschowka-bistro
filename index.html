@@ -215,6 +215,12 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 .daily-plate-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--brown);margin-bottom:6px;}
 .daily-plate-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
 .daily-plate-price{display:flex;align-items:center;justify-content:center;gap:12px;}
+.daily-set-banner{background:linear-gradient(135deg,rgba(200,146,42,.14),rgba(200,146,42,.05));border:1px solid rgba(200,146,42,.35);border-radius:var(--r2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.daily-set-text{font-size:14px;color:var(--brown);}
+.daily-set-old{font-size:12px;color:var(--muted);text-decoration:line-through;margin-right:8px;}
+.daily-set-value{font-family:var(--serif);font-weight:700;color:var(--gold);font-size:16px;}
+.daily-set-btn{background:var(--gold);color:var(--brown);border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;white-space:nowrap;}
+.daily-set-btn:hover{opacity:.9;}
 .dpp{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--gold);}
 .dpp-tag{background:var(--green);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:var(--r);}
 
@@ -898,9 +904,9 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     </div>
     <div class="daily-plate reveal" id="daily-cards-wrap">
       <div class="daily-plate-badge">Dziś gotujemy</div>
-      <div id="daily-set-card" style="margin-bottom:12px;"></div>
       <div id="daily-soup-card" style="margin-bottom:12px;"></div>
-      <div id="daily-main-card"></div>
+      <div id="daily-main-card" style="margin-bottom:12px;"></div>
+      <div id="daily-set-banner"></div>
     </div>
   </div>
 </section>
@@ -1443,22 +1449,36 @@ function makeDailyCard(d,emoji,label,type){
 function renderDaily(){
   const k=LS('kitchen-day');
   if(!k)return;
-  const mainName=k.set?.name||(k.soup?.name&&k.main?.name?k.soup.name+' + '+k.main.name:k.soup?.name||k.main?.name||'');
+  const mainName=(k.soup?.name&&k.main?.name)?k.soup.name+' + '+k.main.name:(k.soup?.name||k.main?.name||'');
   if(mainName){
     document.getElementById('daily-name').textContent='Codziennie coś pysznego z naszej kuchni';
     document.getElementById('daily-desc').textContent='Dziś polecamy: '+mainName+'. Dostępne do wyczerpania.';
   }
-  const setEl=document.getElementById('daily-set-card');
   const soupEl=document.getElementById('daily-soup-card');
   const mainEl=document.getElementById('daily-main-card');
-  if(setEl)  setEl.innerHTML =makeDailyCard(k.set, '⭐','Zestaw dnia',  'set');
   if(soupEl) soupEl.innerHTML=makeDailyCard(k.soup,'🍲','Zupa dnia',    'soup');
   if(mainEl) mainEl.innerHTML=makeDailyCard(k.main,'🍽','Danie główne', 'main');
+  renderDailySetBanner(k);
+}
+function renderDailySetBanner(k){
+  const el=document.getElementById('daily-set-banner');
+  if(!el)return;
+  const setPrice=parseFloat(k?.setPrice);
+  const hasCombo=k?.soup?.name && k?.main?.name && setPrice>0;
+  if(!hasCombo){el.innerHTML='';return;}
+  const soupP=parseFloat(k.soup.price)||0;
+  const mainP=parseFloat(k.main.price)||0;
+  const normalPrice=soupP+mainP;
+  const oldPriceHtml=(normalPrice>setPrice)?`<span class="daily-set-old">${normalPrice.toFixed(2)} zł</span>`:'';
+  el.innerHTML=`
+    <div class="daily-set-text">${oldPriceHtml}W zestawie <span class="daily-set-value">${setPrice.toFixed(2)} zł</span></div>
+    <button class="daily-set-btn" onclick="addKitchenSet()">🛒 Dodaj zestaw</button>`;
 }
 function addDefaultDaily(){
   const k=LS('kitchen-day');
-  if(k?.set?.name){addDailyItem('set');return;}
+  if(k?.soup?.name&&k?.main?.name&&parseFloat(k?.setPrice)>0){addKitchenSet();return;}
   if(k?.main?.name){addDailyItem('main');return;}
+  if(k?.soup?.name){addDailyItem('soup');return;}
 }
 
 // ════ KUCHNIA DNIA — przeniesiona do daily-section ════
@@ -1538,7 +1558,7 @@ function addKitchenSet(){
   const k = LS('kitchen-day');
   if(!k||!k.setPrice) return;
   const name = `Zestaw: ${k.soup?.name||'zupa'} + ${k.main?.name||'drugie danie'}`;
-  cart.push({uid:Date.now(),itemId:0,name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(k.setPrice)||0,qty:1});
+  cart.push({uid:Date.now(),itemId:0,dailyType:'set',name,cat:'Dania obiadowe',mods:[],unitPrice:parseFloat(k.setPrice)||0,qty:1});
   updateCartBadge();
   toast('Zestaw dnia dodany ✓');
 }
@@ -2132,6 +2152,10 @@ async function placeOrder(){
     if(currentKitchen){
       const staleItem = cart.find(function(ci){
         if(!ci.dailyType) return false;
+        if(ci.dailyType==='set'){
+          const curSetPrice=parseFloat(currentKitchen.setPrice)||0;
+          return !currentKitchen.setPrice || curSetPrice!==ci.unitPrice;
+        }
         const cur = currentKitchen[ci.dailyType];
         return !cur || cur.name !== ci.name;
       });
