@@ -807,22 +807,6 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
     onerror="this.style.display='none'">
 </div>
 
-<!-- TICKER — edytuj w panelu admina → Promocje → +Dodaj promocję -->
-<div class="ticker-bar">
-  <div class="ticker-inner" id="ticker-inner">
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
-    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = 50% na bajgla lub danie dnia</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Śniadanie + kawa od 15 zł</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Obiad dnia z zupą od 22 zł</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Darmowy dowóz przy zamówieniu od 40 zł</a>
-    <a href="#menu" class="ticker-item"><span class="ticker-dot">★</span> Świeże wypieki codziennie od 7:00</a>
-    <a href="#loyalty-section" class="ticker-item"><span class="ticker-dot">★</span> Program lojalnościowy — 9 pieczątek = 50% na bajgla lub danie dnia</a>
-  </div>
-</div>
-
 <!-- ═══ DANIE DNIA ═══ -->
 
 <!-- ═══ TRZY KATEGORIE ═══ -->
@@ -1066,7 +1050,7 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
 <footer class="footer">
   <div class="footer-grid">
     <div>
-      <img src="logo-rect.png" alt="Hirschówka Bistro" class="footer-logo-img" onerror="this.style.display='none'">
+      <img src="logorect.png" alt="Hirschówka Bistro" class="footer-logo-img" onerror="this.style.display='none'">
       <div class="footer-col">
         <h4>Dane firmy</h4>
         <p>Fresh Marcin Jastrzębski</p>
@@ -1080,9 +1064,8 @@ body{font-family:var(--sans);background:var(--cream);color:var(--text);overflow-
       <a href="mailto:kontakt@hirschowkabistro.pl">✉ kontakt@hirschowkabistro.pl</a>
       <a href="https://maps.google.com/?q=Mickiewicza+17,+Mielec" target="_blank">📍 ul. Mickiewicza 17, 39-300 Mielec →</a>
       <h4 style="margin-top:16px">Godziny otwarcia</h4>
-      <p>Pon – Pt: 7:00 – 17:00</p>
-      <p>Sobota: 8:00 – 14:00</p>
-      <p style="color:rgba(249,245,238,.3)">Niedziela: nieczynne</p>
+      <p>Pon – Pt: 7:00 – 16:00</p>
+      <p style="color:rgba(249,245,238,.3)">Sobota – Niedziela: nieczynne</p>
     </div>
     <div class="footer-col">
       <h4>Nawigacja</h4>
@@ -1415,23 +1398,12 @@ setInterval(updateClock,1000);updateClock();
 // ════ INIT ════
 function init(){
   renderAdminPromos();
-  renderAdminTicker();
   renderDaily();
   renderKitchen();
   // Pokaż skeleton zamiast MENU_BASE — Firebase zaraz nadpisze menu prawdziwymi danymi
   buildMenuSkeleton();
   renderReviews();
   renderLoyaltyStamps();
-}
-
-// ════ TICKER — ładuje promocje z panelu, fallback na domyślne ════
-function renderAdminTicker(){
-  const ap=(LS('promos')||[]).filter(p=>p.active);
-  if(!ap.length) return; // zostaw domyślne
-  const items = ap.map(p=>`<span class="ticker-item"><span class="ticker-dot">★</span> ${p.name}${p.val?' — '+p.val+(p.type?.includes('%')?'% rabatu':' zł'):''}</span>`);
-  // Duplikuj żeby pętla się nie urywała
-  const doubled = [...items,...items].join('');
-  document.getElementById('ticker-inner').innerHTML = doubled;
 }
 
 function renderAdminPromos(){
