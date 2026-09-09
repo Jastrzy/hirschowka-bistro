@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    {
+      "source": "/lunchowki",
+      "destination": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=tUKd0RqFAU6JQZhJpA4cb8LZ2qJzFVxOrRnlOB1OtLZUQ0tDQVJERFAzOEM4U0lLWVI4WkNKQTRFUS4u",
+      "permanent": false
+    },
+    {
+      "source": "/lunchówki",
+      "destination": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=tUKd0RqFAU6JQZhJpA4cb8LZ2qJzFVxOrRnlOB1OtLZUQ0tDQVJERFAzOEM4U0lLWVI4WkNKQTRFUS4u",
+      "permanent": false
+    }
+  ]
+}
