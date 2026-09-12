@@ -371,7 +371,19 @@
       // smsMktSaveHistory(), a ta pętla, bez własnego nasłuchu odświeżającego lokalną
       // kopię, potrafiła nadpisać prawdziwą historię starą/pustą kopią z przeglądarki
       // (dokładnie to spowodowało utratę historii kampanii SMS).
-      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','orders','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
+      // UWAGA: 'orders' CELOWO NIE JEST na tej liście (usunięte — wcześniej tu było).
+      // Ta pętla robi surowy, pełny nadpisujący zapis (db.ref(k).set(...)) bez żadnej
+      // transakcji ani sprawdzenia aktualnego stanu na serwerze. Dla zamówień to
+      // niebezpieczne: panel co jakiś czas i tak zapisuje świeżą kopię 'orders' do
+      // localStorage z NASŁUCHU Firebase (ten sam plik, wyżej), a ta pętla wtedy
+      // odsyłała tę kopię z powrotem do Firebase — jeśli w międzyczasie (nawet
+      // ułamek sekundy) inne stanowisko zdążyło zmienić status zamówienia bezpieczną
+      // transakcją (claimOrderTransition w panel.html), ten surowy zapis potrafił
+      // cofnąć tę zmianę z powrotem na starą wersję (np. zaakceptowane → znowu
+      // "Do akceptacji", z drugim SMS-em o przyjęciu). Zamówienia mają już własne,
+      // bezpieczne kanały zapisu (transakcje w panel.html, set() po ID z index.html)
+      // i nie mogą być duplikowane przez tę generyczną pętlę.
+      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 

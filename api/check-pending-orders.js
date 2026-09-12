@@ -50,6 +50,20 @@ function normStatus(v) {
   return 'pending';
 }
 
+// Usuwa polskie znaki diakrytyczne z tekstu SMS-a. Polskie litery (ą,ć,ę,ł,ń,ó,
+// ś,ź,ż) wymuszają w SMS-ie kodowanie UCS-2 zamiast standardowego GSM-7 — limit
+// jednej wiadomości spada wtedy ze 160 znaków do 70, więc nawet niewielkie
+// przekroczenie tego progu (np. przez imię/nazwisko klienta) dzieli wiadomość
+// na dwie (i dwie są liczone przez SMSAPI). Ten alert i tak jest wewnętrzny
+// (do Ciebie, nie do klienta), więc nie musi zawierać polskich znaków.
+function stripPolish(str) {
+  const map = {
+    'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z',
+    'Ą':'A','Ć':'C','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z',
+  };
+  return String(str || '').replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, ch => map[ch] || ch);
+}
+
 // Prosta odporność na przejściowe zerwania sieci (np. "fetch failed") —
 // jedna ponowna próba po krótkiej chwili, zanim uznamy to za prawdziwy błąd
 async function fetchWithRetry(url, opts, retries) {
@@ -135,7 +149,7 @@ export default async function handler(req, res) {
       const minutes = Math.round((now - o.timestamp) / 60000);
       const customerName = o.customer || ('Klient ' + (o.phone || ''));
       const totalStr = (o.total !== undefined && o.total !== null) ? `${o.total} zl` : 'b/d';
-      const smsText = `Hirschowka: zamowienie ${o.id} - ${customerName}, ${totalStr} - czeka na akceptacje juz ${minutes} min! Sprawdz panel.`;
+      const smsText = stripPolish(`Hirschowka: zamowienie ${o.id} - ${customerName}, ${totalStr} - czeka na akceptacje juz ${minutes} min! Sprawdz panel.`);
 
       for (const rawPhone of phones) {
         const cleanPhone = '48' + String(rawPhone).replace(/\s/g, '').replace(/^\+48/, '').replace(/\D/g, '');
