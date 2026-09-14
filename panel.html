@@ -952,52 +952,22 @@ requestWakeLock();
     <div class="page" id="page-daniednia">
       <div class="sect-hdr"><h2>⭐ Danie dnia</h2></div>
       <div class="card card-pad" style="margin-bottom:20px;border-left:4px solid var(--gold);">
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Uzupełnij poniższe trzy pozycje. Każda pojawi się na stronie klienta z przyciskiem "Dodaj do koszyka". <strong>Zmieniaj każdego ranka.</strong></p>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Zupa i danie główne pochodzą teraz automatycznie z Menu (kategoria "Dania obiadowe") — oznacz odpowiednią pozycję w edytorze dania polem "Rola w Danie dnia". Tutaj wpisujesz tylko promocyjną cenę zestawu.</p>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid #3b82f6;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍲 Zupa dnia</h3>
-        <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('dd-soup-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="dd-soup-photo" accept="image/*" onchange="previewDdPhoto(this,'soup')">
-            <div id="dd-soup-prev" style="display:none;position:relative;">
-              <img id="dd-soup-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearDdPhoto('soup')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
-            </div>
-            <div id="dd-soup-drop" style="font-size:28px;margin-bottom:4px;">🍲</div>
-            <p style="font-size:11px;color:var(--muted);">Zdjęcie</p>
-          </div>
-          <div>
-            <div class="field"><label>Nazwa</label><input id="dd-soup-name" placeholder="np. Żurek domowy" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="dd-soup-desc" rows="2" placeholder="np. Na zakwasie z jajkiem" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena (zł)</label><input type="number" id="dd-soup-price" placeholder="np. 12" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-          </div>
-        </div>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍲 Zupa dnia <span style="font-size:11px;font-weight:400;color:var(--muted);">(z Menu)</span></h3>
+        <div id="dd-soup-preview" style="font-size:13px;color:var(--muted);">Brak — oznacz pozycję w Menu jako "Zupa dnia".</div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--rust);">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍽 Danie główne</h3>
-        <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-          <div class="photo-drop" onclick="document.getElementById('dd-main-photo').click()" style="padding:14px;text-align:center;min-height:150px;">
-            <input type="file" id="dd-main-photo" accept="image/*" onchange="previewDdPhoto(this,'main')">
-            <div id="dd-main-prev" style="display:none;position:relative;">
-              <img id="dd-main-img" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
-              <button onclick="event.stopPropagation();clearDdPhoto('main')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;">✕</button>
-            </div>
-            <div id="dd-main-drop" style="font-size:28px;margin-bottom:4px;">🍽</div>
-            <p style="font-size:11px;color:var(--muted);">Zdjęcie</p>
-          </div>
-          <div>
-            <div class="field"><label>Nazwa</label><input id="dd-main-name" placeholder="np. Polędwiczki wieprzowe" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-            <div class="field"><label>Opis</label><textarea id="dd-main-desc" rows="2" placeholder="np. Z sosem chrzanowym" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
-            <div class="field"><label>Cena (zł)</label><input type="number" id="dd-main-price" placeholder="np. 26" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
-          </div>
-        </div>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">🍽 Danie główne <span style="font-size:11px;font-weight:400;color:var(--muted);">(z Menu)</span></h3>
+        <div id="dd-main-preview" style="font-size:13px;color:var(--muted);">Brak — oznacz pozycję w Menu jako "Danie główne".</div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;border-left:3px solid var(--gold);">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;">⭐ Zestaw dnia (zupa + danie główne)</h3>
         <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Bez zdjęcia i opisu — wpisz tylko promocyjną cenę za komplet. Na stronie klienta pojawi się jako „W zestawie X zł" pod kartami zupy i dania.</p>
         <div class="field"><label>Cena zestawu (zł)</label><input type="number" id="dd-set-price" placeholder="np. 32" step="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
       </div>
-      <button class="btn bp" onclick="saveDanieDnia()" style="width:100%;padding:14px;font-size:15px;">⭐ Zapisz danie dnia</button>
+      <button class="btn bp" onclick="saveDanieDnia()" style="width:100%;padding:14px;font-size:15px;">⭐ Zapisz cenę zestawu</button>
       <div id="daily-preview-card" style="display:none;margin-top:14px;"></div>
     </div>
 
@@ -1370,6 +1340,17 @@ requestWakeLock();
           <button type="button" class="btn bo bsm" onclick="addNewCategory()" title="Dodaj nową kategorię">+ Nowa</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;">Kategoria pojawi się automatycznie na stronie klienta jako zakładka menu.</div>
+      </div>
+
+      <!-- Rola w Danie dnia -->
+      <div class="field">
+        <label>⭐ Rola w "Danie dnia" (widget na stronie głównej)</label>
+        <select id="d-daily-role" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+          <option value="">Brak — normalna pozycja menu</option>
+          <option value="soup">🍲 Dzisiejsza zupa dnia</option>
+          <option value="main">🍽 Dzisiejsze danie główne</option>
+        </select>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Zaznaczenie automatycznie pokaże tę pozycję (z tym samym zdjęciem, opisem i ceną) w widgecie "Danie dnia" na stronie głównej. Wymaga zdjęcia. Tylko jedna pozycja naraz może mieć tę rolę — poprzednia zostanie automatycznie odznaczona.</div>
       </div>
 
       <!-- Oznaczenia -->
@@ -3477,7 +3458,7 @@ function renderMenuItems(){
       <input type="file" id="mpf-${d.id}" accept="image/*" style="display:none" onchange="saveMPhoto(${d.id},this)">
     </div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;font-weight:600;">${d.name}${d.visible===false?' <span style="font-size:10px;color:var(--red);font-weight:700;">(UKRYTE Z MENU)</span>':''}</div>
+      <div style="font-size:13px;font-weight:600;">${d.name}${d.dailyRole==='soup'?' <span style="font-size:10px;color:var(--gold);font-weight:700;">🍲 ZUPA DNIA</span>':''}${d.dailyRole==='main'?' <span style="font-size:10px;color:var(--gold);font-weight:700;">🍽 DANIE GŁÓWNE (dziś)</span>':''}${d.visible===false?' <span style="font-size:10px;color:var(--red);font-weight:700;">(UKRYTE Z MENU)</span>':''}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px;">${d.desc}</div>
     </div>
     <input class="price-inp" type="number" value="${d.price}" step="0.5" min="0" onchange="updatePrice(${d.id},this.value)">
@@ -3500,17 +3481,25 @@ function saveMPhoto(id,inp){
   const r=new FileReader();r.onload=e=>{
     compressImage(e.target.result,800,800,0.72,compressed=>{
       const d=menuData.find(x=>x.id===id);
-      if(d){d.photo=compressed;W('menu',menuData);renderMenuItems();toast('Zdjęcie zapisane ✓');}
+      if(d){d.photo=compressed;W('menu',menuData);if(d.dailyRole)syncDailyRoleToKitchenDay();renderMenuItems();toast('Zdjęcie zapisane ✓');}
     });
   };r.readAsDataURL(f);
 }
-function updatePrice(id,v){const d=menuData.find(x=>x.id===id);if(d){d.price=parseFloat(v)||0;W('menu',menuData);toast('Cena zaktualizowana ✓');}}
+function updatePrice(id,v){const d=menuData.find(x=>x.id===id);if(d){d.price=parseFloat(v)||0;W('menu',menuData);if(d.dailyRole)syncDailyRoleToKitchenDay();toast('Cena zaktualizowana ✓');}}
 function toggleAvail(id,v){const d=menuData.find(x=>x.id===id);if(d){d.avail=v;W('menu',menuData);renderMenuItems();toast(d.name+(v?' — dostępne ✓':' — ukryte'));}}
 // Osobna od "Dostępne" — ta opcja usuwa danie CAŁKOWICIE z widoku klienta (nie pokazuje
 // się w ogóle, nawet jako "chwilowo niedostępne"). Przydatne np. do wpisania dania
 // z wyprzedzeniem, zanim ma być pokazane, albo do trwałego wycofania bez usuwania danych.
 function toggleVisible(id,v){const d=menuData.find(x=>x.id===id);if(d){d.visible=v;W('menu',menuData);renderMenuItems();toast(d.name+(v?' — widoczne w menu ✓':' — całkowicie ukryte z menu klienta'));}}
-function deleteDish(id){if(!confirm('Usunąć danie?'))return;menuData=menuData.filter(x=>x.id!==id);W('menu',menuData);renderMenuItems();toast('Danie usunięte');}
+function deleteDish(id){
+  if(!confirm('Usunąć danie?'))return;
+  const wasDailyRole=menuData.find(x=>x.id===id)?.dailyRole;
+  menuData=menuData.filter(x=>x.id!==id);
+  W('menu',menuData);
+  if(wasDailyRole)syncDailyRoleToKitchenDay();
+  renderMenuItems();
+  toast('Danie usunięte');
+}
 
 let selectedBadges=[];
 let dishVariants=[];
@@ -3559,6 +3548,10 @@ function openDishModal(id){
   const sel=document.getElementById('d-cat');
   sel.innerHTML=allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
   sel.value=d?.cat||allCats[0];
+
+  // Rola w "Danie dnia"
+  const dailyRoleSel=document.getElementById('d-daily-role');
+  if(dailyRoleSel) dailyRoleSel.value=d?.dailyRole||'';
 
   // Photo
   const pi=document.getElementById('dish-photo-img');
@@ -3672,29 +3665,45 @@ function saveDish(){
     saveParamPrices=Array.from(pRows).map(inp=>parseFloat(inp.value)||0);
     saveParamName=selParam;savePrice=saveParamPrices[0]||0;
   }
+  // Rola w "Danie dnia" — patrz syncDailyRoleToKitchenDay(). Wymaga zdjęcia, bo
+  // widget na stronie klienta zawsze pokazuje zdjęcie z pozycji menu.
+  const dailyRole=document.getElementById('d-daily-role')?document.getElementById('d-daily-role').value:'';
+  if(dailyRole && !photo){
+    toast('Danie oznaczone jako "'+(dailyRole==='soup'?'Zupa dnia':'Danie główne')+'" musi mieć zdjęcie');
+    return;
+  }
   const obj={
     name,desc,price:savePrice,
     cat:document.getElementById('d-cat').value,
     avail:document.getElementById('d-avail').value==='1',
     photo,badges:[...selectedBadges],
+    dailyRole,
     ingredients:(document.getElementById('d-ingredients').value||'').trim(),
     schedule:(document.getElementById('d-schedule').value||''),
     paramName:saveParamName,paramPrices:saveParamPrices,
   };
+  let finalId;
   if(editDishId){
     const existing=menuData.find(x=>x.id===editDishId);
     Object.assign(existing,obj);
     curMenuCat=obj.cat;
+    finalId=editDishId;
   } else {
     obj.id=Math.max(0,...menuData.map(x=>x.id))+1;
     menuData.push(obj);
     curMenuCat=obj.cat;
+    finalId=obj.id;
+  }
+  // Tylko jedna pozycja naraz może mieć daną rolę — odznacz poprzednią
+  if(dailyRole){
+    menuData.forEach(function(x){ if(x.id!==finalId && x.dailyRole===dailyRole) x.dailyRole=''; });
   }
   _dishSaving=true;
   const saveBtn=document.getElementById('dish-save-btn');
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Zapisuję…';}
   W('menu',menuData);
   if(window._firebase&&window._firebase.db){try{window._firebase.db.ref('menu').set(menuData).catch(function(){});}catch(e){}}
+  syncDailyRoleToKitchenDay();
   const savedCat=obj.cat;
   closeModal('mo-dish');
   curMenuCat=savedCat;
@@ -4515,49 +4524,50 @@ function saveDaily(){
   W('daily-dish',daily);toast('Danie dnia zapisane ✓ — strona główna zaktualizowana');
 }
 
-// ── DANIE DNIA (dedykowana strona) ──
-// ── DANIE DNIA (trzy pozycje) ──
-function previewDdPhoto(inp,type){
-  const f=inp.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    compressImage(e.target.result,800,800,0.72,compressed=>{
-      document.getElementById('dd-'+type+'-img').src=compressed;
-      document.getElementById('dd-'+type+'-prev').style.display='block';
-      document.getElementById('dd-'+type+'-drop').style.display='none';
-    });
-  };r.readAsDataURL(f);
-}
-function clearDdPhoto(type){
-  document.getElementById('dd-'+type+'-img').src='';
-  document.getElementById('dd-'+type+'-prev').style.display='none';
-  document.getElementById('dd-'+type+'-drop').style.display='block';
-  document.getElementById('dd-'+type+'-photo').value='';
+// ── DANIE DNIA — zupa/danie główne pochodzą automatycznie z Menu (pole
+// "Rola w Danie dnia" w edytorze dania) — patrz saveDish(). Tutaj zostaje
+// tylko podgląd (read-only) + ręczna cena zestawu.
+// ── SYNCHRONIZACJA ROLI "DANIE DNIA" Z MENU ──
+// Przepisuje pozycję menu oznaczoną jako "Zupa dnia"/"Danie główne" (nazwa, opis,
+// cena, zdjęcie) do 'kitchen-day' — tego samego miejsca, z którego strona klienta
+// już czyta widget "Danie dnia". Cena zestawu NIE jest tu nadpisywana, jeśli nie
+// podano jej jawnie (newSetPrice) — zostaje ta, która była zapisana wcześniej.
+function syncDailyRoleToKitchenDay(newSetPrice){
+  const soupItem=menuData.find(x=>x.dailyRole==='soup');
+  const mainItem=menuData.find(x=>x.dailyRole==='main');
+  const toEntry=(it)=> it?{name:it.name,desc:it.desc||'',price:it.price,photo:it.photo||''}:{};
+  const prev=S('kitchen-day')||{};
+  const kitchenDay={
+    soup:toEntry(soupItem),
+    main:toEntry(mainItem),
+    setPrice:(newSetPrice!==undefined)?newSetPrice:(prev.setPrice||''),
+    date:new Date().toISOString().slice(0,10)
+  };
+  W('kitchen-day',kitchenDay);
+  if(document.getElementById('page-daniednia'))renderDanieDnia();
 }
 function saveDanieDnia(){
-  const getSrc=(t)=>{const prev=document.getElementById('dd-'+t+'-prev');const img=document.getElementById('dd-'+t+'-img');return(prev&&prev.style.display!=='none')?img.src:'';};
-  const getField=(t,f)=>(document.getElementById('dd-'+t+'-'+f)?.value||'').trim();
-  const soup={name:getField('soup','name'),desc:getField('soup','desc'),price:getField('soup','price'),photo:getSrc('soup')};
-  const main={name:getField('main','name'),desc:getField('main','desc'),price:getField('main','price'),photo:getSrc('main')};
   const setPrice=(document.getElementById('dd-set-price')?.value||'').trim();
-  if(!soup.name&&!main.name){toast('Wpisz co najmniej jedną pozycję');return;}
-  W('kitchen-day',{soup,main,setPrice,date:new Date().toISOString().slice(0,10)});
-  toast('⭐ Danie dnia zapisane ✓ — strona zaktualizowana');
+  syncDailyRoleToKitchenDay(setPrice);
+  toast('⭐ Cena zestawu zapisana ✓ — strona zaktualizowana');
 }
 function renderDanieDnia(){
-  const k=S('kitchen-day');
-  if(!k)return;
-  ['soup','main'].forEach(t=>{
-    const d=k[t];if(!d)return;
-    if(d.name&&document.getElementById('dd-'+t+'-name'))document.getElementById('dd-'+t+'-name').value=d.name;
-    if(d.desc&&document.getElementById('dd-'+t+'-desc'))document.getElementById('dd-'+t+'-desc').value=d.desc;
-    if(d.price&&document.getElementById('dd-'+t+'-price'))document.getElementById('dd-'+t+'-price').value=d.price;
-    if(d.photo){
-      document.getElementById('dd-'+t+'-img').src=d.photo;
-      document.getElementById('dd-'+t+'-prev').style.display='block';
-      document.getElementById('dd-'+t+'-drop').style.display='none';
-    }
-  });
+  const k=S('kitchen-day')||{};
+  const makePreview=(d)=>{
+    if(!d||!d.name)return null;
+    return`<div style="display:flex;gap:12px;align-items:center;">
+      ${d.photo?`<img src="${d.photo}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;flex-shrink:0;">`:''}
+      <div>
+        <div style="font-weight:600;color:var(--text);">${d.name}</div>
+        ${d.desc?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">${d.desc}</div>`:''}
+        <div style="font-size:13px;color:var(--gold);font-weight:600;margin-top:4px;">${d.price} zł</div>
+      </div>
+    </div>`;
+  };
+  const soupEl=document.getElementById('dd-soup-preview');
+  const mainEl=document.getElementById('dd-main-preview');
+  if(soupEl) soupEl.innerHTML=makePreview(k.soup)||'Brak — oznacz pozycję w Menu jako "Zupa dnia".';
+  if(mainEl) mainEl.innerHTML=makePreview(k.main)||'Brak — oznacz pozycję w Menu jako "Danie główne".';
   if(k.setPrice&&document.getElementById('dd-set-price'))document.getElementById('dd-set-price').value=k.setPrice;
 }
 
