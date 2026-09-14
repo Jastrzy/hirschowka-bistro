@@ -453,6 +453,33 @@
         'bistro-manual-override': function() { if(window.updateClock) window.updateClock(); }
       };
 
+      // Jeśli PIERWSZY odczyt danego klucza (np. menu) przyjdzie pusty (chwilowy
+      // zator sieci klienta, albo moment nakładający się z zapisem w panelu),
+      // .on('value') odpali się PONOWNIE dopiero przy następnej faktycznej zmianie
+      // danych w Firebase — dla menu to może być bardzo rzadkie (tylko gdy admin coś
+      // zmieni w panelu). Do tego czasu strona zostaje cicho zawieszona (bez błędu
+      // w konsoli), mimo że dane w bazie są tam cały czas i są poprawne. NIE
+      // pokazujemy w tym czasie nic ze starej lokalnej kopii (localStorage) — to
+      // mogłoby pokazać klientowi nieaktualne/wycofane dania. Zamiast tego, przy
+      // pustym odczycie próbujemy ponownie kilka razy, ZAWSZE świeżym zapytaniem do
+      // serwera (once, nigdy z lokalnego cache) — więc to nie zmienia niczego w
+      // kwestii aktualności danych, tylko naprawia ciche zawieszenie na zawsze.
+      function retryEmptyRead(k, attempt) {
+        attempt = attempt || 1;
+        if (attempt > 5) {
+          console.warn('[FB] ' + k + ': puste po 5 próbach (15s), poddaję się do następnej realnej zmiany w Firebase');
+          return;
+        }
+        setTimeout(function() {
+          db.ref(k).once('value').then(function(snap) {
+            var val = snap.val();
+            if (!val) { retryEmptyRead(k, attempt + 1); return; }
+            localStorage.setItem(k, JSON.stringify(val));
+            if (read_keys[k]) read_keys[k]();
+          }).catch(function() { retryEmptyRead(k, attempt + 1); });
+        }, 3000);
+      }
+
       Object.keys(read_keys).forEach(function(k) {
         db.ref(k).on('value', function(snap) {
           var val = snap.val();
@@ -460,7 +487,7 @@
           // przełącznika, wróć do harmonogramu) — to musi się zapisać, w
           // przeciwieństwie do pozostałych kluczy, gdzie "null" zwykle oznacza
           // błąd/pustkę do zignorowania, a nie prawdziwą wartość
-          if (!val && k !== 'bistro-manual-override') return;
+          if (!val && k !== 'bistro-manual-override') { retryEmptyRead(k); return; }
           localStorage.setItem(k, JSON.stringify(val));
           if (read_keys[k]) read_keys[k]();
         });
