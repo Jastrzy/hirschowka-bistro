@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunchówki na wynos dla dzieci i dorosłych | Hirschówka Bistro Mielec</title>
+<meta name="description" content="Zimne, zbilansowane lunchówki na wynos — codziennie inny zestaw, dla dzieci i dorosłych. Alternatywa dla obiadów szkolnych. Zamów online, odbiór w Hirschówka Bistro, Mielec.">
+<meta name="keywords" content="lunchówki mielec, lunch box mielec, obiady dla dzieci mielec, alternatywa dla stołówki, catering mielec, hirschówka bistro">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Lunchówki na wynos | Hirschówka Bistro Mielec">
+<meta property="og:description" content="Zimne, zbilansowane zestawy na wynos — codziennie inny, dla dzieci i dorosłych. Zamów online.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+<link rel="canonical" href="https://hirschowkabistro.pl/lunchowki">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F9F5EE; --cream2:#F0EBE1; --cream3:#EDE0C8;
+  --brown:#3B2512; --brown2:#6B3F1E; --brown3:#5C3920;
+  --gold:#C8921A; --gold2:#D4A42A; --gold3:#A87420;
+  --text:#2A1A0E; --muted:#6B4423; --muted2:#9B7B5A;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'Inter',sans-serif;
+  --r:10px; --r2:16px; --r3:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--cream);color:var(--text);line-height:1.6;}
+a{color:inherit;}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px;}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:22px 24px;max-width:760px;margin:0 auto;}
+.nav-logo{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--brown);text-decoration:none;display:flex;align-items:center;gap:10px;}
+.nav-logo img{height:40px;width:40px;object-fit:contain;border-radius:50%;display:block;}
+.nav-logo span{color:var(--gold);}
+.nav-back{font-size:12px;font-weight:600;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--cream3);padding-bottom:2px;}
+.nav-back:hover{color:var(--brown);}
+
+/* HERO */
+.hero{padding:36px 24px 8px;text-align:left;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:1.5px;color:var(--gold3);margin-bottom:10px;}
+h1{font-family:var(--serif);font-size:clamp(32px,5vw,46px);font-weight:600;color:var(--brown);line-height:1.15;margin-bottom:16px;}
+.lede{font-size:16px;color:var(--muted);max-width:56ch;}
+
+/* SECTIONS */
+section{padding:32px 24px;}
+.who-what{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding-top:8px;}
+@media (max-width:600px){.who-what{grid-template-columns:1fr;}}
+.card-soft{background:var(--cream2);border-radius:var(--r2);padding:22px;}
+.card-soft h3{font-family:var(--serif);font-size:18px;color:var(--brown);margin-bottom:8px;}
+.card-soft p{font-size:14px;color:var(--muted);}
+
+/* PRICING */
+.price-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+@media (max-width:600px){.price-row{grid-template-columns:1fr;}}
+.price-card{border:1px solid var(--cream3);border-radius:var(--r2);padding:24px;background:#fff;}
+.price-card .tag{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold3);margin-bottom:6px;}
+.price-card h3{font-family:var(--serif);font-size:20px;color:var(--brown);margin-bottom:4px;}
+.price-card .price{font-family:var(--serif);font-size:28px;color:var(--gold);font-weight:600;margin:10px 0;}
+.price-card .price small{font-family:var(--sans);font-size:13px;color:var(--muted2);font-weight:400;}
+.price-card ul{list-style:none;font-size:13px;color:var(--muted);}
+.price-card li{padding:4px 0;padding-left:18px;position:relative;}
+.price-card li::before{content:'—';position:absolute;left:0;color:var(--gold);}
+
+/* HOW */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px;}
+@media (max-width:600px){.steps{grid-template-columns:1fr;}}
+.step h4{font-family:var(--serif);font-size:15px;color:var(--brown);margin-bottom:6px;}
+.step p{font-size:13px;color:var(--muted);}
+.step-num{font-family:var(--serif);font-size:13px;color:var(--gold);font-weight:600;margin-bottom:4px;}
+
+/* CTA */
+.cta-block{background:var(--brown);border-radius:var(--r3);padding:40px 32px;text-align:center;margin:8px 24px 0;}
+.cta-block h2{font-family:var(--serif);font-size:26px;color:var(--cream);margin-bottom:10px;}
+.cta-block p{color:rgba(249,245,238,.75);font-size:14px;margin-bottom:22px;}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--gold);color:#1A0E00;border:none;
+  padding:15px 32px;border-radius:var(--r);
+  font-size:15px;font-weight:700;text-decoration:none;
+  cursor:pointer;transition:background .2s,transform .2s;
+}
+.btn-primary:hover{background:var(--gold2);transform:translateY(-1px);}
+.cta-note{margin-top:14px;font-size:12px;color:rgba(249,245,238,.5);}
+
+/* FOOTER */
+.footer{padding:40px 24px 30px;text-align:center;border-top:1px solid var(--cream3);margin-top:40px;}
+.footer p{font-size:12px;color:var(--muted2);margin:3px 0;}
+.footer a{color:var(--muted);text-decoration:none;}
+.footer a:hover{color:var(--brown);}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="logo-round.png" alt="Hirschówka Bistro" onerror="this.style.display='none'">
+    <span>Hirsch<span>ówka</span> Bistro</span>
+  </a>
+  <a href="/" class="nav-back">← Strona główna</a>
+</nav>
+
+<div class="hero">
+  <div class="eyebrow">NOWOŚĆ</div>
+  <h1>Lunchówki na wynos</h1>
+  <p class="lede">Zimne, zbilansowane zestawy — inne każdego dnia. Zdrowa alternatywa dla obiadów szkolnych, dla dzieci i dorosłych.</p>
+</div>
+
+<section>
+  <div class="who-what">
+    <div class="card-soft">
+      <h3>Dla dzieci</h3>
+      <p>Wersja Junior — porcje dopasowane dla najmłodszych, bez zbędnych dodatków, tak żeby smakowało i nie zalegało po szkole.</p>
+    </div>
+    <div class="card-soft">
+      <h3>Dla dorosłych</h3>
+      <p>Wersja Standard — pełnowartościowy posiłek na wynos do pracy, na uczelnię albo po prostu na szybki, zdrowy lunch.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="price-row">
+    <div class="price-card">
+      <div class="tag">JUNIOR</div>
+      <h3>Lunchówka dla dzieci</h3>
+      <div class="price">24 zł</div>
+      <ul>
+        <li>Zestaw dopasowany dla dzieci</li>
+        <li>Menu zmienia się każdego dnia</li>
+        <li>Opakowanie w cenie</li>
+      </ul>
+    </div>
+    <div class="price-card">
+      <div class="tag">STANDARD</div>
+      <h3>Lunchówka dla dorosłych</h3>
+      <div class="price">34 zł</div>
+      <ul>
+        <li>Pełna porcja dla dorosłych</li>
+        <li>Menu zmienia się każdego dnia</li>
+        <li>Opakowanie w cenie</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h4>Wypełnij formularz</h4>
+      <p>Wybierz wersję (Junior / Standard), dzień odbioru i podaj dane kontaktowe.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h4>Potwierdzenie</h4>
+      <p>Odezwiemy się, żeby potwierdzić zamówienie i szczegóły odbioru.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h4>Odbiór</h4>
+      <p>Lunchówka czeka na Ciebie w Hirschówka Bistro, ul. Mickiewicza 17 w Mielcu.</p>
+    </div>
+  </div>
+</section>
+
+<div class="cta-block">
+  <h2>Zamów swoją lunchówkę</h2>
+  <p>Wypełnienie formularza zajmuje mniej niż minutę.</p>
+  <a class="btn-primary" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=tUKd0RqFAU6JQZhJpA4cb8LZ2qJzFVxOrRnlOB1OtLZUQ0tDQVJERFAzOEM4U0lLWVI4WkNKQTRFUS4u" target="_blank" rel="noopener">Przejdź do formularza →</a>
+  <div class="cta-note">Formularz otworzy się w nowej karcie (Microsoft Forms)</div>
+</div>
+
+<footer class="footer">
+  <p><strong>Hirschówka Bistro</strong> · Fresh Marcin Jastrzębski · NIP: 5422587208</p>
+  <p>ul. Mickiewicza 17, 39-300 Mielec · <a href="tel:+48511707232">511 707 232</a> · <a href="mailto:kontakt@hirschowkabistro.pl">kontakt@hirschowkabistro.pl</a></p>
+  <p style="margin-top:10px"><a href="/">Strona główna</a> · <a href="/regulamin.html">Regulamin</a> · <a href="/polityka-prywatnosci.html">Polityka prywatności</a></p>
+</footer>
+
+</body>
+</html>
