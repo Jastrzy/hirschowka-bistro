@@ -448,6 +448,7 @@
         'zones':       null,
         'delivery-zones': null,
         'geo-api-key': null,
+        'delivery-min-order': function() { if(window.renderCartSum) window.renderCartSum(); },
         'schedule':    function() { if(window.updateClock) window.updateClock(); },
         'holidays':    function() { if(window.updateClock) window.updateClock(); },
         'bistro-manual-override': function() { if(window.updateClock) window.updateClock(); }

@@ -992,7 +992,14 @@ requestWakeLock();
           <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Na miejscu</span><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
           <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;">Dostawa bez kontaktu</span><label class="toggle"><input type="checkbox"><span class="tslider"></span></label></div>
         </div>
-        <div class="field" style="margin-top:14px;"><label>Min. wartość zamówienia z odbiorem (zł)</label><input type="number" value="0"></div>
+        <div class="field" style="margin-top:14px;">
+          <label>Min. wartość zamówienia z dostawą (zł)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="delivery-min-order" step="1" placeholder="np. 40" style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
+            <button class="btn bp bsm" onclick="saveDeliveryMinOrder()">Zapisz</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">0 = brak minimum. Dotyczy tylko zamówień z dostawą — nie blokuje odbioru osobistego ani zamówień na miejscu.</div>
+        </div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">Opakowania (dostawa i odbiór)</h3>
@@ -2310,7 +2317,7 @@ function openAcceptModal(id){
 // (nie lokalną, potencjalnie nieaktualną kopię) i przerywa się, jeśli ktoś inny
 // już zmienił status w międzyczasie. Dzięki temu tylko JEDNO stanowisko "wygrywa"
 // prawo do wysłania SMS-a — drugie dostaje czytelną informację, że ktoś je ubiegł.
-async function claimOrderTransition(orderId, expectedStatus, listMutateFn){
+async function claimOrderTransition(orderId, expectedStatus, listMutateFn, _isRetry){
   const db=window._firebase&&window._firebase.db;
   if(!db) return {ok:false,msg:'Brak połączenia z Firebase. Spróbuj ponownie.'};
   try{
@@ -2323,7 +2330,29 @@ async function claimOrderTransition(orderId, expectedStatus, listMutateFn){
       if(cur!==expectedStatus) return; // przerwij — ktoś już zmienił status na innym stanowisku
       return listMutateFn(list, idx);
     });
-    if(!result.committed) return {ok:false,msg:'To zamówienie zostało już obsłużone na innym stanowisku.'};
+    if(!result.committed){
+      // Transakcja mogła się przerwać nie dlatego, że ktoś inny naprawdę obsłużył
+      // zamówienie, tylko dlatego że LOKALNA kopia danych Firebase w tym momencie
+      // była chwilowo nieaktualna (typowo: tuż po odzyskaniu połączenia po zerwanym
+      // Wi-Fi — patrz Watchdog w konsoli). Zanim pokażemy mylący komunikat "obsłużone
+      // gdzie indziej", sprawdźmy PRAWDZIWY aktualny stan wprost z serwera (nie z
+      // lokalnej kopii) i spróbujmy raz jeszcze automatycznie, jeśli zamówienie wcale
+      // nie zostało zmienione. Tylko jedna taka dodatkowa próba (_isRetry) — żeby nie
+      // pętlić się w nieskończoność, gdyby ktoś naprawdę je właśnie przejął.
+      if(!_isRetry){
+        try{
+          const freshSnap=await db.ref('orders').once('value');
+          const freshVal=freshSnap.val();
+          const freshList=freshVal?(Array.isArray(freshVal)?freshVal:Object.values(freshVal)):[];
+          const freshOrder=freshList.find(o=>o&&o.id===orderId);
+          if(freshOrder && normStatus(freshOrder.status)===expectedStatus){
+            console.log('[FB] Transakcja przerwana przez nieświeżą lokalną kopię — ponawiam automatycznie:', orderId);
+            return claimOrderTransition(orderId, expectedStatus, listMutateFn, true);
+          }
+        }catch(e){ /* fallback do zwykłego komunikatu poniżej */ }
+      }
+      return {ok:false,msg:'To zamówienie zostało już obsłużone na innym stanowisku.'};
+    }
     return {ok:true};
   }catch(e){
     return {ok:false,msg:'Błąd zapisu: '+e.message};
@@ -4119,12 +4148,22 @@ function savePackaging(){
   const pkg={soup:parseFloat(document.getElementById('pkg-soup').value)||0,main:parseFloat(document.getElementById('pkg-main').value)||0,set:parseFloat(document.getElementById('pkg-set').value)||0};
   W('packaging',pkg);toast('Stawki opakowań zapisane ✓');
 }
+// Minimalna wartość zamówienia z dostawą — osobny klucz Firebase, czytany bezpośrednio
+// (świeżym zapytaniem) przez placeOrder() w index.html w momencie składania zamówienia,
+// więc zmiana tutaj obowiązuje natychmiast, bez czekania na synchronizację w tle.
+function saveDeliveryMinOrder(){
+  const val=parseFloat(document.getElementById('delivery-min-order').value)||0;
+  W('delivery-min-order',val);
+  toast(val>0?'Minimalna wartość zamówienia z dostawą zapisana ✓ ('+val+' zł)':'Minimum zamówienia z dostawą wyłączone ✓');
+}
 function loadPackaging(){
   const pkg=S('packaging');if(pkg){
     if(document.getElementById('pkg-soup'))document.getElementById('pkg-soup').value=pkg.soup||'';
     if(document.getElementById('pkg-main'))document.getElementById('pkg-main').value=pkg.main||'';
     if(document.getElementById('pkg-set'))document.getElementById('pkg-set').value=pkg.set||'';
   }
+  const minOrder=S('delivery-min-order');
+  if(document.getElementById('delivery-min-order'))document.getElementById('delivery-min-order').value=minOrder||'';
   loadAlertPhones();
 }
 
