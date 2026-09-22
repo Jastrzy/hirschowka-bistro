@@ -446,7 +446,7 @@
         'loyalty-history': null,
         'rewards':     null,
         'zones':       null,
-        'delivery-zones': null,
+        'delivery-zones': function() { if(window.refreshZoneDisplay) window.refreshZoneDisplay(); },
         'geo-api-key': null,
         'delivery-min-order': function() { if(window.renderCartSum) window.renderCartSum(); },
         'schedule':    function() { if(window.updateClock) window.updateClock(); },

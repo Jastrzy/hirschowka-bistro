@@ -1976,7 +1976,9 @@ function selDO(type){
 }
 function selPay(type){payType=type;document.querySelectorAll('.payopt').forEach(p=>{p.classList.remove('on');p.querySelector('.dor2')?.classList.remove('on');});const el=document.getElementById('pay-'+type);if(el){el.classList.add('on');el.querySelector('.dor2')?.classList.add('on');}}
 let _geoTimer=null;
-window._deliveryKm=null; // ostatnio obliczona odległość
+window._deliveryKm=null; // ostatnio obliczona odległość — null gdy dostawa niedostępna (poza zasięgiem LUB strefa zawieszona)
+window._deliveryKmRaw=null; // surowa odległość, niezależna od tego czy strefa jest zawieszona — do odświeżania bez ponownego geokodowania
+window._deliveryZoneClosed=false;
 
 function checkZone(){
   const street=(document.getElementById('addr-street')?.value||'').trim();
@@ -2017,9 +2019,17 @@ async function geocodeAndCheck(street,city,info){
     }
     const loc=data.results[0].geometry.location;
     const km=haversineKm(REST_LAT,REST_LNG,loc.lat,loc.lng);
-    window._deliveryKm=km;
+    window._deliveryKmRaw=km;
     const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
     const zone=zones.find(z=>km<=z.km);
+    if(zone&&zone.closed){
+      info.innerHTML=`⛔ <strong>${data.results[0].formatted_address}</strong><br>Dostawa w dniu dzisiejszym jest ograniczona. Prosimy zamawiać z odbiorem z lokalu.<br>📞 Pytania: <a href="tel:+48511707232" style="color:var(--brown);font-weight:700;">+48 511 707 232</a>`;
+      window._deliveryKm=null;
+      window._deliveryZoneClosed=true;
+      renderCartSum();return;
+    }
+    window._deliveryZoneClosed=false;
+    window._deliveryKm=km;
     if(zone){
       info.innerHTML=`🚗 <strong>${data.results[0].formatted_address}</strong><br>Odległość: ${km.toFixed(1)} km · Dostawa: <strong>${zone.cost} zł</strong> (${zone.label})`;
     } else {
@@ -2032,6 +2042,30 @@ async function geocodeAndCheck(street,city,info){
     info.innerHTML='⚠️ Błąd sprawdzania adresu — spróbuj ponownie.';
     window._deliveryKm=null;renderCartSum();
   }
+}
+
+// Odświeża status strefy (zawieszona / poza zasięgiem / OK) bez ponownego zapytania
+// do Google Geocoding — używa ostatniej znanej surowej odległości. Wywoływane, gdy
+// panel zmieni strefy dostaw w tle, a klient ma już wpisany adres na stronie.
+function refreshZoneDisplay(){
+  if(window._deliveryKmRaw==null) return;
+  const info=document.getElementById('zone-info');
+  if(!info) return;
+  const km=window._deliveryKmRaw;
+  const zones=getDeliveryZones().slice().sort((a,b)=>a.km-b.km);
+  const zone=zones.find(z=>km<=z.km);
+  if(zone&&zone.closed){
+    info.innerHTML=`⛔ Dostawa w dniu dzisiejszym jest ograniczona. Prosimy zamawiać z odbiorem z lokalu.<br>📞 Pytania: <a href="tel:+48511707232" style="color:var(--brown);font-weight:700;">+48 511 707 232</a>`;
+    window._deliveryKm=null;window._deliveryZoneClosed=true;
+  } else if(zone){
+    info.innerHTML=`🚗 Odległość: ${km.toFixed(1)} km · Dostawa: <strong>${zone.cost} zł</strong> (${zone.label})`;
+    window._deliveryKm=km;window._deliveryZoneClosed=false;
+  } else {
+    const maxKm=Math.max(...zones.map(z=>z.km));
+    info.innerHTML=`⛔ Odległość: ${km.toFixed(1)} km — poza zasięgiem dostawy (max ${maxKm} km).<br>📞 Zadzwoń aby ustalić szczegóły: <a href="tel:+48511707232" style="color:var(--brown);font-weight:700;">+48 511 707 232</a>`;
+    window._deliveryKm=null;window._deliveryZoneClosed=false;
+  }
+  renderCartSum();
 }
 
 // ════ COUPON ════
@@ -2207,6 +2241,25 @@ async function placeOrder(){
   if(delType==='dostawa'&&window._deliveryKm===null&&document.getElementById('addr-street').value.trim()){
     const info=document.getElementById('zone-info');
     if(info&&info.innerHTML.includes('poza zasięgiem')){toast('⛔ Adres poza zasięgiem dostawy. Zadzwoń: +48 511 707 232');return;}
+  }
+  // Zawieszone strefy dostawy — świeże zapytanie do Firebase (nie localStorage),
+  // żeby nie dało się obejść zawieszenia zrobionego w panelu chwilę wcześniej.
+  // Używamy surowej odległości (_deliveryKmRaw), bo _deliveryKm bywa wyzerowane
+  // właśnie dlatego, że strefa jest zawieszona.
+  if(delType==='dostawa'&&window._deliveryKmRaw!=null){
+    try{
+      const db=window._firebase&&window._firebase.db;
+      const freshZonesRaw=db?(await db.ref('delivery-zones').once('value')).val():getDeliveryZones();
+      const freshZones=freshZonesRaw?(Array.isArray(freshZonesRaw)?freshZonesRaw:Object.values(freshZonesRaw)):getDeliveryZones();
+      const sortedZones=freshZones.slice().sort((a,b)=>a.km-b.km);
+      const zone=sortedZones.find(z=>window._deliveryKmRaw<=z.km);
+      if(zone&&zone.closed){
+        toast('⛔ Dostawa w dniu dzisiejszym jest ograniczona w tej strefie. Wybierz odbiór z lokalu lub zadzwoń: 511 707 232');
+        return;
+      }
+    }catch(e){
+      console.warn('[ORDER] Nie można sprawdzić statusu strefy dostawy:', e.message);
+    }
   }
   // Minimalna wartość zamówienia z dostawą — świeże zapytanie do Firebase (nie
   // localStorage), żeby nie dało się obejść zmiany limitu zrobionej w panelu
