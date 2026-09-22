@@ -869,6 +869,7 @@ requestWakeLock();
               style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);">
           </div>
         </div>
+        <button class="btn bo bsm" style="margin-bottom:14px;" onclick="saveGeoSettings()">💾 Zapisz klucz API / adres restauracji</button>
         <div id="zones-editor"></div>
         <button class="btn bp bsm" style="margin-top:12px;" onclick="saveZonesSettings()">💾 Zapisz ustawienia stref</button>
       </div>
@@ -3036,12 +3037,22 @@ function renderZonesEditor(){
   // Legend
 
 }
-function saveZonesSettings(){
-  W('delivery-zones', deliveryZones);
+function saveGeoSettings(){
   const key=document.getElementById('geo-api-key')?.value.trim();
   if(key) W('geo-api-key', key);
   const addr=document.getElementById('rest-address')?.value.trim();
   if(addr) W('rest-address', addr);
+  toast('✅ Klucz API / adres restauracji zapisane ✓');
+}
+function saveZonesSettings(){
+  // UWAGA: celowo NIE zapisuje tu klucza API ani adresu restauracji (patrz
+  // saveGeoSettings, osobny przycisk) — to pole wcześniej było odczytywane
+  // i nadpisywane przy KAŻDYM zapisie stref, więc jeśli pole w przeglądarce
+  // z jakiegokolwiek powodu pokazywało akurat nieaktualną/skróconą wartość
+  // (np. odświeżenie widoku w niefortunnym momencie), zapis stref po cichu
+  // nadpisywał poprawny klucz w Firebase tą złą wartością — dokładnie to, co
+  // się przydarzyło 22.09.2026 i zepsuło sprawdzanie adresów dla wszystkich.
+  W('delivery-zones', deliveryZones);
   toast('✅ Strefy dostaw zapisane ✓');
 }
 
