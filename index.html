@@ -2153,7 +2153,12 @@ async function placeOrder(){
         if(!ci.dailyType) return false;
         if(ci.dailyType==='set'){
           const curSetPrice=parseFloat(currentKitchen.setPrice)||0;
-          return !currentKitchen.setPrice || curSetPrice!==ci.unitPrice;
+          const curSetName=`Zestaw: ${currentKitchen.soup?.name||'zupa'} + ${currentKitchen.main?.name||'drugie danie'}`;
+          // Sama cena zestawu to za mało — bywa taka sama (np. zawsze 38 zł) nawet gdy
+          // zupa/danie główne się zmieniły, więc porównujemy też nazwę (ta sama, którą
+          // addKitchenSet() zapisał w koszyku), żeby wyłapać zmianę samych dań przy
+          // niezmienionej cenie.
+          return !currentKitchen.setPrice || curSetPrice!==ci.unitPrice || curSetName!==ci.name;
         }
         const cur = currentKitchen[ci.dailyType];
         return !cur || cur.name !== ci.name;
