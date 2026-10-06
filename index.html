@@ -1421,16 +1421,50 @@ let curItem=null,curQty=1,curSizes=[],selSize=0,curAddons=[];
 let appliedCoupon=null;
 
 // ════ getMenu — GŁÓWNA FUNKCJA ════
-// Priorytet: dane z panelu admina (localStorage 'menu') > MENU_BASE (domyślne)
-// Jeśli restaurator dodał/edytował dania w panelu — używamy JEGO danych w całości.
-// MENU_BASE to tylko dane startowe pokazywane przed pierwszym użyciem panelu.
+// Menu WYŁĄCZNIE ze świeżego odczytu Firebase w tej sesji (window._fbData.menu,
+// ustawiane w firebase-config.js) — nigdy z localStorage. Kopia w localStorage
+// potrafiła być nieaktualna (np. iPhone: menu przekracza limit pamięci Safari,
+// więc świeże dane się nie zapisywały) i klient zamawiał wycofane dania.
+// Dopóki świeże menu nie przyjdzie, zwracamy pustą listę (menu pokazuje szkielet).
+function getFullMenu(){
+  const fresh=window._fbData&&window._fbData.menu;
+  if(!fresh) return [];
+  return (Array.isArray(fresh)?fresh:Object.values(fresh)).filter(d=>d&&d.name);
+}
 function getMenu(){
-  const adminData=LS('menu');
-  const raw=(adminData&&adminData.length>0)?adminData:MENU_BASE;
   // Dania z visible===false są całkowicie ukryte z widoku klienta (nie tylko wyszarzone).
   // Domyślnie (brak pola / undefined) danie jest widoczne — zachowuje zgodność wsteczną.
-  return raw.filter(d=>d.visible!==false);
+  return getFullMenu().filter(d=>d.visible!==false);
 }
+
+// Zwraca pierwszą pozycję koszyka, której nie da się już zamówić z podanego menu:
+// danie usunięte, ukryte, niedostępne albo ZMIENIONE (inna nazwa pod tym samym ID —
+// edycja dania w panelu zachowuje ID, więc samo ID nie wystarcza).
+function findStaleCartItem(menuArr){
+  return cart.find(function(ci){
+    if(ci.dailyType || !ci.itemId) return false; // danie dnia sprawdzane osobno
+    const cur = menuArr.find(m=>m&&m.id===ci.itemId);
+    return !cur || cur.avail===false || cur.visible===false || cur.name!==ci.name;
+  });
+}
+
+// Po przyjściu świeżego menu usuń z (przywróconego) koszyka pozycje, których
+// już nie ma — klient dowiaduje się od razu, a nie dopiero przy składaniu zamówienia.
+function pruneStaleCart(){
+  const menuArr=getFullMenu();
+  if(!menuArr.length||!cart.length) return;
+  const removed=[];
+  let stale;
+  while((stale=findStaleCartItem(menuArr))){
+    removed.push(stale.name);
+    cart=cart.filter(c=>c!==stale);
+  }
+  if(!removed.length) return;
+  updateCartBadge();
+  if(document.getElementById('ov-cart')?.classList.contains('open')) renderCart();
+  toast('Usunięto z koszyka niedostępne pozycje: '+removed.join(', '));
+}
+window.pruneStaleCart=pruneStaleCart;
 
 // ════ HERO CLOCK ════
 function formatDayHours(day){
@@ -1707,6 +1741,8 @@ function buildMenuSkeleton(){
   document.getElementById('menu-content').innerHTML=skeletonSection.repeat(3);
 }
 function buildMenu(){
+  // Bez świeżego menu zostaw szkielet (np. 'params' przyszły z Firebase przed menu)
+  if(!getFullMenu().length) return;
   const cats=getCats();let html='';
   cats.forEach(cat=>{
     const items=getMenu().filter(d=>d.cat===cat);if(!items.length)return;
@@ -2326,23 +2362,27 @@ async function placeOrder(){
   // Sprawdź, czy zwykłe pozycje w koszyku nadal istnieją i są dostępne — ważne
   // odkąd koszyk przetrwa odświeżenie/zamknięcie karty (do 24h), więc menu mogło
   // się w międzyczasie zmienić (danie usunięte, ukryte albo oznaczone jako niedostępne).
+  // Bez świeżego menu z Firebase NIE przepuszczamy zamówienia — wcześniej błąd lub
+  // brak połączenia kończył się tylko ostrzeżeniem w konsoli, a sprawdzenie
+  // przechodziło (albo porównywało ze starą kopią z localStorage).
   try{
     const db=window._firebase&&window._firebase.db;
-    const currentMenuRaw = db ? (await db.ref('menu').once('value')).val() : LS('menu');
-    const currentMenu = currentMenuRaw ? (Array.isArray(currentMenuRaw)?currentMenuRaw:Object.values(currentMenuRaw)) : null;
-    if(currentMenu){
-      const staleItem = cart.find(function(ci){
-        if(ci.dailyType || !ci.itemId) return false; // danie dnia sprawdzone osobno wyżej, zestawy bez itemId pomijamy
-        const cur = currentMenu.find(m=>m&&m.id===ci.itemId);
-        return !cur || cur.avail===false || cur.visible===false;
-      });
-      if(staleItem){
-        toast('⚠️ "'+staleItem.name+'" nie jest już dostępne. Usuń tę pozycję z koszyka, aby złożyć zamówienie.');
-        return;
-      }
+    if(!db) throw new Error('Firebase niedostępny');
+    const currentMenuRaw = (await Promise.race([
+      db.ref('menu').once('value'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
+    ])).val();
+    if(!currentMenuRaw) throw new Error('puste menu');
+    const currentMenu = (Array.isArray(currentMenuRaw)?currentMenuRaw:Object.values(currentMenuRaw)).filter(Boolean);
+    const staleItem = findStaleCartItem(currentMenu);
+    if(staleItem){
+      toast('⚠️ "'+staleItem.name+'" nie jest już dostępne. Usuń tę pozycję z koszyka, aby złożyć zamówienie.');
+      return;
     }
   }catch(e){
     console.warn('[ORDER] Nie można sprawdzić aktualności menu:', e.message);
+    toast('⚠️ Nie udało się sprawdzić aktualnego menu. Odśwież stronę lub zadzwoń: 511 707 232');
+    return;
   }
   if(!document.getElementById('c-terms').checked){toast('Zaakceptuj Regulamin sprzedaży, aby kontynuować');return;}
   if(!document.getElementById('c-privacy').checked){toast('Potwierdź zapoznanie się z Polityką prywatności');return;}
@@ -2939,16 +2979,9 @@ document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
 // ════ BOOT ════
 init();
 
-// Odśwież menu gdy użytkownik wróci z panelu admina (zakładka zyskuje focus)
-// Porównujemy snapshot — przebudowujemy tylko gdy dane się rzeczywiście zmieniły
-let _lastMenuSnapshot = JSON.stringify(LS('menu'));
+// Odśwież sekcje dnia gdy zakładka zyskuje focus. Menu przebudowuje się samo
+// przez nasłuch Firebase (firebase-config.js), nie z localStorage.
 window.addEventListener('focus',()=>{
-  const currentSnapshot = JSON.stringify(LS('menu'));
-  if(currentSnapshot !== _lastMenuSnapshot){
-    _lastMenuSnapshot = currentSnapshot;
-    buildCatTabs();
-    buildMenu();
-  }
   renderDaily();
   renderKitchen();
   renderAdminPromos();

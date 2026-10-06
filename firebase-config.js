@@ -427,7 +427,7 @@
     if (isClient) {
       // Czytaj konfigurację z Firebase → aktualizuj UI
       var read_keys = {
-        'menu':        function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); },
+        'menu':        function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); if(window.pruneStaleCart) window.pruneStaleCart(); },
         'menu-cats-order': function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); },
         'bistro-open':     null,
         'daily-dish':  function() { if(window.renderDaily) window.renderDaily(); },
@@ -465,6 +465,23 @@
       // pustym odczycie próbujemy ponownie kilka razy, ZAWSZE świeżym zapytaniem do
       // serwera (once, nigdy z lokalnego cache) — więc to nie zmienia niczego w
       // kwestii aktualności danych, tylko naprawia ciche zawieszenie na zawsze.
+      // Świeże dane z Firebase trzymamy też w pamięci (window._fbData) — localStorage
+      // ma limit ~5 MB, a Safari na iPhonie liczy znaki podwójnie (~2,5 mln znaków).
+      // Menu ze zdjęciami base64 przekracza ten limit: setItem rzucał wyjątek, świeże
+      // menu nigdy się nie zapisywało i klient z iPhone'a widział (i zamawiał) dania
+      // ze starej kopii, nawet po odświeżeniu. Przy nieudanym zapisie usuwamy starą
+      // kopię, żeby nic już z niej nie czytało.
+      window._fbData = window._fbData || {};
+      function storeKey(k, val) {
+        window._fbData[k] = val;
+        try {
+          localStorage.setItem(k, JSON.stringify(val));
+        } catch (e) {
+          console.warn('[FB] Nie można zapisać ' + k + ' w localStorage (limit?):', e.message);
+          try { localStorage.removeItem(k); } catch (_) {}
+        }
+      }
+
       function retryEmptyRead(k, attempt) {
         attempt = attempt || 1;
         if (attempt > 5) {
@@ -475,7 +492,7 @@
           db.ref(k).once('value').then(function(snap) {
             var val = snap.val();
             if (!val) { retryEmptyRead(k, attempt + 1); return; }
-            localStorage.setItem(k, JSON.stringify(val));
+            storeKey(k, val);
             if (read_keys[k]) read_keys[k]();
           }).catch(function() { retryEmptyRead(k, attempt + 1); });
         }, 3000);
@@ -489,7 +506,7 @@
           // przeciwieństwie do pozostałych kluczy, gdzie "null" zwykle oznacza
           // błąd/pustkę do zignorowania, a nie prawdziwą wartość
           if (!val && k !== 'bistro-manual-override') { retryEmptyRead(k); return; }
-          localStorage.setItem(k, JSON.stringify(val));
+          storeKey(k, val);
           if (read_keys[k]) read_keys[k]();
         });
       });
