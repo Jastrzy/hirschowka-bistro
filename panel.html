@@ -2354,13 +2354,25 @@ async function claimOrderTransition(orderId, expectedStatus, listMutateFn, _isRe
   try{
     const key=await findOrderKey(db, orderId);
     if(key===null) return {ok:false,msg:'To zamówienie zostało już obsłużone na innym stanowisku.'};
+    // Firebase wywołuje tę funkcję NAJPIERW na lokalnej kopii danych panelu. Gdyby
+    // przy niezgodności zwracała undefined (przerwij), transakcja kończyłaby się od
+    // razu, BEZ pytania serwera — a lokalna kopia bywa chwilę nieaktualna, zwłaszcza
+    // przy zamówieniach z P24, które zapisuje serwer spoza panelu (stąd wcześniej
+    // konieczność dwukrotnego "Przyjmij zamówienie"). Dlatego przy niezgodności
+    // zwracamy dane BEZ ZMIAN: serwer porównuje je ze swoją wersją i jeśli się
+    // różnią, wywołuje funkcję ponownie z aktualnymi danymi. O tym, czy zmiana
+    // naprawdę została zrobiona, decyduje 'applied' z OSTATNIEGO wywołania.
+    let applied=false, reason='';
     const result=await db.ref('orders/'+key).transaction(function(cur){
-      if(!cur || cur.id!==orderId) return; // przerwij — zamówienie zniknęło (np. już zarchiwizowane)
-      if(normStatus(cur.status)!==expectedStatus) return; // przerwij — ktoś już zmienił status na innym stanowisku
+      applied=false;
+      if(!cur || cur.id!==orderId){ reason=cur?'inne zamówienie pod kluczem':'brak zamówienia'; return cur; } // zamówienie zniknęło (np. już zarchiwizowane)
+      if(normStatus(cur.status)!==expectedStatus){ reason='status '+cur.status; return cur; } // ktoś już zmienił status na innym stanowisku
+      applied=true;
       const list=listMutateFn([cur], 0);
       return (list && list[0]) ? list[0] : null; // null = usuń zamówienie z 'orders'
     });
-    if(!result.committed){
+    if(!result.committed || !applied){
+      fbLog('WARN','claimOrderTransition: nie przyjęto zmiany',{orderId,key,expectedStatus,reason,committed:result.committed,retry:!!_isRetry});
       // Transakcja mogła się przerwać nie dlatego, że ktoś inny naprawdę obsłużył
       // zamówienie, tylko dlatego że LOKALNA kopia danych Firebase w tym momencie
       // była chwilowo nieaktualna (typowo: tuż po odzyskaniu połączenia po zerwanym
@@ -2385,6 +2397,7 @@ async function claimOrderTransition(orderId, expectedStatus, listMutateFn, _isRe
     }
     return {ok:true};
   }catch(e){
+    fbLog('ERROR','claimOrderTransition: błąd zapisu',{orderId,expectedStatus,message:e.message});
     return {ok:false,msg:'Błąd zapisu: '+e.message};
   }
 }
