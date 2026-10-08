@@ -2599,16 +2599,12 @@ async function placeOrder(){
         </button>
       </div>` : `
       <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-        <div style="font-size:56px;margin-bottom:12px;">❌</div>
-        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność nieudana</h2>
+        <div style="font-size:56px;margin-bottom:12px;">⏳</div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Czekamy na potwierdzenie z banku</h2>
         <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
-        <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Płatność nie została zrealizowana lub upłynął czas sesji.<br>Możesz spróbować ponownie lub wybrać inną metodę płatności.</p>
-        <button onclick="document.getElementById('payment-result-modal').remove();openCart();"
-          style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-bottom:10px;">
-          Spróbuj ponownie
-        </button>
+        <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Jeśli płatność została pobrana, zamówienie zostanie przyjęte automatycznie — <strong>nie płać ponownie</strong>.<br>W razie wątpliwości zadzwoń: <a href="tel:+48511707232" style="color:#C8921A;font-weight:700;text-decoration:none;">511 707 232</a></p>
         <button onclick="document.getElementById('payment-result-modal').remove();"
-          style="background:var(--cream2,#f5f0e8);color:#2A1A0E;border:none;border-radius:8px;padding:12px 32px;font-size:13px;font-weight:600;cursor:pointer;width:100%;">
+          style="background:#2A1A0E;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">
           Wróć do menu
         </button>
       </div>`;
@@ -2651,7 +2647,7 @@ async function placeOrder(){
 
       try{
         const st = await clientApi('order-status', {id: oid});
-        if(st.status === 'paid'){
+        if(st.paid){
           showModal(true);
           return;
         }

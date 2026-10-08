@@ -214,10 +214,16 @@ const actions = {
     return { ok: true, existing: false };
   },
 
-  // Status jednego zamówienia (powrót z Przelewy24) — tylko status
+  // Status jednego zamówienia (powrót z Przelewy24) — tylko status i to, czy
+  // płatność potwierdzono. Samo status === 'paid' nie wystarcza: jeśli obsługa
+  // zdąży przyjąć zamówienie w panelu, zanim klient wróci z banku, status jest
+  // już 'accepted'. Znacznik paymentConfirmed (ustawia go webhook P24 w p24.js)
+  // panel zachowuje przy zmianach statusu.
   async 'order-status'(body) {
     const hit = await findOrder(body.id);
-    return { ok: true, found: !!hit, status: hit ? (hit.order.status || '') : null };
+    if (!hit) return { ok: true, found: false, status: null, paid: false };
+    const o = hit.order;
+    return { ok: true, found: true, status: o.status || '', paid: o.paymentConfirmed === true || o.status === 'paid' };
   },
 
   // Płatność nie doszła w czasie — oznacz jako nieudaną, ale TYLKO jeśli zamówienie
