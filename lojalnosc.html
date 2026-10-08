@@ -221,7 +221,6 @@ footer a{color:#C8921A}
   <p style="margin-top:12px"><a href="/">Strona główna</a> · <a href="/regulamin">Regulamin</a> · <a href="/polityka-prywatnosci">Polityka prywatności</a></p>
 </footer>
 
-<script src="firebase-config.js"></script>
 <script>
 function fmtCheckPhone(el){
   let v=el.value.replace(/\D/g,'').slice(0,9);
@@ -236,17 +235,21 @@ async function checkCard(){
   if(raw.length<9){res.innerHTML='Wpisz pełny numer telefonu (9 cyfr)';return;}
   res.innerHTML='Sprawdzam…';
 
+  // Serwer (api/client.js) zwraca tylko imię i pieczątki tego jednego klienta
   let c=null;
   try{
-    if(window._firebase&&window._firebase.db){
-      const snap=await window._firebase.db.ref('customers').once('value');
-      const val=snap.val();
-      if(val){
-        const arr=Array.isArray(val)?val:Object.values(val);
-        c=arr.find(x=>x&&(x.phone||'').replace(/\s/g,'')===raw);
-      }
-    }
-  }catch(e){}
+    const resp=await fetch('/api/client?action=loyalty',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:raw})
+    });
+    const data=await resp.json();
+    if(!resp.ok) throw new Error(data.msg||resp.status);
+    if(data.found) c=data;
+  }catch(e){
+    res.innerHTML='<div style="color:rgba(249,245,238,.6);">Nie udało się sprawdzić karty. Spróbuj ponownie.</div>';
+    return;
+  }
 
   if(!c){
     res.innerHTML='<div style="color:rgba(249,245,238,.6);">Nie znaleziono karty dla tego numeru.<br><small>Złóż pierwsze zamówienie od 19 zł, a karta zostanie założona automatycznie.</small></div>';
@@ -265,7 +268,7 @@ async function checkCard(){
   const nextTxt=next?`Jeszcze ${next.at-stamps} ${next.at-stamps===1?'pieczątka':'pieczątek'} do: <strong>${next.name}</strong>`:`🎉 Masz nagrodę — powiedz obsłudze!`;
 
   res.innerHTML=`
-    <div style="font-size:18px;font-weight:700;color:#F9F5EE;margin-bottom:4px;">Cześć, ${c.name.split(' ')[0]}!</div>
+    <div style="font-size:18px;font-weight:700;color:#F9F5EE;margin-bottom:4px;">Cześć, ${c.firstName}!</div>
     <div style="font-size:13px;color:rgba(249,245,238,.7);margin-bottom:12px;">Masz <strong style="color:#C8921A;font-size:16px;">${stamps}/9</strong> pieczątek</div>
     <div class="stamps-result">${stHtml}</div>
     <div style="font-size:13px;color:rgba(249,245,238,.8);">${nextTxt}</div>`;

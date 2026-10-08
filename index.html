@@ -2223,20 +2223,35 @@ function refreshZoneDisplay(){
   renderCartSum();
 }
 
+// Operacje wymagające dostępu do danych klientów/kuponów/zamówień idą przez
+// serwer (api/client.js) — przeglądarka nie czyta już tych list z Firebase.
+async function clientApi(action, body){
+  const resp=await fetch('/api/client?action='+encodeURIComponent(action),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body||{})
+  });
+  const data=await resp.json().catch(()=>null);
+  if(!data) throw new Error('Błąd serwera ('+resp.status+')');
+  if(!resp.ok&&data.ok!==false) throw new Error(data.msg||('Błąd serwera ('+resp.status+')'));
+  return data;
+}
+
 // ════ COUPON ════
-function applyCoupon(){
+async function applyCoupon(){
   const code=(document.getElementById('coup-in').value||'').trim().toUpperCase();
   const res=document.getElementById('coup-res');
-  const all=LS('coupons')||[];
-  const found=all.find(c=>(c.code||'').toUpperCase()===code);
-  if(!found){res.style.color='var(--rust)';res.textContent='❌ Nieprawidłowy kod kuponu.';return;}
-  // Sprawdź datę ważności
-  if(found.exp){
-    const today=new Date().toISOString().slice(0,10);
-    if(found.exp < today){res.style.color='var(--rust)';res.textContent='❌ Ten kupon wygasł.';return;}
+  if(!code){res.style.color='var(--rust)';res.textContent='❌ Nieprawidłowy kod kuponu.';return;}
+  // Ważność, limit użyć i istnienie kodu sprawdza serwer
+  res.style.color='var(--muted)';res.textContent='Sprawdzam kod…';
+  let check;
+  try{
+    check=await clientApi('coupon-check',{code});
+  }catch(e){
+    res.style.color='var(--rust)';res.textContent='❌ Nie udało się sprawdzić kodu. Spróbuj ponownie.';return;
   }
-  // Sprawdź limit użyć
-  if(found.limit && (found.used||0) >= found.limit){res.style.color='var(--rust)';res.textContent='❌ Kupon został już wykorzystany.';return;}
+  if(!check.ok){res.style.color='var(--rust)';res.textContent='❌ '+(check.msg||'Nieprawidłowy kod kuponu.');return;}
+  const found=check.coupon;
   // Sprawdź minimalną wartość
   const sub=cart.reduce((s,c)=>s+c.unitPrice*c.qty,0);
   if(sub<(found.min||0)){res.style.color='var(--rust)';res.textContent=`❌ Minimalna wartość zamówienia: ${found.min} zł`;return;}
@@ -2248,52 +2263,16 @@ function applyCoupon(){
   renderCartSum();
 }
 
-// Atomowa realizacja kodu — transakcja Firebase, bezpieczna gdy wielu klientów
-// próbuje użyć tego samego kodu w tym samym czasie (limit np. 100 osób)
+// Atomowa realizacja kodu — serwer robi transakcję na kuponie, bezpieczną gdy
+// wielu klientów próbuje użyć tego samego kodu w tym samym czasie (limit np. 100
+// osób). Przy nagrodzie lojalnościowej serwer oznacza też wpis w historii nagród
+// jako zrealizowany (widoczne w panelu, zakładka Lojalność).
 async function redeemCouponAtomic(code){
-  const db=window._firebase&&window._firebase.db;
-  if(!db) return {ok:false,msg:'Brak połączenia z internetem. Spróbuj ponownie.'};
   try{
-    const result=await db.ref('coupons').transaction(function(arr){
-      if(!arr) return arr;
-      const list=Array.isArray(arr)?arr:Object.values(arr);
-      const idx=list.findIndex(c=>c&&(c.code||'').toUpperCase()===code.toUpperCase());
-      if(idx===-1) return; // przerwij transakcję — kod nie istnieje
-      const c=list[idx];
-      const limit=c.limit||1;
-      const used=c.used||0;
-      if(used>=limit) return; // przerwij — limit wyczerpany
-      if(c.exp){
-        const expDate=new Date(c.exp);expDate.setHours(23,59,59,999);
-        if(Date.now()>expDate.getTime()) return; // przerwij — kod wygasł
-      }
-      list[idx]=Object.assign({},c,{used:used+1,usedAt:new Date().toLocaleString('pl-PL')});
-      return list;
-    });
-    if(!result.committed) return {ok:false,msg:'Ten kod właśnie wygasł lub został w pełni wykorzystany.'};
-    return {ok:true};
+    const result=await clientApi('coupon-redeem',{code});
+    return result.ok?{ok:true}:{ok:false,msg:result.msg||'Ten kod właśnie wygasł lub został w pełni wykorzystany.'};
   }catch(e){
     return {ok:false,msg:'Błąd zapisu kodu: '+e.message};
-  }
-}
-
-// Oznacz odpowiedni wpis w historii nagród lojalnościowych jako zrealizowany —
-// bez tego panel (zakładka Lojalność) nigdy nie pokazywał realizacji kodów użytych
-// przez klientów bezpośrednio w koszyku na stronie.
-async function markLoyaltyHistoryUsed(code){
-  const db=window._firebase&&window._firebase.db;
-  if(!db) return;
-  try{
-    await db.ref('loyalty-history').transaction(function(arr){
-      if(!arr) return arr;
-      const list=Array.isArray(arr)?arr:Object.values(arr);
-      const idx=list.findIndex(h=>h&&h.code===code);
-      if(idx===-1) return arr;
-      list[idx]=Object.assign({},list[idx],{used:true,usedAt:new Date().toLocaleString('pl-PL')});
-      return list;
-    });
-  }catch(e){
-    console.warn('[loyalty-history] błąd oznaczania jako zrealizowany:', e.message);
   }
 }
 
@@ -2493,45 +2472,20 @@ async function placeOrder(){
     }:null,
   };
 
-  // Rejestruj klienta — zapisz do Firebase (źródło prawdy) i lokalnie
-  const raw=phone.replace(/\s/g,'');
-  (async()=>{
-    try{
-      const db=window._firebase&&window._firebase.db;
-      if(db){
-        const snap=await db.ref('customers').once('value');
-        const val=snap.val();
-        const arr=val?(Array.isArray(val)?val:Object.values(val)):[];
-        const exists=arr.find(c=>c&&(c.phone||'').replace(/\s/g,'')===raw);
-        if(!exists){
-          await db.ref('customers').push({
-            name,phone,email,
-            sms:false,
-            emailMkt:document.getElementById('c-mkt')?.checked||false,
-            stamps:0,totalStamps:0,visits:0,spent:0,last:'',
-            registeredAt:new Date().toISOString().slice(0,10)
-          });
-          console.log('[CUST] Nowy klient zapisany do Firebase:', phone);
-        }
-      }
-    }catch(e){
-      // Fallback — zapisz lokalnie jeśli Firebase niedostępny
-      const custs=LS('customers')||[];
-      if(!custs.find(c=>c.phone.replace(/\s/g,'')===raw)){
-        custs.push({name,phone,email,sms:false,emailMkt:document.getElementById('c-mkt')?.checked||false,stamps:0,visits:0,last:'',registeredAt:new Date().toISOString().slice(0,10)});
-        localStorage.setItem('customers',JSON.stringify(custs));
-      }
-      console.warn('[CUST] Firebase niedostępny, zapis lokalny:', e.message);
-    }
-  })();
+  // Rejestruj klienta — serwer sprawdza, czy telefon już jest w bazie, i dopisuje
+  // tylko nowego (nie czekamy na wynik — rejestracja nie blokuje zamówienia)
+  clientApi('customer-register',{
+    name,phone,email,
+    emailMkt:document.getElementById('c-mkt')?.checked||false
+  }).then(r=>{
+    if(r.created) console.log('[CUST] Nowy klient zapisany do Firebase:', phone);
+  }).catch(e=>console.warn('[CUST] Nie udało się zarejestrować klienta:', e.message));
 
-  // Licznik użyć kodu został już bezpiecznie zwiększony wcześniej (redeemCouponAtomic).
-  // Tu tylko zapisujemy zdarzenie do historii realizacji — kto (telefon) i kiedy użył kodu.
+  // Licznik użyć kodu (i historia nagród) zostały już zaktualizowane wcześniej
+  // (redeemCouponAtomic). Tu tylko zapisujemy zdarzenie do historii realizacji —
+  // kto (telefon) i kiedy użył kodu.
   if(appliedCoupon){
     logCouponRedemption(appliedCoupon.code,name,phone,oid,total);
-    if(appliedCoupon.loyaltyReward){
-      markLoyaltyHistoryUsed(appliedCoupon.code);
-    }
   }
 
   // ── PŁATNOŚĆ ONLINE — Przelewy24 ──
@@ -2696,37 +2650,20 @@ async function placeOrder(){
       showWaiting(maxAttempts - attempts);
 
       try{
-        if(window._firebase && window._firebase.db){
-          const snap = await window._firebase.db.ref('orders').once('value');
-          const val = snap.val();
-          if(val){
-            const all = Array.isArray(val) ? val : Object.values(val);
-            const order = all.find(o => o && String(o.id) === String(oid));
-            if(order && order.status === 'paid'){
-              showModal(true);
-              return;
-            }
-          }
+        const st = await clientApi('order-status', {id: oid});
+        if(st.status === 'paid'){
+          showModal(true);
+          return;
         }
       }catch(e){}
 
       if(attempts >= maxAttempts){
         // Oznacz zamówienie jako nieudane — TYLKO jeśli nadal oczekuje na płatność
-        // (transakcja chroni przed nadpisaniem, gdyby webhook P24 zdążył je w
+        // (serwer robi to transakcją, gdyby webhook P24 zdążył je w
         // międzyczasie potwierdzić). Bez tego zamówienie zostawało "widmowym"
         // wpisem w kolejce Do akceptacji w panelu na zawsze.
         try{
-          if(window._firebase && window._firebase.db){
-            await window._firebase.db.ref('orders').transaction(function(arr){
-              if(!arr) return arr;
-              var list = Array.isArray(arr)?arr:Object.values(arr);
-              var idx = list.findIndex(function(o){return o && String(o.id)===String(oid);});
-              if(idx===-1) return arr;
-              if((list[idx].status||'')!=='awaiting_payment') return arr;
-              list[idx] = Object.assign({}, list[idx], {status:'payment_failed', paymentFailedAt:new Date().toISOString()});
-              return list;
-            });
-          }
+          await clientApi('order-payment-failed', {id: oid});
         }catch(e){ console.warn('[P24] Nie udało się oznaczyć zamówienia jako nieudane:', e.message); }
         showModal(false);
       } else {
@@ -2764,29 +2701,19 @@ async function checkLoyalty(){
   if(!isEmail&&query.length<9){toast('Wpisz pełny numer telefonu (9 cyfr)');return;}
   if(!query){toast('Wpisz numer telefonu lub e-mail');return;}
   st.style.color='var(--muted)';st.textContent='Sprawdzam…';
+  // Serwer zwraca tylko imię i pieczątki tego jednego klienta
   let c=null;
-  if(window._firebase&&window._firebase.db){
-    try{
-      const snap=await window._firebase.db.ref('customers').once('value');
-      const val=snap.val();
-      if(val){
-        const arr=Array.isArray(val)?val:Object.values(val);
-        c=isEmail
-          ?arr.find(x=>x&&(x.email||'').toLowerCase()===query.toLowerCase())
-          :arr.find(x=>x&&(x.phone||'').replace(/\s/g,'')===query);
-      }
-    }catch(e){}
-  }
-  if(!c){
-    const local=LS('customers')||[];
-    c=isEmail
-      ?local.find(x=>(x.email||'').toLowerCase()===query.toLowerCase())
-      :local.find(x=>(x.phone||'').replace(/\s/g,'')===query);
+  try{
+    const r=await clientApi('loyalty',{query});
+    if(r.found) c=r;
+  }catch(e){
+    st.style.color='var(--rust)';st.textContent='Nie udało się sprawdzić karty. Spróbuj ponownie.';
+    return;
   }
   if(c){
     const stamps=c.stamps||0;
     renderLoyaltyStamps(stamps);
-    let msg=`Cześć ${c.name.split(' ')[0]}! Masz ${stamps}/9 pieczątek.`;
+    let msg=`Cześć ${c.firstName}! Masz ${stamps}/9 pieczątek.`;
     if(stamps>=9)msg+=' 🎉 Twoja nagroda czeka — powiedz o niej przy kasie!';
     else if([3,6].includes(stamps))msg+=` 🎁 Masz nagrodę do odebrania!`;
     else msg+=` Jeszcze ${9-stamps} do nagrody.`;
@@ -2816,44 +2743,18 @@ async function subscribeNL(){
 
   r.style.color='var(--muted)'; r.textContent='Zapisuję…';
 
-  if(!window._firebase || !window._firebase.db){
-    r.style.color='var(--red2)'; r.textContent='❌ Brak połączenia z bazą danych. Spróbuj ponownie.';
-    console.warn('[subscribeNL] Firebase niedostępny');
-    return;
-  }
-
   try{
-    const snap = await window._firebase.db.ref('customers').once('value');
-    const fbVal = snap.val();
-    let existingKey = null, existing = null;
-    if(fbVal){
-      const entries = Object.entries(fbVal);
-      const found = isEmail
-        ? entries.find(([k,x])=> x && (x.email||'').toLowerCase().trim()===val.toLowerCase().trim())
-        : entries.find(([k,x])=> x && (x.phone||'').replace(/\s/g,'')===val);
-      if(found){ existingKey=found[0]; existing=found[1]; }
+    // Serwer sam sprawdza, czy klient już jest w bazie: dopisuje zgodę albo tworzy wpis
+    const res = await clientApi('newsletter', {type: isEmail?'email':'sms', value: val});
+    if(!res.ok){
+      r.style.color='var(--red2)'; r.textContent='❌ '+(res.msg||'Nie udało się zapisać.');
+      return;
     }
-    console.log('[subscribeNL]', isEmail?'email':'phone', val, '→', existing?'istniejący klient':'nowy');
-
-    if(existing){
-      if(isEmail) existing.emailMkt=true; else existing.sms=true;
-      await window._firebase.db.ref('customers/'+existingKey).update(existing);
-      r.style.color='var(--gold2)';
-      r.textContent='Zaktualizowano zgodę. Damy znać o nowych promocjach.';
-    } else {
-      const newCust = {
-        name: isEmail ? 'Klient '+val.split('@')[0] : 'Klient '+val,
-        phone: isEmail ? '' : val,
-        email: isEmail ? val : '',
-        sms: !isEmail,
-        emailMkt: isEmail,
-        stamps:0, totalStamps:0, visits:0, spent:0,
-        last:'', registeredAt: new Date().toISOString().slice(0,10)
-      };
-      await window._firebase.db.ref('customers').push(newCust);
-      r.style.color='var(--gold2)';
-      r.textContent='Zapisano. Damy znać o nowych promocjach.';
-    }
+    console.log('[subscribeNL]', isEmail?'email':'phone', val, '→', res.existing?'istniejący klient':'nowy');
+    r.style.color='var(--gold2)';
+    r.textContent = res.existing
+      ? 'Zaktualizowano zgodę. Damy znać o nowych promocjach.'
+      : 'Zapisano. Damy znać o nowych promocjach.';
   }catch(e){
     console.error('[subscribeNL] błąd:', e);
     r.style.color='var(--red2)'; r.textContent='❌ Błąd zapisu: '+e.message;

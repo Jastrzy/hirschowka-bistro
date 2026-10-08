@@ -1230,15 +1230,27 @@ function renderRewardsList(stamps=-1){
 }
 
 function fmtPhone(el){let v=el.value.replace(/\D/g,'').slice(0,9);if(v.length>6)v=v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);else if(v.length>3)v=v.slice(0,3)+' '+v.slice(3);el.value=v;}
-function loginLoyalty(){
+async function loginLoyalty(){
   const phone=(document.getElementById('loyalty-phone').value||'').trim();
   if(phone.replace(/\s/g,'').length<9){toast('Wpisz pełny numer telefonu');return;}
-  // Check panel customers
-  const custs=LS('customers')||[];
-  const found=custs.find(c=>c.phone.replace(/\s/g,'')===phone.replace(/\s/g,''));
+  // Serwer (api/client.js) zwraca tylko imię i pieczątki tego jednego klienta
+  let found=null;
+  try{
+    const resp=await fetch('/api/client?action=loyalty',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:phone.replace(/\s/g,'')})
+    });
+    const data=await resp.json();
+    if(!resp.ok) throw new Error(data.msg||resp.status);
+    if(data.found) found=data;
+  }catch(e){
+    toast('Nie udało się sprawdzić karty. Spróbuj ponownie.');
+    return;
+  }
   if(found){
-    WLS('app-user',{name:found.name,phone:found.phone,stamps:found.stamps||0,visits:found.visits||0});
-    toast('Witaj, '+found.name.split(' ')[0]+'! 👋');
+    WLS('app-user',{name:found.firstName,phone,stamps:found.stamps||0,visits:found.visits||0});
+    toast('Witaj, '+found.firstName+'! 👋');
   } else {
     // New user
     WLS('app-user',{name:'Klient',phone,stamps:0,visits:0});

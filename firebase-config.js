@@ -425,6 +425,11 @@
 
     // ═══ KLIENT ═══
     if (isClient) {
+      // Strona klienta NIE pobiera już kuponów, historii nagród ani tokenów
+      // SMSAPI/EmailJS — kody sprawdza serwer (api/client.js), a tokeny są
+      // potrzebne tylko w panelu. (Starych kopii z localStorage celowo nie
+      // kasujemy: panel działa w tej samej domenie i korzysta z tych kluczy.)
+
       // Czytaj konfigurację z Firebase → aktualizuj UI
       var read_keys = {
         'menu':        function() { if(window.buildCatTabs) window.buildCatTabs(); if(window.buildMenu) window.buildMenu(); if(window.pruneStaleCart) window.pruneStaleCart(); },
@@ -433,17 +438,10 @@
         'daily-dish':  function() { if(window.renderDaily) window.renderDaily(); },
         'kitchen-day': function() { if(window.renderKitchen) window.renderKitchen(); if(window.renderDailyDish) window.renderDailyDish(); if(window.renderDaily) window.renderDaily(); },
         'promos':      function() { if(window.renderAdminPromos) window.renderAdminPromos(); if(window.renderAdminTicker) window.renderAdminTicker(); },
-        'coupons':     null,
         'addons':      null,
         'cross':       null,
-        'smsapi-token':  null,
-        'smsapi-sender': null,
-        'emailjs-key':   null,
-        'emailjs-service': null,
-        'emailjs-template': null,
         'params':      function() { if(window.buildMenu) window.buildMenu(); if(window.buildMenuContent) window.buildMenuContent(); },
         'packaging':   null,
-        'loyalty-history': null,
         'rewards':     null,
         'zones':       null,
         'delivery-zones': function() { if(window.refreshZoneDisplay) window.refreshZoneDisplay(); },
@@ -551,7 +549,9 @@
 
     // ═══ APP ═══
     if (isApp) {
-      ['menu','daily-dish','promos','customers'].forEach(function(k) {
+      // 'customers' celowo NIE — karta lojalnościowa w app.html pyta serwer
+      // (api/client.js), zamiast pobierać do przeglądarki całą bazę klientów
+      ['menu','daily-dish','promos'].forEach(function(k) {
         db.ref(k).on('value', function(snap) {
           var val = snap.val();
           if (val) localStorage.setItem(k, JSON.stringify(val));
