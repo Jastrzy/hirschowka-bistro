@@ -105,9 +105,15 @@ export default async function handler(req, res) {
     // 'key' to prawdziwy klucz Firebase (do zapisu), 'o.id' to numer zamówienia
     const entries = Object.entries(ordersVal).filter(([, o]) => o && o.id);
 
+    // Zamówienia online (BLIK/karta/Google Pay) panel pokazuje obsłudze dopiero po
+    // potwierdzeniu płatności (paymentConfirmed z p24.js) — do tego czasu nie ma
+    // czego akceptować, więc nie alarmujemy, a czas liczymy od chwili płatności
     const stuck = entries.filter(([, o]) => {
-      return normStatus(o.status) === 'pending' && o.timestamp &&
-        (now - o.timestamp > THRESHOLD_MS) && !o.alertSent;
+      const isOnline = ['blik', 'card', 'gpay'].includes(String(o.payment || '').toLowerCase());
+      if (isOnline && !o.paymentConfirmed && String(o.status || '').toLowerCase() !== 'paid') return false;
+      const since = (isOnline && o.paidAt) ? Date.parse(o.paidAt) : o.timestamp;
+      return normStatus(o.status) === 'pending' && since &&
+        (now - since > THRESHOLD_MS) && !o.alertSent;
     });
 
     if (!stuck.length) {

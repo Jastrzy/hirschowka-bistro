@@ -102,7 +102,10 @@ async function findOrder(id) {
   if (!/^[0-9A-Za-z_-]{1,40}$/.test(orderKey)) return null;
   const direct = await fbGet('orders/' + orderKey);
   if (direct && String(direct.id).replace('#', '') === orderKey) return { key: orderKey, order: direct };
-  const found = entriesOf(await fbGet('orders')).find(([, o]) => String(o.id).replace('#', '') === orderKey);
+  // Przy kolizji losowych numerów bierzemy najnowsze zamówienie (tak jak p24.js)
+  const found = entriesOf(await fbGet('orders'))
+    .filter(([, o]) => String(o.id).replace('#', '') === orderKey)
+    .sort(([, a], [, b]) => (b.timestamp || 0) - (a.timestamp || 0))[0];
   return found ? { key: found[0], order: found[1] } : null;
 }
 

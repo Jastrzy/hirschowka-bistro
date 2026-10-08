@@ -211,42 +211,63 @@ async function grantStampForOrder(order) {
   }
 }
 
-// Aktualizuj status zamówienia w Firebase — pobierz wszystkie i filtruj w JS
-async function updateOrderStatus(orderId, status, extraFields) {
-  try {
-    const fetchUrl = `${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
-    const resp = await fetch(fetchUrl);
+// Bezpieczna aktualizacja zamówienia: znajdź klucz po numerze zamówienia, odczytaj
+// zamówienie z ETag i zapisz zmiany TYLKO jeśli pod tym kluczem nadal jest to samo,
+// niezmienione zamówienie (if-match). Wcześniej był tu ślepy PATCH pod klucz
+// znaleziony chwilę wcześniej — gdy panel w tym samym momencie przestawił klucze
+// zamówień, PATCH tworzył osierocony wpis, a prawdziwe zamówienie zostawało bez
+// potwierdzenia płatności. Przy konflikcie szukamy zamówienia od nowa.
+// Zwraca zaktualizowane zamówienie (albo null, jeśli się nie udało).
+async function safeUpdateOrder(orderId, fields) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const resp = await fetch(`${FB_URL}/orders.json${FB_SECRET?'?auth='+FB_SECRET:''}`);
     const orders = await resp.json();
-
     if (!orders || typeof orders !== 'object') {
       await fbLog('WARN', 'Brak zamowien w Firebase', { fetchStatus: resp.status });
-      return;
+      return null;
     }
-
-    const matchingKeys = Object.keys(orders).filter(key => {
-      const order = orders[key];
-      return order && order.id === orderId;
-    });
-
-    await fbLog('INFO', 'updateOrderStatus szukam', { orderId, znaleziono: matchingKeys.length, klucze: matchingKeys });
-
+    const matchingKeys = Object.keys(orders).filter(key => orders[key] && orders[key].id === orderId);
+    await fbLog('INFO', 'updateOrderStatus szukam', { orderId, znaleziono: matchingKeys.length, klucze: matchingKeys, proba: attempt });
     if (matchingKeys.length === 0) {
       await fbLog('WARN', 'Nie znaleziono zamowienia', { orderId, dostepneId: Object.values(orders).map(o=>o&&o.id).slice(0,10) });
-      return;
+      return null;
+    }
+    // Numery zamówień są losowe (5 cyfr), więc przy kolizji wybierz najnowsze —
+    // właśnie opłacane zamówienie jest zawsze tym ostatnio złożonym
+    matchingKeys.sort((a, b) => (orders[b].timestamp || 0) - (orders[a].timestamp || 0));
+    if (matchingKeys.length > 1) {
+      await fbLog('WARN', 'Kilka zamowien z tym samym numerem — aktualizuje najnowsze', { orderId, klucze: matchingKeys });
     }
 
-    const updates = matchingKeys.map(async (key) => {
-      const updateUrl = `${FB_URL}/orders/${key}.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
-      const updateResp = await fetch(updateUrl, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({ status }, extraFields || {})),
-      });
-      await fbLog('INFO', 'Firebase update', { key, status, updateStatus: updateResp.status });
+    const key = matchingKeys[0];
+    const url = `${FB_URL}/orders/${key}.json${FB_SECRET?'?auth='+FB_SECRET:''}`;
+    const getResp = await fetch(url, { headers: { 'X-Firebase-ETag': 'true' } });
+    const etag = getResp.headers.get('etag');
+    const current = await getResp.json();
+    if (!current || current.id !== orderId) continue; // klucz zdążył się zmienić — szukaj od nowa
+
+    const updated = Object.assign({}, current, fields);
+    const putResp = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'if-match': etag },
+      body: JSON.stringify(updated),
     });
-    await Promise.all(updates);
+    await fbLog('INFO', 'Firebase update', { key, pola: Object.keys(fields), updateStatus: putResp.status, proba: attempt });
+    if (putResp.status === 412) continue; // ktoś zmienił zamówienie w międzyczasie — od nowa
+    if (!putResp.ok) return null;
+    return updated;
+  }
+  await fbLog('ERROR', 'safeUpdateOrder: nie udalo sie zapisac po 5 probach', { orderId, pola: Object.keys(fields) });
+  return null;
+}
+
+// Aktualizuj status zamówienia w Firebase
+async function updateOrderStatus(orderId, status, extraFields) {
+  try {
+    return await safeUpdateOrder(orderId, Object.assign({ status }, extraFields || {}));
   } catch(e) {
     await fbLog('ERROR', 'Blad aktualizacji Firebase', { message: e.message });
+    return null;
   }
 }
 
@@ -358,30 +379,19 @@ module.exports = async function handler(req, res) {
         const parts = sessionId.split('-');
         const orderNum = parts.slice(1, -1).join('-');
         await fbLog('INFO', 'orderNum', { parts, orderNum });
-        await updateOrderStatus(orderNum, 'paid', { paymentConfirmed: true, paidAt: new Date().toISOString() });
+        const paidOrder = await updateOrderStatus(orderNum, 'paid', { paymentConfirmed: true, paidAt: new Date().toISOString() });
 
-        // Przyznaj pieczątkę — pobierz dane zamówienia z Firebase
+        // Przyznaj pieczątkę — na podstawie zamówienia zapisanego chwilę wcześniej
         try {
-          const ordersResp = await fetch(`${FB_URL}/orders.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`);
-          const ordersVal = await ordersResp.json();
-          if (ordersVal && typeof ordersVal === 'object') {
-            const entries = Object.entries(ordersVal);
-            const paidEntry = entries.find(([, o]) => o && o.id === orderNum);
-            if (paidEntry) {
-              const [paidKey, paidOrder] = paidEntry;
-              const granted = await grantStampForOrder(paidOrder);
-              if (granted) {
-                // Oznacz na zamówieniu, że pieczątka już poszła — inaczej panel doliczy
-                // drugą, gdy obsługa oznaczy zamówienie jako "Zrealizowane"
-                await fetch(`${FB_URL}/orders/${paidKey}.json${FB_SECRET ? '?auth=' + FB_SECRET : ''}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ stampGranted: true }),
-                });
-              }
-            } else {
-              await fbLog('WARN', 'grantStamp: nie znaleziono zamowienia', { orderNum });
+          if (paidOrder) {
+            const granted = await grantStampForOrder(paidOrder);
+            if (granted) {
+              // Oznacz na zamówieniu, że pieczątka już poszła — inaczej panel doliczy
+              // drugą, gdy obsługa oznaczy zamówienie jako "Zrealizowane"
+              await safeUpdateOrder(orderNum, { stampGranted: true });
             }
+          } else {
+            await fbLog('WARN', 'grantStamp: nie znaleziono zamowienia', { orderNum });
           }
         } catch (e) {
           await fbLog('ERROR', 'grantStamp fetch exception', { message: e.message });

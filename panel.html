@@ -2033,8 +2033,19 @@ function normStatus(s){
   return 'pending';
 }
 
+// Zamówienie z płatnością online (BLIK/karta/Google Pay), której Przelewy24 jeszcze
+// nie potwierdziło (albo która się nie udała). Panel takich zamówień NIE pokazuje —
+// trafiają do "Do akceptacji" (z alarmem i e-mailem) dopiero, gdy webhook P24
+// (api/p24.js) ustawi paymentConfirmed. Dzięki temu obsługa nie przyjmie
+// zamówienia, za które klient nie zapłacił. Zostają tylko w tablicy `orders`,
+// żeby sweepStalePaymentOrders mógł je po 20 min przenieść do archiwum.
+function isUnpaidOnline(o){
+  return ['blik','card','gpay'].includes((o.payment||'').toLowerCase())
+    && !o.paymentConfirmed && (o.status||'').toLowerCase()!=='paid';
+}
+
 function updateAlarm(){
-  const pending = orders.filter(o=>normStatus(o.status)==='pending');
+  const pending = orders.filter(o=>normStatus(o.status)==='pending'&&!isUnpaidOnline(o));
   const cnt = pending.length;
   document.getElementById('alarm-count').textContent = cnt>0?`(${cnt} oczekujące)`:'';
   document.getElementById('badge-ord').textContent = cnt||'';
@@ -2068,8 +2079,8 @@ function setOrdTypeFilter(f, el){
 function renderOrders(){
   const list = document.getElementById('orders-list');
   let source;
-  if(ordTab==='pending')   source = orders.filter(o=>normStatus(o.status)==='pending');
-  else if(ordTab==='current')  source = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned; });
+  if(ordTab==='pending')   source = orders.filter(o=>normStatus(o.status)==='pending'&&!isUnpaidOnline(o));
+  else if(ordTab==='current')  source = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned&&!isUnpaidOnline(o); });
   else                          source = [...archive].concat(orders.filter(o=>normStatus(o.status)==='done'));
 
   // Filtr typu
@@ -2079,7 +2090,7 @@ function renderOrders(){
 
   // Odznaki zakładek
   const cBadge = document.getElementById('tab-badge-current');
-  const cur = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned; }).length;
+  const cur = orders.filter(o=>{ const ns=normStatus(o.status); return ns!=='pending'&&ns!=='done'&&!o.planned&&!isUnpaidOnline(o); }).length;
   if(cBadge){ cBadge.textContent=cur||''; cBadge.className='ord-tab-badge'+(cur?' show':''); }
   updateAlarm();
 
@@ -2313,23 +2324,41 @@ function openAcceptModal(id){
   openModal('mo-accept-order');
 }
 
+// Klucz zamówienia w Firebase (orders/<klucz>) — szukany po numerze zamówienia
+async function findOrderKey(db, orderId){
+  const snap=await db.ref('orders').once('value');
+  let key=null;
+  snap.forEach(function(ch){
+    const v=ch.val();
+    if(key===null && v && v.id===orderId) key=ch.key;
+  });
+  return key;
+}
+
 // ── OCHRONA PRZED PODWÓJNYM ZATWIERDZENIEM Z DWÓCH PANELI ──
-// Transakcja Firebase na kluczu 'orders': sprawdza AKTUALNY status zamówienia
-// (nie lokalną, potencjalnie nieaktualną kopię) i przerywa się, jeśli ktoś inny
-// już zmienił status w międzyczasie. Dzięki temu tylko JEDNO stanowisko "wygrywa"
-// prawo do wysłania SMS-a — drugie dostaje czytelną informację, że ktoś je ubiegł.
+// Transakcja Firebase na JEDNYM zamówieniu (orders/<klucz>): sprawdza AKTUALNY
+// status zamówienia (nie lokalną, potencjalnie nieaktualną kopię) i przerywa się,
+// jeśli ktoś inny już zmienił status w międzyczasie. Dzięki temu tylko JEDNO
+// stanowisko "wygrywa" prawo do wysłania SMS-a — drugie dostaje czytelną
+// informację, że ktoś je ubiegł.
+// WAŻNE: wcześniej transakcja obejmowała CAŁĄ listę 'orders' i zapisywała ją od
+// nowa jako tablicę — to zmieniało klucze WSZYSTKICH zamówień (np. '12514' → '3').
+// Webhook Przelewy24 (api/p24.js), który w tej samej chwili aktualizował zamówienie
+// pod starym kluczem, tworzył wtedy osierocony wpis, a prawdziwe zamówienie
+// zostawało bez potwierdzenia płatności (klient widział "nie potwierdzono").
+// listMutateFn dostaje jednoelementową listę [zamówienie] i indeks 0 — usunięcie
+// elementu (splice) usuwa zamówienie z 'orders'.
 async function claimOrderTransition(orderId, expectedStatus, listMutateFn, _isRetry){
   const db=window._firebase&&window._firebase.db;
   if(!db) return {ok:false,msg:'Brak połączenia z Firebase. Spróbuj ponownie.'};
   try{
-    const result=await db.ref('orders').transaction(function(arr){
-      if(!arr) return arr;
-      const list=Array.isArray(arr)?arr:Object.values(arr);
-      const idx=list.findIndex(o=>o&&o.id===orderId);
-      if(idx===-1) return; // przerwij — zamówienie zniknęło (np. już zarchiwizowane)
-      const cur=normStatus(list[idx].status);
-      if(cur!==expectedStatus) return; // przerwij — ktoś już zmienił status na innym stanowisku
-      return listMutateFn(list, idx);
+    const key=await findOrderKey(db, orderId);
+    if(key===null) return {ok:false,msg:'To zamówienie zostało już obsłużone na innym stanowisku.'};
+    const result=await db.ref('orders/'+key).transaction(function(cur){
+      if(!cur || cur.id!==orderId) return; // przerwij — zamówienie zniknęło (np. już zarchiwizowane)
+      if(normStatus(cur.status)!==expectedStatus) return; // przerwij — ktoś już zmienił status na innym stanowisku
+      const list=listMutateFn([cur], 0);
+      return (list && list[0]) ? list[0] : null; // null = usuń zamówienie z 'orders'
     });
     if(!result.committed){
       // Transakcja mogła się przerwać nie dlatego, że ktoś inny naprawdę obsłużył
@@ -5961,30 +5990,46 @@ updateAlarm();
 // Firebase nie może nadpisać zamówień przez 8 sekund po lokalnej zmianie
 var _ordersLastWrite = 0;
 
+// "Nowe do akceptacji" z punktu widzenia obsługi: zamówienie gotówkowe od razu,
+// zamówienie online dopiero po potwierdzeniu płatności (patrz isUnpaidOnline)
+function isNewForStaff(o, prevVisibleIds){
+  return !prevVisibleIds.has(o.id) && !isUnpaidOnline(o) &&
+    ['pending','nowe','do akceptacji','new','awaiting_payment','paid'].includes((o.status||'').toLowerCase());
+}
+
 window.onFirebaseOrders = function(freshArr) {
+  // Zamówienia, które obsługa już widziała (bez czekających na płatność online)
+  const prevVisibleIds = new Set((orders||[]).filter(o=>!isUnpaidOnline(o)).map(o=>o.id));
+
   // Nie nadpisuj jeśli panel właśnie zmienił status zamówienia
   if(Date.now() - _ordersLastWrite < 8000) {
     console.log('[FB] Orders: pomijam nadpisanie — lokalny zapis jest świeży (', Date.now() - _ordersLastWrite, 'ms temu)');
     // Ale sprawdź czy są nowe zamówienia (nowe ID)
     const prevIds = new Set((orders||[]).map(o=>o.id));
     const brandNew = freshArr.filter(o=>!prevIds.has(o.id));
-    if(brandNew.length > 0) {
+    // ...i czy któreś czekające zamówienie online właśnie zostało opłacone — bez
+    // tego zostałoby ukryte do następnej zmiany w Firebase
+    const newlyPaid = freshArr.filter(f=>{
+      const lo=(orders||[]).find(x=>x.id===f.id);
+      return lo && isUnpaidOnline(lo) && !isUnpaidOnline(f);
+    });
+    newlyPaid.forEach(f=>{
+      const lo=orders.find(x=>x.id===f.id);
+      Object.assign(lo,{status:f.status,paymentConfirmed:f.paymentConfirmed,paidAt:f.paidAt,stampGranted:f.stampGranted});
+    });
+    if(brandNew.length > 0 || newlyPaid.length > 0) {
       // Dodaj tylko nowe zamówienia, nie nadpisuj statusów istniejących
       brandNew.forEach(o => orders.push(o));
       renderOrders(); updateAlarm(); renderDashboard();
-      brandNew.filter(o=>['pending','nowe','do akceptacji','new','awaiting_payment']
-        .includes((o.status||'').toLowerCase()))
-        .forEach(o => sendOrderEmail(o));
+      brandNew.concat(newlyPaid).filter(o=>isNewForStaff(orders.find(x=>x.id===o.id)||o, prevVisibleIds))
+        .forEach(o => sendOrderEmail(orders.find(x=>x.id===o.id)||o));
     }
     return;
   }
 
-  // Wykryj nowe zamówienia (pending) których wcześniej nie było
-  const prevIds = new Set((orders||[]).map(o=>o.id));
-  const newPending = freshArr.filter(o=>
-    !prevIds.has(o.id) &&
-    ['pending','nowe','do akceptacji','new','awaiting_payment'].includes((o.status||'').toLowerCase())
-  );
+  // Wykryj nowe zamówienia do akceptacji, których obsługa wcześniej nie widziała
+  // (w tym zamówienia online, które właśnie zostały opłacone)
+  const newPending = freshArr.filter(o=>isNewForStaff(o, prevVisibleIds));
 
   // Przy mergowaniu — zachowaj lokalny status jeśli jest nowszy
   const mergedOrders = freshArr.map(fbOrder => {
@@ -6009,6 +6054,9 @@ window.onFirebaseOrders = function(freshArr) {
       const merged = {...localOrder};
       if(fbOrder.paymentStatus) merged.paymentStatus = fbOrder.paymentStatus;
       if(fbOrder.status === 'paid') merged.paymentStatus = 'PAID';
+      // Potwierdzenie płatności z P24 zawsze przenieś — od niego zależy, czy
+      // zamówienie online w ogóle jest widoczne dla obsługi (isUnpaidOnline)
+      if(fbOrder.paymentConfirmed){ merged.paymentConfirmed = true; merged.paidAt = fbOrder.paidAt; }
       return merged;
     }
     return fbOrder;
