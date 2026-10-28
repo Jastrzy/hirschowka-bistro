@@ -444,10 +444,13 @@ window._onAuthReady = function(auth){
       localStorage.setItem('hb_login_email', user.email);
       showPanel();
     } else {
-      // Niezalogowany lub anonimowy
-      if(user && user.isAnonymous){
-        auth.signOut();
-      }
+      // Niezalogowany lub anonimowy.
+      // UWAGA (28.10.2026): NIE wylogowujemy tu anonimowego użytkownika. Panel i
+      // strona klienta działają w tej samej domenie i dzielą sesję Firebase w
+      // przeglądarce. Wylogowanie "anonimowego" w panelu wylogowywało też otwartą
+      // w tej samej przeglądarce stronę klienta — jej zamówienia były wtedy
+      // odrzucane (PERMISSION_DENIED). Panel po prostu pokazuje ekran logowania;
+      // zalogowanie e-mailem i tak zastępuje sesję anonimową.
       // Jeśli byliśmy wcześniej zalogowani (powrót z uśpienia/tła) —
       // NIE pokazuj od razu ekranu logowania. Firebase zwykle sam przywróci
       // sesję w ciągu 1-2 s. Pokaż logowanie dopiero gdy po 30 s nadal brak usera.

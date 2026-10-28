@@ -86,9 +86,20 @@
         }, 50);
       }
     } else {
-      // Strona klienta i app — loguj anonimowo
-      auth.signInAnonymously().catch(function(e){
-        console.warn('[Auth] Logowanie anonimowe nieudane:', e.message);
+      // Strona klienta i app — loguj anonimowo, ale TYLKO gdy nikt nie jest zalogowany.
+      // UWAGA (28.10.2026): panel i strona klienta dzielą sesję Firebase w tej samej
+      // przeglądarce (ta sama domena). Bezwarunkowe signInAnonymously() zastępowało
+      // zalogowanie e-mailem w otwartym panelu (wylogowanie panelu), a panel w
+      // odpowiedzi wylogowywał sesję anonimową — zamówienia klienta były wtedy
+      // odrzucane (PERMISSION_DENIED). Jeśli w przeglądarce jest już zalogowany
+      // panel, strona klienta po prostu korzysta z tej sesji.
+      var _anonPending = false;
+      auth.onAuthStateChanged(function(u) {
+        if (u || _anonPending) return;
+        _anonPending = true;
+        auth.signInAnonymously().catch(function(e){
+          console.warn('[Auth] Logowanie anonimowe nieudane:', e.message);
+        }).then(function(){ _anonPending = false; });
       });
     }
 
@@ -104,6 +115,10 @@
     // dopiero, gdy onAuthStateChanged potwierdzi, że user faktycznie istnieje.
     var _listenersStarted = false;
     auth.onAuthStateChanged(function(user) {
+      // Panel: nasłuch danych dopiero po zalogowaniu e-mailem — sesja anonimowa
+      // (np. z otwartej w tej samej przeglądarce strony klienta) nie ma dostępu
+      // do danych panelu, a odrzucone nasłuchy Firebase same się nie ponawiają.
+      if (user && isPanelPath && user.isAnonymous) return;
       if (user && !_listenersStarted) {
         _listenersStarted = true;
         startDataListeners();
