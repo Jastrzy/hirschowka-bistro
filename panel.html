@@ -1822,10 +1822,111 @@ requestWakeLock();
 <script>
 // ── STORAGE ──
 const S = key => { try{return JSON.parse(localStorage.getItem(key));}catch{return null;} };
+// WAŻNE (28.10.2026): pamięć przeglądarki (localStorage) ma limit ~5 MB. Gdy się
+// zapełniła (menu ze zdjęciami base64 = 4,5 MB), setItem rzucał wyjątek i zapis do
+// Firebase w ogóle się nie wykonywał — przyciski "Zapisz" po cichu nie działały.
+// Teraz: kopia lokalna to tylko dodatek — jej błąd NIGDY nie blokuje zapisu do bazy.
+let _lsQuotaWarned = false;
 const W = (key,val) => {
-  localStorage.setItem(key,JSON.stringify(val));
+  try{
+    localStorage.setItem(key,JSON.stringify(val));
+  }catch(e){
+    console.warn('[W] Nie można zapisać "'+key+'" w pamięci przeglądarki (limit?):', e && e.message);
+    if(!_lsQuotaWarned){
+      _lsQuotaWarned = true;
+      setTimeout(function(){ toast('⚠️ Pamięć przeglądarki pełna — zapisuję tylko na serwerze. Zgłoś to, jeśli się powtarza.'); }, 2500);
+    }
+  }
   writeToFirebaseWithRetry(key,val);
 };
+
+// ── ZDJĘCIA DAŃ W FIREBASE STORAGE ──
+// W tablicy 'menu' trzymamy tylko krótki link do zdjęcia, a nie cały obraz
+// (base64). Inaczej menu rośnie do kilku MB, zapełnia pamięć przeglądarki i
+// spowalnia stronę klienta. Reguły Storage: zapis tylko dla zalogowanych.
+function dataURLtoBlob(dataUrl){
+  const parts=dataUrl.split(',');
+  const mime=(parts[0].match(/:(.*?);/)||[])[1]||'image/jpeg';
+  const bin=atob(parts[1]);
+  const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+async function uploadDishPhoto(dataUrl, dishId){
+  const st=window._firebase&&window._firebase.storage;
+  if(!st) throw new Error('Firebase Storage niedostępny');
+  const ref=st.ref('menu-photos/dish-'+dishId+'-'+Date.now()+'.jpg');
+  await ref.put(dataURLtoBlob(dataUrl),{contentType:'image/jpeg',cacheControl:'public,max-age=31536000'});
+  return await ref.getDownloadURL();
+}
+
+// Jednorazowe przeniesienie starych zdjęć (base64) z menu do Storage.
+// Zapisuje TYLKO pole photo konkretnego dania (menu/<klucz>/photo), na świeżo
+// odczytanych danych z serwera — nie nadpisuje całego menu.
+let _photoMigrationRunning=false;
+async function migrateMenuPhotosToStorage(){
+  if(_photoMigrationRunning)return;
+  const fb=window._firebase;
+  if(!fb||!fb.db||!fb.storage)return;
+  _photoMigrationRunning=true;
+  try{
+    const snap=await fb.db.ref('menu').once('value');
+    const val=snap.val();
+    if(!val)return;
+    const keys=Object.keys(val);
+    let moved=0;
+    for(const k of keys){
+      const it=val[k];
+      if(!it||typeof it.photo!=='string'||it.photo.indexOf('data:')!==0)continue;
+      try{
+        const url=await uploadDishPhoto(it.photo, it.id!=null?it.id:k);
+        await fb.db.ref('menu/'+k+'/photo').set(url);
+        const local=menuData.find(x=>x&&x.id===it.id);
+        if(local)local.photo=url;
+        moved++;
+      }catch(e){console.warn('[Zdjęcia] Nie udało się przenieść zdjęcia dania',it.name,e&&e.message);}
+    }
+    // Danie dnia (kitchen-day) trzyma kopie zdjęć z menu — podmień na linki
+    const kdSnap=await fb.db.ref('kitchen-day').once('value');
+    const kd=kdSnap.val();
+    if(kd){
+      for(const part of ['soup','main']){
+        const p=kd[part];
+        if(p&&typeof p.photo==='string'&&p.photo.indexOf('data:')===0){
+          const src=menuData.find(x=>x&&x.dailyRole===part&&x.name===p.name);
+          let url=(src&&src.photo&&src.photo.indexOf('data:')!==0)?src.photo:null;
+          try{ if(!url) url=await uploadDishPhoto(p.photo,'kd-'+part); await fb.db.ref('kitchen-day/'+part+'/photo').set(url); }
+          catch(e){console.warn('[Zdjęcia] kitchen-day',part,e&&e.message);}
+        }
+      }
+    }
+    // Odśwież lokalną kopię (teraz mała — same linki)
+    try{ localStorage.setItem('menu',JSON.stringify(menuData)); }catch(e){}
+    try{ const k2=(await fb.db.ref('kitchen-day').once('value')).val(); if(k2) localStorage.setItem('kitchen-day',JSON.stringify(k2)); }catch(e){}
+    if(moved>0){
+      console.log('[Zdjęcia] Przeniesiono do Storage:',moved);
+      toast('📷 Zdjęcia dań przeniesione na serwer ('+moved+') ✓');
+      if(typeof renderMenu==='function')renderMenu();
+    }
+  }catch(e){
+    console.warn('[Zdjęcia] Migracja przerwana:',e&&e.message);
+  }finally{
+    _photoMigrationRunning=false;
+  }
+}
+// Start migracji dopiero po potwierdzonym zalogowaniu e-mailem (reguły Storage
+// wymagają zalogowania; anonimowe/brak logowania = permission_denied).
+(function waitForPanelAuthThenMigrate(attempt){
+  attempt=attempt||0;
+  try{
+    const u=window.firebase&&firebase.apps&&firebase.apps.length&&firebase.auth().currentUser;
+    if(u&&!u.isAnonymous&&window._firebase&&window._firebase.storage){
+      setTimeout(migrateMenuPhotosToStorage,3000);
+      return;
+    }
+  }catch(e){}
+  if(attempt<120)setTimeout(function(){waitForPanelAuthThenMigrate(attempt+1);},2000);
+})();
 
 // Zapisuje do Firebase, czekając (do 5 sekund) aż połączenie będzie gotowe —
 // wcześniej W() cicho pomijało zapis, jeśli Firebase jeszcze się nie załadowało
@@ -3734,7 +3835,7 @@ function previewDishPhoto(inp){
   r.readAsDataURL(f);
 }
 let _dishSaving=false;
-function saveDish(){
+async function saveDish(){
   if(_dishSaving)return;
   const name=(document.getElementById('d-name').value||'').trim();
   const desc=(document.getElementById('d-desc').value||'').trim();
@@ -3742,7 +3843,7 @@ function saveDish(){
   const imgEl=document.getElementById('dish-photo-img');
   const hasPhoto=document.getElementById('dish-photo-prev').style.display!=='none';
   // Zdjęcie już skompresowane przez previewDishPhoto
-  const photo=hasPhoto?imgEl.src:'';
+  let photo=hasPhoto?imgEl.src:'';
   const selParam=document.getElementById('d-param').value;
   let savePrice=parseFloat(document.getElementById('d-price').value)||0;
   let saveParamName='',saveParamPrices=[];
@@ -3768,6 +3869,23 @@ function saveDish(){
     schedule:(document.getElementById('d-schedule').value||''),
     paramName:saveParamName,paramPrices:saveParamPrices,
   };
+  // Nowe zdjęcie (base64) — najpierw wyślij do Firebase Storage, w menu zapisz tylko link
+  const saveBtn=document.getElementById('dish-save-btn');
+  if(photo && photo.indexOf('data:')===0){
+    _dishSaving=true;
+    if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Wysyłam zdjęcie…';}
+    try{
+      const idForPhoto=editDishId!==null&&editDishId!==undefined?editDishId:(Math.max(0,...menuData.map(x=>x.id))+1);
+      photo=await uploadDishPhoto(photo,idForPhoto);
+      obj.photo=photo;
+    }catch(e){
+      console.warn('[Zdjęcia] Upload nieudany:',e&&e.message);
+      toast('⚠️ Nie udało się wysłać zdjęcia ('+(e&&e.message||'błąd')+'). Sprawdź internet i spróbuj ponownie.');
+      _dishSaving=false;
+      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Zapisz danie';}
+      return;
+    }
+  }
   let finalId;
   if(editDishId){
     const existing=menuData.find(x=>x.id===editDishId);
@@ -3785,18 +3903,23 @@ function saveDish(){
     menuData.forEach(function(x){ if(x.id!==finalId && x.dailyRole===dailyRole) x.dailyRole=''; });
   }
   _dishSaving=true;
-  const saveBtn=document.getElementById('dish-save-btn');
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Zapisuję…';}
-  W('menu',menuData);
-  if(window._firebase&&window._firebase.db){try{window._firebase.db.ref('menu').set(menuData).catch(function(){});}catch(e){}}
-  syncDailyRoleToKitchenDay();
-  const savedCat=obj.cat;
-  closeModal('mo-dish');
-  curMenuCat=savedCat;
-  renderMenu();
-  toast(editDishId!==null?'Danie "'+name+'" zaktualizowane ✓':'Danie "'+name+'" dodane ✓ — zakładka "'+savedCat+'" aktywna');
-  _dishSaving=false;
-  if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Zapisz danie';}
+  try{
+    W('menu',menuData);
+    syncDailyRoleToKitchenDay();
+    const savedCat=obj.cat;
+    closeModal('mo-dish');
+    curMenuCat=savedCat;
+    renderMenu();
+    toast(editDishId!==null?'Danie "'+name+'" zaktualizowane ✓':'Danie "'+name+'" dodane ✓ — zakładka "'+savedCat+'" aktywna');
+  }catch(e){
+    console.error('[saveDish] Błąd zapisu:',e);
+    toast('⚠️ Błąd zapisu dania: '+(e&&e.message||e)+'. Spróbuj ponownie.');
+  }finally{
+    // Zawsze odblokuj przycisk — wcześniej błąd zostawiał go na stałe w stanie "Zapisuję…"
+    _dishSaving=false;
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Zapisz danie';}
+  }
 }
 
 // ── ADDONS ──
@@ -4644,8 +4767,13 @@ function syncDailyRoleToKitchenDay(newSetPrice){
 }
 function saveDanieDnia(){
   const setPrice=(document.getElementById('dd-set-price')?.value||'').trim();
-  syncDailyRoleToKitchenDay(setPrice);
-  toast('⭐ Cena zestawu zapisana ✓ — strona zaktualizowana');
+  try{
+    syncDailyRoleToKitchenDay(setPrice);
+    toast('⭐ Cena zestawu zapisana ✓ — strona zaktualizowana');
+  }catch(e){
+    console.error('[saveDanieDnia] Błąd zapisu:',e);
+    toast('⚠️ Błąd zapisu ceny zestawu: '+(e&&e.message||e)+'. Spróbuj ponownie.');
+  }
 }
 function renderDanieDnia(){
   const k=S('kitchen-day')||{};
