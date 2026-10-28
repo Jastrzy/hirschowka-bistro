@@ -419,9 +419,14 @@ function showPanel(){
   setTimeout(checkPwdReminder, 1000);
 }
 
+// Wylogowanie: po wylogowaniu przeładowujemy stronę — wtedy ekran logowania
+// pokazuje się od razu (bez 30-sekundowego okresu ochronnego dla "powrotu z tła",
+// przez który przycisk wyglądał, jakby nie działał).
 window.doLogout = function(){
-  if(window._fbAuth) window._fbAuth.signOut();
-  localStorage.removeItem('hb_login_email');
+  if(!confirm('Wylogować z panelu na tym urządzeniu?')) return;
+  try{ localStorage.removeItem('hb_login_email'); }catch(e){}
+  var done=function(){ location.reload(); };
+  if(window._fbAuth){ window._fbAuth.signOut().then(done).catch(done); } else { done(); }
 };
 
 // onAuthStateChanged — wpuszczaj TYLKO zalogowanych emailem (nie anonimowych)
@@ -558,7 +563,8 @@ requestWakeLock();
       <button class="status-pill sp-open" id="sp-btn" onclick="toggleStatusManual()">
         <span class="sdot"></span><span id="sp-txt">Restauracja otwarta</span>
       </button>
-      <div class="avatar">H</div>
+      <button onclick="doLogout()" title="Wyloguj" aria-label="Wyloguj" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border2);border-radius:99px;background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">🚪 <span>Wyloguj</span></button>
+      <div class="avatar" title="Wyloguj" onclick="doLogout()" style="cursor:pointer;">H</div>
     </div>
   </header>
   <!-- ALARM BAR — nowe zamówienia -->
