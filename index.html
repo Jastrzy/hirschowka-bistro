@@ -2443,8 +2443,8 @@ async function placeOrder(){
   const pkg=calcPackaging();
   const disc=calcCouponDiscount(sub,cart,appliedCoupon);
   const total=parseFloat(Math.max(0,sub+dc+pkg-disc).toFixed(2));
-  const oid='#'+(10000+Math.floor(Math.random()*89999));
-  const orderKey=oid.replace('#',''); // Firebase nie pozwala na '#' w kluczu
+  // Numer zamówienia może się zmienić w writeNewOrder(), jeśli wylosowany jest zajęty
+  let oid='#'+(10000+Math.floor(Math.random()*89999));
   const typeMap={'dostawa':'delivery','odbior':'pickup','miejsce':'dine'};
   const newOrder={
     id:oid,
@@ -2481,30 +2481,46 @@ async function placeOrder(){
     if(r.created) console.log('[CUST] Nowy klient zapisany do Firebase:', phone);
   }).catch(e=>console.warn('[CUST] Nie udało się zarejestrować klienta:', e.message));
 
-  // Licznik użyć kodu (i historia nagród) zostały już zaktualizowane wcześniej
-  // (redeemCouponAtomic). Tu tylko zapisujemy zdarzenie do historii realizacji —
-  // kto (telefon) i kiedy użył kodu.
-  if(appliedCoupon){
-    logCouponRedemption(appliedCoupon.code,name,phone,oid,total);
+  // Zapis nowego zamówienia pod kluczem = numer zamówienia bez '#'. Reguły bazy
+  // pozwalają klientowi tylko UTWORZYĆ zamówienie (nie nadpisać istniejącego),
+  // więc jeśli wylosowany numer jest już zajęty, Firebase odmawia
+  // (PERMISSION_DENIED) — wtedy losujemy nowy numer i próbujemy ponownie.
+  // Zwraca true, gdy zamówienie jest zapisane.
+  async function writeNewOrder(db){
+    for(let attempt=1;attempt<=5;attempt++){
+      if(attempt>1){
+        oid='#'+(10000+Math.floor(Math.random()*89999));
+        newOrder.id=oid;
+      }
+      if(window._markOrderSent) window._markOrderSent(oid);
+      try{
+        await db.ref('orders/'+oid.replace('#','')).set(newOrder); // Firebase nie pozwala na '#' w kluczu
+        return true;
+      }catch(e){
+        console.warn('[ORDER] Zapis zamówienia '+oid+' odrzucony (próba '+attempt+'):', e.message);
+      }
+    }
+    return false;
   }
+  const orderFailMsg='❌ Nie udało się wysłać zamówienia. Spróbuj ponownie lub zadzwoń: 511 707 232';
 
   // ── PŁATNOŚĆ ONLINE — Przelewy24 ──
   if(isOnline){
     const btn=document.querySelector('.order-btn');
     if(btn){btn.disabled=true;btn.textContent='Przekierowuję do płatności…';}
     try{
-      // 1. Najpierw zapisz zamówienie do Firebase — set() na kluczu z numeru zamówienia
-      // (nie push()) — jeśli ten zapis z jakiegokolwiek powodu "wystrzeli" dwa razy
-      // (podwójne kliknięcie, retry po zerwaniu połączenia), drugi zapis NADPISZE
-      // pierwszy tymi samymi danymi, zamiast tworzyć zdublowany rekord.
+      // 1. Najpierw zapisz zamówienie do Firebase
       const db=window._firebase&&window._firebase.db;
-      if(db){
-        if(window._markOrderSent) window._markOrderSent(oid);
-        await db.ref('orders/'+orderKey).set(newOrder);
-        console.log('[ORDER] ✅ Zamówienie online zapisane do Firebase:', oid);
-      } else {
-        console.warn('[ORDER] Firebase niedostępny przy płatności online');
+      if(!db||!(await writeNewOrder(db))){
+        if(btn){btn.disabled=false;btn.textContent='Do kasy — '+total.toFixed(2)+' zł';}
+        toast(orderFailMsg);
+        return;
       }
+      console.log('[ORDER] ✅ Zamówienie online zapisane do Firebase:', oid);
+      // Licznik użyć kodu (i historia nagród) zostały już zaktualizowane wcześniej
+      // (redeemCouponAtomic). Tu tylko zapisujemy zdarzenie do historii realizacji —
+      // kto (telefon) i kiedy użył kodu.
+      if(appliedCoupon) logCouponRedemption(appliedCoupon.code,name,phone,oid,total);
       // 2. Dopiero teraz rejestruj w P24
       const resp=await fetch('/api/p24?action=register',{
         method:'POST',
@@ -2538,26 +2554,21 @@ async function placeOrder(){
   }
 
   // ── PŁATNOŚĆ PRZY ODBIORZE / GOTÓWKA ──
-  // Bezpośredni zapis do Firebase z potwierdzeniem (nie przez localStorage pośrednio)
+  // Bezpośredni zapis do Firebase z potwierdzeniem. Jeśli się nie uda, klient
+  // dostaje komunikat o błędzie — wcześniej widział "Zamówienie przyjęte!", choć
+  // zamówienie nigdy nie dotarło do panelu.
   const btn2=document.querySelector('.order-btn');
   if(btn2){btn2.disabled=true;btn2.textContent='Wysyłam zamówienie…';}
-  try{
-    const db=window._firebase&&window._firebase.db;
-    if(db){
-      if(window._markOrderSent) window._markOrderSent(oid);
-      await db.ref('orders/'+orderKey).set(newOrder);
-      console.log('[ORDER] ✅ Zapisano do Firebase:', oid);
-    } else {
-      // Fallback — przez localStorage (stara ścieżka)
-      console.warn('[ORDER] Firebase niedostępny — fallback localStorage');
-      localStorage.setItem('orders',JSON.stringify([newOrder]));
-    }
-  }catch(e){
-    console.error('[ORDER] Błąd zapisu Firebase:', e.message);
-    // Mimo błędu pokaż sukces klientowi i zapisz lokalnie jako backup
-    localStorage.setItem('orders',JSON.stringify([newOrder]));
-  }
+  const db2=window._firebase&&window._firebase.db;
+  const saved=db2?await writeNewOrder(db2):false;
   if(btn2){btn2.disabled=false;}
+  if(!saved){
+    if(btn2) btn2.textContent='Do kasy — '+total.toFixed(2)+' zł';
+    toast(orderFailMsg);
+    return;
+  }
+  console.log('[ORDER] ✅ Zapisano do Firebase:', oid);
+  if(appliedCoupon) logCouponRedemption(appliedCoupon.code,name,phone,oid,total);
   cart=[];appliedCoupon=null;updateCartBadge();closeOv('ov-cart');
   document.getElementById('menu-content').insertAdjacentHTML('afterbegin',`<div class="success-box fi" id="sb"><div class="si">🎉</div><h3>Zamówienie przyjęte!</h3><p>Numer: <strong>${oid}</strong><br>Wartość: <strong>${total.toFixed(2)} zł</strong><br><br>Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem ${delType==='dostawa'?'dostawy':'realizacji'}.</p><button class="sbk" onclick="document.getElementById('sb').remove()">Powrót do menu</button></div>`);
   document.getElementById('menu-content').scrollIntoView({behavior:'smooth'});

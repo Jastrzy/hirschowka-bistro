@@ -1,0 +1,37 @@
+{
+  "rules": {
+    ".read": "auth != null && auth.uid === 'WVO1bmHJacSUcpwg4h2eZbKO1yZ2'",
+    ".write": "auth != null && auth.uid === 'WVO1bmHJacSUcpwg4h2eZbKO1yZ2'",
+
+    "menu":                   { ".read": true },
+    "menu-cats-order":        { ".read": true },
+    "bistro-open":            { ".read": true },
+    "bistro-manual-override": { ".read": true },
+    "daily-dish":             { ".read": true },
+    "kitchen-day":            { ".read": true },
+    "promos":                 { ".read": true },
+    "addons":                 { ".read": true },
+    "cross":                  { ".read": true },
+    "params":                 { ".read": true },
+    "packaging":              { ".read": true },
+    "rewards":                { ".read": true },
+    "zones":                  { ".read": true },
+    "delivery-zones":         { ".read": true },
+    "delivery-min-order":     { ".read": true },
+    "schedule":               { ".read": true },
+    "holidays":               { ".read": true },
+    "geo-api-key":            { ".read": true },
+
+    "orders": {
+      "$orderKey": {
+        ".write": "auth != null && !data.exists() && newData.child('id').val() === '#' + $orderKey && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'awaiting_payment') && !newData.child('paymentConfirmed').exists() && !newData.child('stampGranted').exists() && !newData.child('alertSent').exists()"
+      }
+    },
+
+    "coupon-redemptions": {
+      "$id": {
+        ".write": "auth != null && !data.exists() && newData.child('code').isString() && newData.child('timestamp').isNumber()"
+      }
+    }
+  }
+}
