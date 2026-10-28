@@ -18,6 +18,11 @@
       "source": "/lunchówki",
       "destination": "/lunchowki",
       "permanent": false
+    },
+    {
+      "source": "/stolik",
+      "destination": "/?src=qr-stolik#menu",
+      "permanent": false
     }
   ]
 }

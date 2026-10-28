@@ -243,6 +243,10 @@ body::after{
 .section-title{font-family:var(--serif);font-size:clamp(34px,4.4vw,58px);font-weight:400;color:var(--ink);line-height:1.04;letter-spacing:-.03em;font-variation-settings:'opsz' 144;}
 .section-title em{font-style:italic;color:var(--accent-2);}
 .section-lead{font-size:17px;color:var(--ink-2);line-height:1.7;max-width:48ch;}
+.menu-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:18px;}
+.menu-pdf-link{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font-size:14px;font-weight:600;text-decoration:none;transition:border-color .2s,color .2s;}
+.menu-pdf-link:hover{border-color:var(--accent);color:var(--accent-2);}
+.menu-pdf-note{font-size:12px;color:var(--ink-3);}
 
 /* ════ TRZY KATEGORIE ════ */
 .cats-section{background:var(--paper);}
@@ -1039,6 +1043,10 @@ body::after{
         <h2 class="section-title" id="menu-title">Nasze menu</h2>
       </div>
       <p class="section-lead">Kliknij pozycję, żeby wybrać wariant i dodatki. Zamówienie opłacisz BLIK-iem, kartą lub gotówką.</p>
+      <div class="menu-pdf">
+        <a class="menu-pdf-link" href="/menu.pdf" target="_blank" rel="noopener" download="Hirschowka-Bistro-menu.pdf">📄 Pobierz menu (PDF)</a>
+        <span class="menu-pdf-note">aktualne na 23.10.2026 · ceny w zamówieniu online są zawsze aktualne</span>
+      </div>
     </div>
     <div class="cat-tabs-wrap" id="cat-tabs"></div>
     <div id="menu-content"></div>
@@ -1186,6 +1194,7 @@ body::after{
     <div class="footer-col">
       <h4>Na stronie</h4>
       <a href="#menu">Menu</a>
+      <a href="/menu.pdf" target="_blank" rel="noopener">Menu do pobrania (PDF)</a>
       <a href="#daily-section">Danie dnia</a>
       <a href="#loyalty-section">Karta stałego gościa</a>
       <a href="#contact-section">Kontakt</a>
