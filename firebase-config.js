@@ -135,7 +135,15 @@
       var _localWriteTs = {};
       var __origSet = localStorage.setItem.bind(localStorage);
       localStorage.setItem = function(key, value) {
-        __origSet(key, value);
+        // Pełna pamięć przeglądarki (limit ~5 MB) NIE może przerywać nasłuchów
+        // Firebase — 28.10.2026 przez wyjątek z setItem tablet nie dostawał
+        // nowych zamówień (callback zamówień nie dochodził do onFirebaseOrders).
+        try {
+          __origSet(key, value);
+        } catch (e) {
+          console.warn('[FB] Pamięć przeglądarki: nie zapisano "' + key + '" (' + (e && e.message) + ')');
+          return;
+        }
         if (_trackKeys.indexOf(key) >= 0) {
           _localWriteTs[key] = Date.now();
         }
@@ -161,19 +169,34 @@
         }, protectionMs + 500);
       }
 
+      // WAŻNE (28.10.2026): wcześniej ta funkcja ustawiała window.menuData, ale panel
+      // trzyma menu w zmiennej `let menuData` — to DWIE RÓŻNE zmienne. Panel nigdy więc
+      // nie dostawał świeżego menu z serwera i przy zapisie wysyłał swoją starą kopię
+      // z chwili otwarcia, cofając zmiany zrobione na drugim urządzeniu.
+      // Teraz: panel.html udostępnia window._applyFreshMenu(), które podmienia menu
+      // panelu na świeże dane z serwera.
       function processMenu(val) {
         if (!val) return;
         var fresh = JSON.stringify(val);
-        var stored = localStorage.getItem('menu');
-        if (stored === fresh) return;
-        localStorage.setItem('menu', fresh);
-        if (window._panelMenuReady) {
+        if (localStorage.getItem('menu') !== fresh) localStorage.setItem('menu', fresh);
+        function apply() {
           try {
             var arr = Array.isArray(val) ? val : Object.values(val);
-            window.menuData = arr.filter(function(d){ return d && d.name; });
-            if (typeof window.renderMenu === 'function') window.renderMenu();
-            console.log('[FB] Menu zaktualizowane z Firebase ✓');
-          } catch(e) {}
+            arr = arr.filter(function(d){ return d && d.name; });
+            if (typeof window._applyFreshMenu === 'function') window._applyFreshMenu(arr);
+          } catch(e) { console.warn('[FB] Menu: błąd odświeżenia panelu', e); }
+        }
+        if (window._panelMenuReady && typeof window._applyFreshMenu === 'function') {
+          apply();
+        } else {
+          var _r = 0;
+          var _w = setInterval(function(){
+            _r++;
+            if ((window._panelMenuReady && typeof window._applyFreshMenu === 'function') || _r > 40) {
+              clearInterval(_w);
+              apply();
+            }
+          }, 250);
         }
       }
       db.ref('menu').on('value', function(snap) {
@@ -383,7 +406,12 @@
       // "Do akceptacji", z drugim SMS-em o przyjęciu). Zamówienia mają już własne,
       // bezpieczne kanały zapisu (transakcje w panel.html, set() po ID z index.html)
       // i nie mogą być duplikowane przez tę generyczną pętlę.
-      var cfg_keys = ['menu','menu-cats-order','daily-dish','kitchen-day','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
+      // UWAGA (28.10.2026): 'menu', 'daily-dish' i 'kitchen-day' CELOWO NIE SĄ na tej
+      // liście — zapisuje je bezpośrednio W() w panelu. Ta pętla odbijała do Firebase
+      // każdą kopię odebraną z serwera (echo), a dwa otwarte panele przerzucały się
+      // starymi wersjami: ceny "skakały" przez kilka minut, a nieaktualna kopia menu
+      // z tabletu potrafiła cofnąć dostępność dań i "Danie dnia".
+      var cfg_keys = ['menu-cats-order','promos','addons','params','packaging','zones','delivery-zones','geo-api-key','cross','rewards','smsapi-token','smsapi-sender','sms-tpl-accepted','sms-tpl-ready','sms-tpl-delivering','sms-tpl-rejected','emailjs-key','emailjs-service','emailjs-template','hb_login_email'];
       var last = {};
       cfg_keys.forEach(function(k) { last[k] = localStorage.getItem(k); });
 

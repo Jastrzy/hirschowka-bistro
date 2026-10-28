@@ -1900,9 +1900,9 @@ async function migrateMenuPhotosToStorage(){
         }
       }
     }
-    // Odśwież lokalną kopię (teraz mała — same linki)
-    try{ localStorage.setItem('menu',JSON.stringify(menuData)); }catch(e){}
-    try{ const k2=(await fb.db.ref('kitchen-day').once('value')).val(); if(k2) localStorage.setItem('kitchen-day',JSON.stringify(k2)); }catch(e){}
+    // (Celowo NIE zapisujemy tu całego menu do localStorage — świeże menu z linkami
+    // przychodzi samo z nasłuchu Firebase. Zapis lokalnej kopii stąd powodował
+    // odesłanie nieaktualnego menu tego urządzenia na serwer — 28.10.2026.)
     if(moved>0){
       console.log('[Zdjęcia] Przeniesiono do Storage:',moved);
       toast('📷 Zdjęcia dań przeniesione na serwer ('+moved+') ✓');
@@ -1962,6 +1962,17 @@ let menuData = S('menu') || [
   {id:8,cat:'Obiady',name:'Kopytka z sosem pieczarkowym',desc:'Leśne pieczarki, koperek',price:15,avail:true,photo:''},
   {id:9,cat:'Wypieki',name:'Szarlotka z lodami',desc:'Ciepła, wanilia, cynamon',price:11,avail:true,photo:''},
 ];
+// Świeże menu z serwera (wywoływane z firebase-config.js przy każdej zmianie
+// 'menu' w bazie). Bez tego panel przez cały czas pracował na kopii menu z
+// chwili otwarcia strony i przy zapisie cofał zmiany zrobione na innym urządzeniu.
+window._applyFreshMenu=function(arr){
+  if(!Array.isArray(arr)||!arr.length)return;
+  if(JSON.stringify(arr)===JSON.stringify(menuData))return;
+  menuData=arr;
+  try{ if(typeof renderMenu==='function')renderMenu(); }catch(e){}
+  try{ if(document.getElementById('page-daniednia')&&typeof renderDanieDnia==='function')renderDanieDnia(); }catch(e){}
+  console.log('[FB] Menu panelu odświeżone z serwera ✓',arr.length);
+};
 function _toArr(val){ if(!val) return []; if(Array.isArray(val)) return val.filter(Boolean); return Object.values(val).filter(Boolean); }
 let customers = _toArr(S('customers'));
 
