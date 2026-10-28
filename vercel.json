@@ -3,6 +3,14 @@
     {
       "source": "/lunchowki",
       "destination": "/lunchowki.html"
+    },
+    {
+      "source": "/lojalnosc",
+      "destination": "/lojalnosc.html"
+    },
+    {
+      "source": "/karta",
+      "destination": "/lojalnosc.html"
     }
   ],
   "redirects": [
