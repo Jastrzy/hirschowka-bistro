@@ -2054,8 +2054,8 @@ let holidays = S('holidays') || [{from:'2026-08-28',to:'2026-09-01',type:'Zamkni
 if(!S('smsapi-sender')) W('smsapi-sender','Hirschowka');
 // Token SMSAPI — wpisz w Panel → Ustawienia → SMS
 let rewards = S('rewards') || [
-  {stamp:3, name:'50% zniżki na kawę lub deser ze Słodkiej Chwili', icon:'☕', discType:'percent', discVal:50, cats:'Kawy klasyczne,Kawy smakowe,Słodka Chwila'},
-  {stamp:6, name:'Darmowa kawa lub deser', icon:'🎂', discType:'percent', discVal:100, cats:'Kawy klasyczne,Kawy smakowe,Słodka Chwila'},
+  {stamp:3, name:'50% zniżki na kawę lub deser ze Słodkiej Chwili', icon:'☕', discType:'percent', discVal:50, cats:'Kawy i  napoje z mlekiem,Kawy mrożone,Słodka Chwila'},
+  {stamp:6, name:'Darmowa kawa lub deser', icon:'🎂', discType:'percent', discVal:100, cats:'Kawy i  napoje z mlekiem,Kawy mrożone,Słodka Chwila'},
   {stamp:9, name:'50% zniżki na bajgiel lub danie dnia', icon:'🥯', discType:'percent', discVal:50, cats:'Bajgle,Dania obiadowe'}
 ];
 let loyaltyHistory = S('loyalty-history') || [];
@@ -6047,6 +6047,58 @@ async function downloadFullBackup(){
       console.warn('[Hirschówka] Nie udało się odtworzyć historii SMS:', e.message);
     });
   });
+})();
+
+// Migracja (29.10.2026): nagrody za 3 i 6 pieczątek miały przypisane kategorie
+// "Kawy klasyczne" i "Kawy smakowe", których po zmianie karty już nie ma w menu —
+// rabat na kawę wynosił 0 zł. Podmieniamy je na aktualne kategorie kaw (wszystkie
+// kategorie menu ze słowem "kaw"), w definicjach nagród i w jeszcze niewykorzystanych
+// kodach. Zapis punktowy (tylko pole cats danego kodu), na świeżych danych z serwera.
+async function migrateLoyaltyRewardCats(){
+  const fb=window._firebase; if(!fb||!fb.db) return;
+  const OLD=['kawy klasyczne','kawy smakowe'];
+  const norm=s=>String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const coffeeCats=[...new Set(menuData.map(x=>x&&x.cat).filter(c=>c&&/kaw/i.test(c)))];
+  if(!coffeeCats.length) return;
+  const fixCats=cats=>{
+    const list=String(cats||'').split(',').map(c=>c.trim()).filter(Boolean);
+    if(!list.some(c=>OLD.includes(norm(c)))) return null;
+    const out=[];
+    list.forEach(c=>{ if(OLD.includes(norm(c))){ coffeeCats.forEach(k=>{ if(!out.includes(k)) out.push(k); }); } else if(!out.includes(c)) out.push(c); });
+    return out.join(',');
+  };
+  try{
+    let n=0;
+    const cSnap=await fb.db.ref('coupons').once('value'); const cv=cSnap.val()||{};
+    for(const k of Object.keys(cv)){
+      const c=cv[k]; if(!c||!c.loyaltyReward) continue;
+      const nc=fixCats(c.cats); if(!nc) continue;
+      await fb.db.ref('coupons/'+k+'/cats').set(nc);
+      const loc=coupons.find(x=>x&&x.code===c.code); if(loc) loc.cats=nc;
+      n++;
+    }
+    const rSnap=await fb.db.ref('rewards').once('value'); const rv=rSnap.val();
+    if(!rv){
+      rewards.forEach(r=>{ const nc=fixCats(r.cats); if(nc) r.cats=nc; });
+      await fb.db.ref('rewards').set(rewards);
+    } else {
+      for(const k of Object.keys(rv)){
+        const r=rv[k]; if(!r) continue; const nc=fixCats(r.cats); if(!nc) continue;
+        await fb.db.ref('rewards/'+k+'/cats').set(nc);
+        const loc=rewards.find(x=>x&&Number(x.stamp)===Number(r.stamp)); if(loc) loc.cats=nc;
+      }
+    }
+    try{ localStorage.setItem('rewards',JSON.stringify(rewards)); }catch(e){}
+    if(n>0){ console.log('[Lojalność] Poprawiono kategorie w kodach:',n); toast('☕ Poprawiono kategorie w '+n+' kodach nagród ✓'); }
+  }catch(e){ console.warn('[Lojalność] Migracja kategorii przerwana:', e&&e.message); }
+}
+(function waitAuthThenFixRewards(a){
+  a=a||0;
+  try{
+    const u=window.firebase&&firebase.apps&&firebase.apps.length&&firebase.auth().currentUser;
+    if(u&&!u.isAnonymous&&window._panelMenuReady){ setTimeout(migrateLoyaltyRewardCats,6000); return; }
+  }catch(e){}
+  if(a<120) setTimeout(function(){waitAuthThenFixRewards(a+1);},2000);
 })();
 
 // Migracja: uzupełnij brakujące pole 'cats' w starych, już wygenerowanych kodach nagród
