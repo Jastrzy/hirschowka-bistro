@@ -2048,15 +2048,18 @@ function renderCart(){
 // "50% na bajgiel lub danie dnia"), rabat liczy się TYLKO od pasujących pozycji w koszyku,
 // nie od całej sumy zamówienia. Bez ograniczenia (zwykłe kupony rabatowe) — jak dotychczas,
 // od całego koszyka.
+// Porównanie nazw kategorii odporne na wielkość liter i podwójne spacje
+// (np. "Kawy i  napoje z mlekiem") — inaczej rabat / wyjątki cicho nie działały.
+function _normCat(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
 function calcCouponDiscount(sub, cartItems, coupon){
   if(!coupon) return 0;
   if(coupon.cats && coupon.cats.trim()){
-    const catList = coupon.cats.split(',').map(c=>c.trim()).filter(Boolean);
+    const catList = coupon.cats.split(',').map(_normCat).filter(Boolean);
     // Rabat obejmuje TYLKO JEDNĄ SZTUKĘ — najtańszą pasującą pozycję z kategorii —
     // a nie całą linię (ilość) ani sumę wszystkich pasujących pozycji w koszyku.
     let cheapestUnitPrice = null;
     cartItems.forEach(function(c){
-      if(catList.includes(c.cat) && (cheapestUnitPrice===null || c.unitPrice < cheapestUnitPrice)){
+      if(catList.includes(_normCat(c.cat)) && (cheapestUnitPrice===null || c.unitPrice < cheapestUnitPrice)){
         cheapestUnitPrice = c.unitPrice;
       }
     });
@@ -2101,16 +2104,39 @@ function calcDel(){
   }
   return (getDeliveryZones()[0]?.cost)||6;
 }
+// Opłata za opakowania — tylko przy dostawie i odbiorze osobistym.
+// • Danie dnia: stawki z panelu (zupa / danie główne / zestaw).
+// • Każda inna pozycja z karty: stawka za sztukę wg kategorii (panel: "Stawki dla
+//   kategorii", np. "Śniadania: 1"), a dla pozostałych kategorii stawka domyślna
+//   (panel: "Pozostałe pozycje z karty – za sztukę", domyślnie 0,50 zł).
+//   Stawka 0 = kategoria bez opłaty.
+// • Pozycja, przy której klient wybrał opcję z dawnej grupy dodatków
+//   "Opakowanie na wynos" (Na wynos / Własny), nie jest liczona drugi raz.
+const PKG_DEFAULT_CAT_RATES='Śniadania: 1\nDania obiadowe: 1\nSałatki: 1';
 function calcPackaging(){
   if(delType==='miejsce')return 0;
   const pkg=LS('packaging')||{soup:1,main:1,set:2};
+  const itemRate=(pkg.item===undefined||pkg.item===null||pkg.item==='')?0.5:(parseFloat(pkg.item)||0);
+  const catRates={};
+  const rateText=(pkg.catRates===undefined||pkg.catRates===null)?PKG_DEFAULT_CAT_RATES:String(pkg.catRates);
+  rateText.split(/\n|;/).forEach(line=>{
+    const m=line.match(/^(.+?)\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)\s*(zł)?\s*$/i);
+    if(m) catRates[_normCat(m[1])]=parseFloat(m[2].replace(',','.'));
+  });
+  String(pkg.exclude||'').split(',').map(_normCat).filter(Boolean).forEach(c=>{catRates[c]=0;});
   let total=0;
   cart.forEach(ci=>{
-    if(ci.itemId!==0)return;
-    const type=ci.dailyType||'main';
-    total+=(parseFloat(pkg[type])||0)*ci.qty;
+    if(ci.itemId===0){
+      const type=ci.dailyType||'main';
+      total+=(parseFloat(pkg[type])||0)*ci.qty;
+      return;
+    }
+    if((ci.mods||[]).some(m=>/^(na wynos|własny)$/i.test(String(m&&m.n||'').trim())))return;
+    const key=_normCat(ci.cat);
+    const rate=Object.prototype.hasOwnProperty.call(catRates,key)?catRates[key]:itemRate;
+    total+=rate*ci.qty;
   });
-  return total;
+  return parseFloat(total.toFixed(2));
 }
 function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c.qty+d);updateCartBadge();renderCart();renderCartFreeDelBar();}}
 function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart();renderCartFreeDelBar();}

@@ -1018,7 +1018,10 @@ requestWakeLock();
           <div class="field"><label>Zupa dnia (zł)</label><input type="number" id="pkg-soup" step="0.50" placeholder="np. 1.00" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
           <div class="field"><label>Danie główne (zł)</label><input type="number" id="pkg-main" step="0.50" placeholder="np. 1.00" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
           <div class="field"><label>Zestaw dnia (zł)</label><input type="number" id="pkg-set" step="0.50" placeholder="np. 2.00" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
+          <div class="field"><label>Pozostałe pozycje z karty – za sztukę (zł)</label><input type="number" id="pkg-item" step="0.10" placeholder="0.50" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);"></div>
         </div>
+        <div class="field" style="margin-top:12px;"><label>Stawki dla kategorii (jedna w linii: Kategoria: kwota)</label><textarea id="pkg-catrates" rows="5" placeholder="Śniadania: 1&#10;Dania obiadowe: 1&#10;Sałatki: 1" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;background:var(--card);color:var(--text);resize:vertical;"></textarea></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5;">Opłata za każdą sztukę z karty. Kategorie wpisane wyżej mają własną stawkę (0 = bez opłaty), wszystkie pozostałe (kawy, napary, croissanty…) — stawkę „Pozostałe pozycje”. Nazwa kategorii jak w menu.</div>
         <button class="btn bp bsm" onclick="savePackaging()" style="margin-top:12px;">Zapisz stawki opakowań</button>
       </div>
 
@@ -4345,7 +4348,10 @@ async function changePassword(){
 
 // ── PACKAGING ──
 function savePackaging(){
-  const pkg={soup:parseFloat(document.getElementById('pkg-soup').value)||0,main:parseFloat(document.getElementById('pkg-main').value)||0,set:parseFloat(document.getElementById('pkg-set').value)||0};
+  const itemRaw=(document.getElementById('pkg-item')?.value||'').trim();
+  const pkg={soup:parseFloat(document.getElementById('pkg-soup').value)||0,main:parseFloat(document.getElementById('pkg-main').value)||0,set:parseFloat(document.getElementById('pkg-set').value)||0,
+    item:itemRaw===''?0.5:(parseFloat(itemRaw.replace(',','.'))||0),
+    catRates:(document.getElementById('pkg-catrates')?.value||'').trim()};
   W('packaging',pkg);toast('Stawki opakowań zapisane ✓');
 }
 // Minimalna wartość zamówienia z dostawą — osobny klucz Firebase, czytany bezpośrednio
@@ -4361,6 +4367,8 @@ function loadPackaging(){
     if(document.getElementById('pkg-soup'))document.getElementById('pkg-soup').value=pkg.soup||'';
     if(document.getElementById('pkg-main'))document.getElementById('pkg-main').value=pkg.main||'';
     if(document.getElementById('pkg-set'))document.getElementById('pkg-set').value=pkg.set||'';
+    if(document.getElementById('pkg-item'))document.getElementById('pkg-item').value=(pkg.item===undefined||pkg.item===null)?'0.50':pkg.item;
+    if(document.getElementById('pkg-catrates'))document.getElementById('pkg-catrates').value=(pkg.catRates===undefined||pkg.catRates===null)?'Śniadania: 1\nDania obiadowe: 1\nSałatki: 1':pkg.catRates;
   }
   const minOrder=S('delivery-min-order');
   if(document.getElementById('delivery-min-order'))document.getElementById('delivery-min-order').value=minOrder||'';
