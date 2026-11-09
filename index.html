@@ -289,11 +289,12 @@ body::after{
 .daily-plate-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--accent);}
 .daily-plate-empty{padding:32px 8px 8px;color:var(--ink-3);font-size:15px;line-height:1.6;}
 .daily-plate-empty strong{display:block;font-family:var(--serif);font-weight:400;font-size:24px;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em;}
-.daily-mini-card{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:stretch;background:transparent;border-radius:var(--r2);padding:10px;margin:0 -10px;transition:background .2s;}
-.daily-mini-card:hover{background:var(--paper);}
-.daily-mini-card img{width:120px;height:120px;object-fit:cover;display:block;border-radius:14px;}
-.daily-mini-card-ph{width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--paper-2);border-radius:14px;}
-.daily-mini-body{padding:4px 0;display:flex;flex-direction:column;min-width:0;}
+/* Karty zupy / dania dnia — duże zdjęcie na całą szerokość, opis pod spodem */
+.daily-mini-card{display:flex;flex-direction:column;gap:14px;background:transparent;border-radius:var(--r3);cursor:pointer;}
+.daily-mini-card img{width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;display:block;border-radius:18px;background:var(--paper-2);transition:transform .5s var(--ease);}
+.daily-mini-card:hover img{transform:scale(1.015);}
+.daily-mini-card-ph{display:none;}
+.daily-mini-body{padding:0 2px;display:flex;flex-direction:column;min-width:0;}
 .daily-mini-type{font-size:13px;font-weight:500;color:var(--accent-2);margin-bottom:4px;}
 .daily-mini-name{font-family:var(--serif);font-size:21px;font-weight:400;color:var(--ink);margin-bottom:4px;line-height:1.2;letter-spacing:-.01em;}
 .daily-mini-desc{font-size:14px;color:var(--ink-2);line-height:1.5;margin-bottom:6px;}
@@ -769,13 +770,78 @@ body::after{
   .ivar-wrap{max-width:none;}
   .irow:hover .iadd{background:var(--card);color:var(--ink);border-color:rgba(59,40,22,.18);}
   .daily-plate{padding:20px;border-radius:var(--r3);}
-  .daily-mini-card{grid-template-columns:88px 1fr;gap:14px;}
-  .daily-mini-card img,.daily-mini-card-ph{width:88px;height:88px;}
+  .daily-mini-card img{aspect-ratio:4/3;border-radius:16px;}
   .loy-stamps-grid{grid-template-columns:repeat(5,1fr);gap:10px;}
   .loy-cta-row,.nl-form-row{flex-direction:column;}
   .loy-btn,.nl-btn{width:100%;}
   .footer-grid{grid-template-columns:1fr;gap:36px;}
   .cross-grid{grid-template-columns:1fr 1fr;}
+}
+
+/* ════ MENU — KARTY Z DUŻYM ZDJĘCIEM (kategorie, w których są zdjęcia) ════ */
+.iact{display:contents;}
+.menu-grid.cards{display:grid;grid-template-columns:1fr;gap:36px 28px;padding-top:20px;}
+.menu-grid.cards .irow{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;margin:0;border:none;border-radius:0;background:transparent;}
+.menu-grid.cards .irow:hover{background:transparent;}
+.menu-grid.cards .iphoto{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:18px;margin-bottom:14px;transition:transform .5s var(--ease),box-shadow .5s var(--ease);}
+.menu-grid.cards .irow:hover .iphoto{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.menu-grid.cards .irow-info{margin-bottom:14px;}
+.menu-grid.cards .iname{font-size:19px;margin-bottom:6px;}
+.menu-grid.cards .iact{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:auto;}
+.menu-grid.cards .iprice{margin-right:auto;}
+.menu-grid.cards .iadd{background:var(--accent);color:#1E1406;border-color:var(--accent);padding:10px 18px;font-size:15px;box-shadow:0 6px 16px rgba(192,142,54,.22);}
+.menu-grid.cards .iadd .plus{background:#1E1406;color:var(--accent);}
+.menu-grid.cards .irow:hover .iadd,.menu-grid.cards .iadd:hover{background:#CC9A40;color:#1E1406;border-color:#CC9A40;}
+.menu-grid.cards .ivar-wrap{max-width:none;}
+@media(min-width:640px){.menu-grid.cards{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(min-width:1000px){.menu-grid.cards{grid-template-columns:repeat(3,minmax(0,1fr));}}
+
+/* ════ PODSTRONA DANIA (zamiast popupu) ════ */
+#ov-product{z-index:calc(var(--z-overlay) + 2);align-items:stretch;justify-content:flex-end;}
+#ov-product .pg{
+  display:flex;flex-direction:column;width:100%;max-width:560px;height:100dvh;max-height:100dvh;
+  background:var(--paper);border-radius:0;padding:0;overflow:hidden;
+  transform:translateX(40px);transition:transform .35s var(--ease);box-shadow:-10px 0 50px rgba(22,18,12,.22);
+}
+#ov-product.open .pg{transform:translateX(0);}
+.pg-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));background:rgba(246,241,231,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);flex-shrink:0;}
+.pg-hd h3{flex:1;min-width:0;font-family:var(--serif);font-size:19px;font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em;}
+.pg-body{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.pg-hero{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--paper-2);}
+.pg-main{padding:22px 20px 8px;}
+.pg-name{font-family:var(--serif);font-size:30px;font-weight:400;line-height:1.1;letter-spacing:-.02em;color:var(--ink);margin-bottom:8px;}
+.pg-desc{font-size:16px;color:var(--ink-2);line-height:1.6;}
+.pg-price{margin-top:10px;font-size:18px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;}
+.pg-closed{margin:16px 20px 0;background:var(--accent-soft);color:var(--accent-2);border-radius:var(--r2);padding:12px 14px;font-size:14px;line-height:1.5;}
+.pg-closed:empty{display:none;}
+#ov-product #sp-sizes>div,#ov-product .ag{padding-left:20px!important;padding-right:20px!important;}
+.pg-xs{padding:24px 20px 28px;}
+.pg-xs:empty{display:none;}
+.pg-xs h4{font-family:var(--serif);font-size:24px;font-weight:400;color:var(--ink);letter-spacing:-.01em;margin-bottom:14px;}
+.xs-list{display:flex;flex-direction:column;gap:12px;}
+.xs-card{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;background:var(--card);border:1.5px solid transparent;border-radius:var(--r3);padding:12px;box-shadow:var(--shadow);transition:border-color .2s;}
+.xs-card.on{border-color:var(--accent);}
+.xs-card.nophoto{grid-template-columns:minmax(0,1fr);}
+.xs-img{width:96px;height:96px;border-radius:14px;object-fit:cover;display:block;background:var(--paper-2);}
+.xs-info{display:flex;flex-direction:column;min-width:0;}
+.xs-name{font-size:16px;font-weight:600;color:var(--ink);line-height:1.3;}
+.xs-price{font-size:15px;color:var(--ink-2);margin-top:2px;font-variant-numeric:tabular-nums;}
+.xs-desc{font-size:13px;color:var(--ink-3);line-height:1.45;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.xs-vars{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.xs-var{border:1px solid rgba(59,40,22,.18);background:var(--paper);color:var(--ink-2);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);}
+.xs-var.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.xs-act{display:flex;justify-content:flex-end;margin-top:auto;padding-top:8px;}
+.xs-plus,.xs-step button{width:40px;height:40px;border-radius:50%;border:none;background:var(--accent-soft);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--sans);transition:background .2s,transform .15s;}
+.xs-plus:hover,.xs-step button:hover{background:rgba(192,142,54,.26);}
+.xs-plus:active,.xs-step button:active{transform:scale(.92);}
+.xs-step{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:999px;padding:2px;}
+.xs-step span{min-width:18px;text-align:center;font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;}
+.pg-ft{flex-shrink:0;display:flex;align-items:center;gap:12px;padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(59,40,22,.06);}
+.pg-ft .addmain{margin-left:0;white-space:nowrap;padding:15px 18px;}
+@media(max-width:600px){
+  #ov-product .pg{max-width:100%;box-shadow:none;transform:translateX(100%);}
+  #ov-product{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;}
+  .pg-name{font-size:27px;}
 }
 
 @keyframes fu{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
@@ -1210,7 +1276,18 @@ body::after{
 </footer>
 
 <!-- ═══ OVERLAYS ═══ -->
-<div class="ov" id="ov-product"><div class="sheet fi"><div class="sh-hd"><h3 id="sp-title"></h3><button class="sh-cl" onclick="closeOv('ov-product')">✕</button></div><div id="sp-desc" style="padding:10px 22px;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(59,37,18,.08);display:none;"></div><div id="sp-sizes"></div><div id="sp-addons"></div><div class="qty-row"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)">+</button></div><button class="addmain" onclick="doAdd()">Dodaj — <span id="sp-tot"></span></button></div></div></div>
+<!-- Podstrona dania: duże zdjęcie, opcje i „Polecamy do tego” (cross-selling) w jednym widoku -->
+<div class="ov" id="ov-product"><div class="pg" role="dialog" aria-modal="true" aria-labelledby="sp-title">
+  <div class="pg-hd"><h3 id="sp-title"></h3><button class="sh-cl" id="sp-close" onclick="closeProduct()" aria-label="Zamknij">✕</button></div>
+  <div class="pg-body" id="sp-body">
+    <img class="pg-hero" id="sp-photo" alt="" style="display:none;">
+    <div class="pg-main"><div class="pg-name" id="sp-name"></div><div class="pg-desc" id="sp-desc" style="display:none;"></div><div class="pg-price" id="sp-price"></div></div>
+    <div class="pg-closed" id="sp-closed"></div>
+    <div id="sp-sizes"></div><div id="sp-addons"></div>
+    <div class="pg-xs" id="sp-cross"></div>
+  </div>
+  <div class="pg-ft"><div class="qctrl"><button class="qbtn" onclick="qCh(-1)" aria-label="Mniej">−</button><span class="qnum" id="sp-qty">1</span><button class="qbtn" onclick="qCh(1)" aria-label="Więcej">+</button></div><button class="addmain" onclick="doAdd()">Do koszyka · <span id="sp-tot"></span></button></div>
+</div></div>
 
 <div class="ov" id="ov-cross"><div class="sheet fi"><div class="sh-hd"><h3>Dodano do koszyka ✓</h3><button class="sh-cl" onclick="closeCross()">✕</button></div><div class="cross-ok">✅ Dodano do koszyka</div><div id="cross-free-del-bar"></div><div id="cross-suggest-block"></div><button class="cross-cont" onclick="closeCross()">Kontynuuj zakupy →</button></div></div>
 
@@ -1578,29 +1655,33 @@ function renderAdminPromos(){
 }
 
 // ════ DAILY DISH ════
-function addDailyItem(type){
+// Kategorie dania dnia używane w regułach cross-sell (panel → Cross-selling)
+const DAILY_CAT_MAP={set:'⭐ Zestaw dnia', soup:'🍲 Zupa dnia', main:'🍽 Danie główne'};
+// Danie dnia jako „pozycja menu” — do podstrony dania i do listy „Polecamy do tego”
+function getDailyAsItem(type){
   const k=LS('kitchen-day');
-  if(!k||!k[type]?.name)return;
-  const d=k[type];
-  // Mapuj typ dania dnia na kategorię używaną w regułach cross-sell
-  const catMap={set:'⭐ Zestaw dnia', soup:'🍲 Zupa dnia', main:'🍽 Danie główne'};
-  const cat = catMap[type]||'Dania obiadowe';
-  const fakeItem={id:0,name:d.name,cat,price:parseFloat(d.price)||0};
-  cart.push({uid:Date.now(),itemId:0,dailyType:type,name:d.name,cat,mods:[],unitPrice:parseFloat(d.price)||0,qty:1});
-  updateCartBadge();
-  showCross(fakeItem);
+  const d=k&&k[type];
+  if(!d||!d.name)return null;
+  return{id:'daily-'+type,name:d.name,desc:d.desc||'',price:parseFloat(d.price)||0,photo:d.photo||'',
+    cat:DAILY_CAT_MAP[type]||'Dania obiadowe',avail:true,_dailyType:type};
+}
+// Kliknięcie „Dodaj” przy zupie / daniu dnia otwiera podstronę dania (z „Polecamy do tego”)
+function addDailyItem(type){
+  const item=getDailyAsItem(type);
+  if(!item)return;
+  openProductItem(item);
 }
 function makeDailyCard(d,emoji,label,type){
   if(!d||!d.name)return'';
-  return`<div class="daily-mini-card">
-    ${d.photo?`<img src="${d.photo}" alt="${d.name}">`:`<div class="daily-mini-card-ph">${emoji}</div>`}
+  return`<div class="daily-mini-card" onclick="addDailyItem('${type}')">
+    ${d.photo?`<img src="${d.photo}" alt="${d.name}" loading="lazy">`:''}
     <div class="daily-mini-body">
       <div class="daily-mini-type">${emoji} ${label}</div>
       <div class="daily-mini-name">${d.name}</div>
       ${d.desc?`<div class="daily-mini-desc">${d.desc}</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
         <span class="daily-mini-price">${d.price} zł</span>
-        <button class="iadd" onclick="addDailyItem('${type}')"><span class="plus">+</span> Dodaj</button>
+        <button class="iadd" onclick="event.stopPropagation();addDailyItem('${type}')"><span class="plus">+</span> Dodaj</button>
       </div>
     </div>
   </div>`;
@@ -1756,7 +1837,9 @@ function buildMenu(){
   const cats=getCats();let html='';
   cats.forEach(cat=>{
     const items=getMenu().filter(d=>d.cat===cat);if(!items.length)return;
-    html+=`<div class="cat-sec" id="sec-${slug(cat)}"><div class="cat-head">${cat}</div><div class="menu-grid">${items.map(renderItem).join('')}</div></div>`;
+    // Kategoria z choć jednym zdjęciem → karty z dużym zdjęciem; bez zdjęć (np. napoje) → zwykła lista
+    const asCards=items.some(d=>d.photo);
+    html+=`<div class="cat-sec" id="sec-${slug(cat)}"><div class="cat-head">${cat}</div><div class="menu-grid${asCards?' cards':''}">${items.map(renderItem).join('')}</div></div>`;
   });
   document.getElementById('menu-content').innerHTML=html;
   const io=new IntersectionObserver(entries=>{
@@ -1800,24 +1883,16 @@ function renderItem(item){
   if(!item.avail) priceLabel=`<span class="iprice">${basePrice.toFixed(2)} zł</span>`;
   else if(hasParam&&item.paramPrices.length>0) priceLabel=`<span class="iprice"><span class="ipfrom">od </span>${Math.min(...item.paramPrices.map(p=>parseFloat(p)||0)).toFixed(2)} zł</span>`;
   return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
-    ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}">`:''}
+    ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}" loading="lazy">`:''}
     <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
-    ${priceLabel}
-    ${actionArea}
+    <div class="iact">${priceLabel}${actionArea}</div>
   </div>`;
 }
+// Przycisk wariantu (np. mała/duża kawa) otwiera podstronę dania z tym wariantem już zaznaczonym
 function quickAddParam(itemId,paramIndex){
   const item=getMenu().find(x=>x.id===itemId);
   if(!item||!item.avail)return;
-  const paramDef=(LS('params')||[]).find(p=>p.name===item.paramName);
-  const vals=paramDef?paramDef.vals.split('\n').filter(v=>v.trim()):[];
-  const vName=vals[paramIndex]||'';
-  const vPrice=parseFloat(item.paramPrices[paramIndex])||item.price;
-  const hasAddons=getItemAddons(item).length>0;
-  if(hasAddons){openProduct(itemId);setTimeout(()=>selSz(paramIndex),50);return;}
-  const mods=vName?[{n:vName,p:0}]:[];
-  cart.push({uid:Date.now(),itemId:item.id,name:item.name,cat:item.cat,mods,unitPrice:parseFloat(vPrice.toFixed(2)),qty:1});
-  updateCartBadge();showCross(item);
+  openProductItem(item,{size:paramIndex});
 }
 
 // ════ ADDONS ════
@@ -1834,23 +1909,118 @@ function getItemAddons(item){
 }
 
 // ════ PRODUCT SHEET ════
+// Podstrona dania (dawniej popup). Działa dla dań z menu i dla zupy / dania dnia
+// (item._dailyType). Cross-selling („Polecamy do tego”) jest od razu na podstronie —
+// klient zaznacza dodatki +/− i jednym przyciskiem dodaje wszystko do koszyka.
+let pgCross=[];          // propozycje: {it, qty, v, vals}
+let _pgPushed=false;     // czy dodaliśmy wpis do historii (przycisk „wstecz” w telefonie zamyka podstronę)
 function openProduct(id){
   const item=getMenu().find(x=>x.id===id);if(!item||!item.avail)return;
-  // variants (z panelu) lub sizes (stary format) — ujednolicamy do curSizes
+  openProductItem(item);
+}
+function getParamVals(item){
   const paramDef=item.paramName?(LS('params')||[]).find(p=>p.name===item.paramName):null;
-  const paramVals=paramDef?paramDef.vals.split('\n').filter(v=>v.trim()):[];
+  return paramDef?paramDef.vals.split('\n').filter(v=>v.trim()):[];
+}
+function openProductItem(item,opts){
+  if(!item||!item.avail)return;
+  opts=opts||{};
+  // variants (z panelu) lub sizes (stary format) — ujednolicamy do curSizes
+  const paramVals=getParamVals(item);
   curItem=item;curQty=1;
   curSizes=paramVals.map((v,i)=>({n:v,p:(parseFloat(item.paramPrices?.[i])||item.price)-item.price}));
-  selSize=0;
+  selSize=(opts.size!=null&&opts.size<curSizes.length)?opts.size:0;
   document.getElementById('sp-title').textContent=item.name;
+  document.getElementById('sp-name').textContent=item.name;
+  const ph=document.getElementById('sp-photo');
+  if(item.photo){ph.src=item.photo;ph.alt=item.name;ph.style.display='block';}else{ph.removeAttribute('src');ph.style.display='none';}
+  const cl=document.getElementById('sp-closed');
+  cl.textContent=(typeof isBistroOpenNow==='function'&&!isBistroOpenNow())?'Teraz nie przyjmujemy zamówień online. Możesz dodać danie do koszyka — zamówienie złożysz w godzinach otwarcia.':'';
   const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
   const sz=document.getElementById('sp-sizes');
   if(curSizes.length>=1){sz.innerHTML=`<div style="padding:12px 22px;border-bottom:1px solid rgba(59,37,18,.08);"><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Wariant</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${curSizes.map((s,i)=>`<button onclick="selSz(${i})" id="sz-${i}" style="flex:1;min-width:80px;padding:10px;border-radius:var(--r);border:2px solid ${i===0?'var(--brown)':'rgba(59,37,18,.15)'};background:${i===0?'rgba(59,37,18,.05)':'transparent'};color:${i===0?'var(--brown)':'var(--muted)'};font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);">${s.n||'Standard'}<br><span style="font-size:11px;">${(item.price+s.p).toFixed(2)} zł</span></button>`).join('')}</div></div>`;}else sz.innerHTML='';
   const groups=getItemAddons(item);
   curAddons=groups.map(g=>{const def=g.opts.find(o=>o.def)||g.opts[0];return{group:g,selected:g.type==='radio'?(def?.n||''):[],isCheckbox:g.type==='checkbox'};});
-  renderAddonUI();updateSpTotal();
-  document.getElementById('ov-product').classList.add('open');
+  renderAddonUI();
+  if(selSize)selSz(selSize);
+  pgCross=getCrossItems(item).map(it=>({it,qty:0,v:0,vals:getParamVals(it)}));
+  renderPgCross();
+  updateSpTotal();
+  const ov=document.getElementById('ov-product');
+  document.getElementById('sp-body').scrollTop=0;
+  if(!ov.classList.contains('open')){
+    try{history.pushState({hbPg:1},'');_pgPushed=true;}catch(e){_pgPushed=false;}
+  }
+  ov.classList.add('open');
+  setTimeout(()=>{const b=document.getElementById('sp-close');if(b)b.focus({preventScroll:true});},60);
 }
+function closeProduct(fromPop){
+  const ov=document.getElementById('ov-product');
+  if(!ov||!ov.classList.contains('open'))return;
+  ov.classList.remove('open');
+  if(_pgPushed){_pgPushed=false;if(!fromPop){try{history.back();}catch(e){}}}
+}
+window.addEventListener('popstate',()=>{
+  const ov=document.getElementById('ov-product');
+  if(ov&&ov.classList.contains('open'))closeProduct(true);
+});
+
+// Czy pozycję da się dodać jednym „+” — bez wymaganego wyboru (np. sos do wyboru z kilku)
+function needsChoice(it){
+  return getItemAddons(it).some(g=>g.required&&g.type==='radio'&&g.opts.length>1);
+}
+// Propozycje „Polecamy do tego” — wg reguł z panelu (Cross-selling: „gdy kategoria/danie X → pokaż kategorie A, B…”).
+// Z każdej pokazywanej kategorii do 4 pozycji (najpierw te ze zdjęciem), łącznie max 10.
+function getCrossItems(trigger){
+  const rules=LS('cross')||[];
+  const menu=getMenu().filter(x=>x.avail);
+  const inCart=new Set(cart.map(c=>c.itemId));
+  const out=[];
+  const has=id=>out.some(s=>s.id===id);
+  const dailyTypeMap={'⭐ Zestaw dnia':'set','🍲 Zupa dnia':'soup','🍽 Danie główne':'main','Zestaw dnia':'set','Zupa dnia':'soup','Danie główne':'main'};
+  rules.forEach(r=>{
+    if(!(trigger.cat===r.when||trigger.name===r.when))return;
+    (r.show||'').split(',').map(c=>c.trim()).filter(Boolean).forEach(c=>{
+      const dt=dailyTypeMap[c];
+      if(dt){
+        const d=getDailyAsItem(dt);
+        if(d&&d.id!==trigger.id&&!has(d.id)&&!cart.some(ci=>ci.dailyType===dt))out.push(d);
+        return;
+      }
+      menu.filter(m=>(m.cat===c||m.name===c)&&m.id!==trigger.id&&!inCart.has(m.id)&&!has(m.id)&&!needsChoice(m))
+        .sort((a,b)=>(b.photo?1:0)-(a.photo?1:0))
+        .slice(0,4)
+        .forEach(m=>out.push(m));
+    });
+  });
+  return out.slice(0,10);
+}
+function xsUnit(x){
+  if(x.vals.length) return parseFloat(x.it.paramPrices?.[x.v])||x.it.price;
+  return x.it.price;
+}
+function renderPgCross(){
+  const el=document.getElementById('sp-cross');
+  if(!pgCross.length){el.innerHTML='';return;}
+  el.innerHTML=`<h4>Polecamy do tego</h4><div class="xs-list">${pgCross.map((x,i)=>{
+    const it=x.it;
+    const vars=x.vals.length>1?`<div class="xs-vars">${x.vals.map((v,vi)=>`<button class="xs-var${vi===x.v?' on':''}" onclick="xsVar(${i},${vi})">${v}</button>`).join('')}</div>`:'';
+    const act=x.qty>0
+      ?`<div class="xs-step"><button onclick="xsQty(${i},-1)" aria-label="Mniej">−</button><span>${x.qty}</span><button onclick="xsQty(${i},1)" aria-label="Więcej">+</button></div>`
+      :`<button class="xs-plus" onclick="xsQty(${i},1)" aria-label="Dodaj ${it.name}">+</button>`;
+    return`<div class="xs-card${x.qty>0?' on':''}${it.photo?'':' nophoto'}">
+      ${it.photo?`<img class="xs-img" src="${it.photo}" alt="${it.name}" loading="lazy">`:''}
+      <div class="xs-info">
+        <div class="xs-name">${it.name}</div>
+        <div class="xs-price">${xsUnit(x).toFixed(2).replace('.',',')} zł</div>
+        ${it.desc?`<div class="xs-desc">${it.desc}</div>`:''}
+        ${vars}
+        <div class="xs-act">${act}</div>
+      </div>
+    </div>`;}).join('')}</div>`;
+}
+function xsQty(i,d){const x=pgCross[i];if(!x)return;x.qty=Math.max(0,Math.min(20,x.qty+d));renderPgCross();updateSpTotal();}
+function xsVar(i,v){const x=pgCross[i];if(!x)return;x.v=v;renderPgCross();updateSpTotal();}
 function renderAddonUI(){
   document.getElementById('sp-addons').innerHTML=curAddons.map((ag,gi)=>`
     <div class="ag"><div class="ag-ttl">${ag.group.name}${ag.group.required?' <span class="ag-req">Wymagane</span>':''}</div>
@@ -1860,7 +2030,13 @@ function renderAddonUI(){
 function selAddon(gi,oi){const ag=curAddons[gi];const opt=ag.group.opts[oi];if(ag.isCheckbox){const i=ag.selected.indexOf(opt.n);i>-1?ag.selected.splice(i,1):ag.selected.push(opt.n);}else ag.selected=opt.n;renderAddonUI();updateSpTotal();}
 function selSz(i){selSize=i;curSizes.forEach((_,j)=>{const b=document.getElementById('sz-'+j);if(!b)return;b.style.borderColor=j===i?'var(--brown)':'rgba(59,37,18,.15)';b.style.background=j===i?'rgba(59,37,18,.05)':'transparent';b.style.color=j===i?'var(--brown)':'var(--muted)';});updateSpTotal();}
 function calcSpPrice(){if(!curItem)return 0;let base=curItem.price+(curSizes[selSize]?.p||0);curAddons.forEach(ag=>{if(ag.isCheckbox)ag.selected.forEach(s=>{const o=ag.group.opts.find(x=>x.n===s);if(o)base+=o.p;});else{const o=ag.group.opts.find(x=>x.n===ag.selected);if(o)base+=o.p;}});return base*curQty;}
-function updateSpTotal(){document.getElementById('sp-qty').textContent=curQty;document.getElementById('sp-tot').textContent=calcSpPrice().toFixed(2)+' zł';}
+function pgCrossTotal(){return pgCross.reduce((s,x)=>s+(x.qty>0?xsUnit(x)*x.qty:0),0);}
+function updateSpTotal(){
+  document.getElementById('sp-qty').textContent=curQty;
+  document.getElementById('sp-tot').textContent=(calcSpPrice()+pgCrossTotal()).toFixed(2).replace('.',',')+' zł';
+  const pr=document.getElementById('sp-price');
+  if(pr&&curItem)pr.textContent=(curItem.price+(curSizes[selSize]?.p||0)).toFixed(2).replace('.',',')+' zł';
+}
 function qCh(d){curQty=Math.max(1,curQty+d);updateSpTotal();}
 function doAdd(){
   if(!curItem)return;
@@ -1869,8 +2045,29 @@ function doAdd(){
   if(curSizes.length>1&&curSizes[selSize]?.n)mods.push({n:curSizes[selSize].n,p:curSizes[selSize].p});
   curAddons.forEach(ag=>{if(ag.isCheckbox)ag.selected.forEach(s=>{const o=ag.group.opts.find(x=>x.n===s);if(o)mods.push({n:s,p:o.p});});else if(ag.selected){const o=ag.group.opts.find(x=>x.n===ag.selected);mods.push({n:ag.selected,p:o?.p||0});}});
   const unitPrice=curItem.price+(curSizes[selSize]?.p||0)+mods.reduce((s,m)=>s+(m.p||0),0);
-  cart.push({uid:Date.now(),itemId:curItem.id,name:curItem.name,cat:curItem.cat,mods,unitPrice:parseFloat(unitPrice.toFixed(2)),qty:curQty});
-  updateCartBadge();closeOv('ov-product');showCross(curItem);
+  let uid=Date.now(); // każda pozycja dostaje własny uid (kilka pozycji w tej samej milisekundzie)
+  if(curItem._dailyType){
+    // Zupa / danie dnia — ten sam format co wcześniej (itemId 0 + dailyType: opakowania, kontrola aktualności)
+    cart.push({uid:uid++,itemId:0,dailyType:curItem._dailyType,name:curItem.name,cat:curItem.cat,mods,unitPrice:parseFloat(unitPrice.toFixed(2)),qty:curQty});
+  } else {
+    cart.push({uid:uid++,itemId:curItem.id,name:curItem.name,cat:curItem.cat,mods,unitPrice:parseFloat(unitPrice.toFixed(2)),qty:curQty});
+  }
+  // Zaznaczone propozycje z „Polecamy do tego”
+  let extra=0;
+  pgCross.forEach(x=>{
+    if(x.qty<=0)return;
+    const it=x.it, price=parseFloat(xsUnit(x).toFixed(2));
+    if(it._dailyType){
+      cart.push({uid:uid++,itemId:0,dailyType:it._dailyType,name:it.name,cat:it.cat,mods:[],unitPrice:price,qty:x.qty});
+    } else {
+      const vName=x.vals.length?(x.vals[x.v]||''):'';
+      cart.push({uid:uid++,itemId:it.id,name:it.name,cat:it.cat,mods:vName?[{n:vName,p:0}]:[],unitPrice:price,qty:x.qty});
+    }
+    extra+=x.qty;
+  });
+  updateCartBadge();
+  closeProduct();
+  toast(extra?`Dodano do koszyka ✓ (+${extra} z poleconych)`:'Dodano do koszyka ✓');
 }
 
 // ════ CROSS SELL ════
@@ -2911,7 +3108,8 @@ document.querySelectorAll('.cat-card[data-cat-tab]').forEach(card=>card.addEvent
 
 // ════ OVERLAYS ════
 function closeOv(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target!==o)return;if(o.id==='ov-product')closeProduct();else o.classList.remove('open');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProduct();});
 
 // ════ TOAST ════
 let tt;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600);}
