@@ -4,15 +4,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hirschówka Bistro Mielec — Śniadania, Obiady, Kawy | Zamów Online</title>
-<meta name="description" content="Domowa kuchnia w sercu Mielca. Śniadania od 7:00, obiady dnia, wypieki i kawy. Zamów online z dowozem. ul. Mickiewicza 17, Mielec. Tel. 511 707 232.">
-<meta name="keywords" content="bistro mielec, śniadania mielec, obiady mielec, kawa mielec, zamów jedzenie mielec, hirschówka bistro, lunch mielec, bajgiel mielec, dowóz jedzenia mielec">
+<title>Hirschówka Bistro Mielec – śniadania, bajgle, sałatki, kawa</title>
+<meta name="description" content="Bistro i kawiarnia w centrum Mielca: śniadania od 7:00, bajgle, sałatki, kanapki na ciepło, wrapy i kawa. Na miejscu, na wynos i z dowozem.">
 <meta name="robots" content="index, follow">
-<meta property="og:title" content="Hirschówka Bistro Mielec — Zamów Online">
-<meta property="og:description" content="Domowe śniadania od 7:00, obiady dnia, wypieki i kawy. Zamów z dowozem na terenie Mielca.">
+<meta property="og:title" content="Hirschówka Bistro Mielec – śniadania, bajgle, sałatki, kawa">
+<meta property="og:description" content="Bistro i kawiarnia w centrum Mielca: śniadania od 7:00, bajgle, sałatki, kanapki na ciepło, wrapy i kawa. Na miejscu, na wynos i z dowozem.">
 <meta property="og:type" content="restaurant">
 <meta property="og:locale" content="pl_PL">
-<link rel="canonical" href="https://hirschowkabistro.pl/">
+<meta property="og:url" content="https://www.hirschowkabistro.pl/">
+<meta property="og:site_name" content="Hirschówka Bistro">
+<meta property="og:image" content="https://www.hirschowkabistro.pl/hirschowka-bistro-mielec-ogrodek.jpg">
+<link rel="canonical" href="https://www.hirschowkabistro.pl/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -188,11 +190,12 @@ body::after{
 .hero-tag.is-closed .live-dot{background:#E3A08E;box-shadow:0 0 0 4px rgba(227,160,142,.16);animation:none;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 .hero h1{
-  font-family:var(--serif);font-size:clamp(44px,6.2vw,88px);font-weight:400;
+  font-family:var(--serif);font-size:clamp(40px,5.2vw,76px);font-weight:400;
   font-variation-settings:'opsz' 144;
   color:var(--paper);line-height:1;letter-spacing:-.035em;margin-bottom:28px;
 }
 .hero h1 em{font-style:italic;font-weight:400;color:#DDB468;}
+.hero-motto{font-family:var(--serif);font-style:italic;font-size:clamp(20px,1.8vw,24px);color:rgba(246,241,231,.88);margin:-12px 0 14px;letter-spacing:-.01em;}
 .hero-sub{font-size:18px;color:rgba(246,241,231,.72);line-height:1.65;font-weight:300;margin-bottom:36px;max-width:46ch;}
 .hero-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:48px;}
 .hero-stats{display:flex;gap:40px;padding-top:28px;border-top:1px solid rgba(246,241,231,.12);}
@@ -251,18 +254,15 @@ body::after{
 /* ════ TRZY KATEGORIE ════ */
 .cats-section{background:var(--paper);}
 .cats-head{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:48px;align-items:end;margin-bottom:56px;}
-.cats-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);grid-template-rows:auto auto;gap:24px;}
+.cats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;}
 .cat-card{position:relative;display:flex;flex-direction:column;text-decoration:none;color:inherit;border-radius:var(--r3);overflow:hidden;background:var(--card);box-shadow:var(--shadow);transition:transform .35s var(--ease),box-shadow .35s var(--ease);}
 .cat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
-.cat-card:first-child{grid-row:span 2;}
 .cat-card-img{position:relative;overflow:hidden;aspect-ratio:16/10;background:var(--paper-3);}
-.cat-card:first-child .cat-card-img{aspect-ratio:auto;flex:1;min-height:360px;}
 .cat-card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s var(--ease);}
 .cat-card:hover .cat-card-img img{transform:scale(1.045);}
 .cat-card-num{position:absolute;top:16px;left:16px;z-index:1;font-size:13px;font-weight:500;color:var(--ink);background:rgba(255,252,246,.88);backdrop-filter:blur(6px);padding:5px 11px;border-radius:999px;font-variant-numeric:tabular-nums;}
-.cat-card-body{padding:22px 24px 24px;display:grid;grid-template-columns:1fr auto;gap:4px 20px;align-items:end;}
+.cat-card-body{padding:22px 24px 24px;display:grid;grid-template-columns:1fr auto;gap:4px 20px;align-items:end;flex:1;grid-template-rows:auto 1fr auto;}
 .cat-card h3{font-family:var(--serif);font-size:26px;font-weight:400;color:var(--ink);letter-spacing:-.02em;line-height:1.15;grid-column:1/-1;}
-.cat-card:first-child h3{font-size:clamp(28px,2.8vw,38px);}
 .cat-card h3 em{font-style:italic;color:var(--accent-2);}
 .cat-card p{font-size:15px;color:var(--ink-2);line-height:1.6;max-width:44ch;}
 .cat-card-price{font-family:var(--serif);font-size:20px;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;}
@@ -303,7 +303,6 @@ body::after{
 #daily-set-banner:empty{display:none;}
 #daily-set-banner{border-top:1px dashed var(--paper-3);padding-top:18px;margin-top:4px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .daily-set-text{font-size:15px;color:var(--ink-2);}
-.daily-set-old{font-size:15px;color:var(--ink-3);text-decoration:line-through;margin-right:8px;font-variant-numeric:tabular-nums;}
 .daily-set-value{font-family:var(--serif);font-weight:400;color:var(--ink);font-size:26px;margin-left:6px;font-variant-numeric:tabular-nums;}
 .daily-set-btn{background:var(--ink);color:var(--paper);border:none;border-radius:999px;padding:13px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:background .2s,transform .2s var(--ease);}
 .daily-set-btn:hover{background:var(--brown2);}
@@ -339,7 +338,9 @@ body::after{
 .promo-card h3{grid-area:title;font-family:var(--serif);font-size:22px;font-weight:400;color:var(--ink);line-height:1.2;letter-spacing:-.01em;}
 .promo-card p{grid-area:text;font-size:14px;color:var(--ink-2);line-height:1.55;margin-top:4px;}
 .promo-price{grid-area:price;font-family:var(--serif);font-size:26px;font-weight:400;color:var(--accent-2);font-variant-numeric:tabular-nums;white-space:nowrap;}
-.promo-price-old{display:none;}
+.promos-label{font-weight:400;}
+.promos-extra:empty{display:none;}
+.promos-extra{margin-top:22px;padding-top:22px;border-top:1px solid var(--line);}
 
 /* ════ MENU ════ */
 .menu-section{padding:clamp(80px,10vw,120px) var(--gutter) clamp(88px,11vw,140px);background:var(--paper);}
@@ -507,7 +508,20 @@ body::after{
 #nl-result{font-size:14px;margin-top:12px;min-height:20px;}
 
 /* ════ SEO TAGS (ukryte) ════ */
-.seo-section{display:none;}
+/* ════ FAQ ════ */
+.faq-section{background:var(--paper-2);}
+.faq-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:48px;align-items:start;}
+.faq-list{display:flex;flex-direction:column;}
+.faq-item{border-bottom:1px solid var(--line);}
+.faq-item:first-child{border-top:1px solid var(--line);}
+.faq-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0;}
+.faq-item summary::-webkit-details-marker{display:none;}
+.faq-item summary::after{content:'+';font-size:26px;line-height:1;color:var(--accent-2);transition:transform .25s var(--ease);flex-shrink:0;}
+.faq-item[open] summary::after{transform:rotate(45deg);}
+.faq-item h3{font-family:var(--serif);font-size:21px;font-weight:400;color:var(--ink);letter-spacing:-.01em;line-height:1.3;}
+.faq-item p{font-size:16px;color:var(--ink-2);line-height:1.7;padding:0 40px 22px 0;max-width:62ch;}
+.faq-item a{color:var(--accent-2);font-weight:600;}
+@media(max-width:860px){.faq-wrap{grid-template-columns:1fr;gap:24px;}.faq-item h3{font-size:19px;}}
 
 /* ════ KONTAKT + MAPA ════ */
 .contact-section{padding:clamp(80px,10vw,128px) var(--gutter) clamp(88px,11vw,140px);background:var(--paper-2);}
@@ -692,7 +706,7 @@ body::after{
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:13px 22px;border-radius:999px;font-size:14px;font-weight:500;z-index:var(--z-toast);opacity:0;transition:opacity .3s var(--ease),transform .3s var(--ease);white-space:nowrap;max-width:90vw;text-align:center;box-shadow:0 12px 32px rgba(22,18,12,.25);pointer-events:none;}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 
-/* ════ POPUPY (urlop, iOS PWA) ════ */
+/* ════ POPUPY (iOS PWA) ════ */
 .popup-backdrop{display:none;position:fixed;inset:0;z-index:var(--z-modal);background:rgba(22,18,12,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
 .popup-backdrop.sheet-like{align-items:flex-end;padding:0;}
 
@@ -725,9 +739,7 @@ body::after{
   .hero-stats{gap:32px;}
 
   .cats-head{grid-template-columns:1fr;gap:16px;margin-bottom:36px;}
-  .cats-grid{grid-template-columns:1fr;}
-  .cat-card:first-child{grid-row:auto;}
-  .cat-card:first-child .cat-card-img{min-height:0;aspect-ratio:4/3;flex:none;}
+  .cats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
 
   .daily-inner,.loyalty-inner,.contact-inner{grid-template-columns:1fr;}
   .daily-features{grid-template-columns:1fr;}
@@ -844,11 +856,23 @@ body::after{
   .pg-name{font-size:27px;}
 }
 
+/* Kafle kategorii na telefonie: zdjęcie po lewej, tekst po prawej */
+@media(max-width:640px){
+  .cats-grid{grid-template-columns:1fr;gap:14px;}
+  .cat-card{flex-direction:row;align-items:stretch;}
+  .cat-card-img{aspect-ratio:auto;width:38%;flex-shrink:0;min-height:150px;}
+  .cat-card-num{display:none;}
+  .cat-card-body{padding:16px 16px 16px 18px;grid-template-columns:1fr;grid-template-rows:auto auto auto auto;align-items:start;gap:6px;}
+  .cat-card-price{font-size:18px;}
+  .cat-card h3{font-size:21px;}
+  .cat-card p{font-size:14px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .cat-card-go{margin-top:8px;font-size:13px;}
+}
+
 @keyframes fu{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
 @keyframes popIn{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:scale(1);}}
 #ios-pwa-popup.show{display:flex!important;}
-#urlop-popup.show{display:flex!important;}
 .fi{animation:fu .35s var(--ease) both;}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease);transition-delay:var(--d,0s);}
 .reveal.visible{opacity:1;transform:translateY(0);}
@@ -908,20 +932,69 @@ body::after{
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Restaurant",
+  "@type": ["Restaurant", "CafeOrCoffeeShop"],
+  "@id": "https://www.hirschowkabistro.pl/#bistro",
   "name": "Hirschówka Bistro",
+  "alternateName": ["Hirschówka", "Hirszówka Bistro"],
+  "description": "Bistro i kawiarnia w centrum Mielca: śniadania od 7:00, bajgle, sałatki, kanapki na ciepło, wrapy i kawa. Na miejscu, na wynos i z dowozem.",
+  "url": "https://www.hirschowkabistro.pl/",
+  "image": [
+    "https://www.hirschowkabistro.pl/hirschowka-bistro-mielec-ogrodek.jpg",
+    "https://www.hirschowkabistro.pl/bajgiel-farmer.jpg",
+    "https://www.hirschowkabistro.pl/sniadanie-croissant-jajecznica.jpg",
+    "https://www.hirschowkabistro.pl/cappuccino.jpg"
+  ],
+  "logo": "https://www.hirschowkabistro.pl/logo-round.png",
+  "telephone": "+48511707232",
+  "email": "kontakt@hirschowkabistro.pl",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "ul. Mickiewicza 17",
     "addressLocality": "Mielec",
     "postalCode": "39-300",
+    "addressRegion": "podkarpackie",
     "addressCountry": "PL"
   },
-  "telephone": "+48511707232",
-  "openingHours": ["Mo-Fr 07:00-16:00"],
-  "servesCuisine": ["Polish", "Breakfast", "Coffee"],
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 50.2884,
+    "longitude": 21.4302
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "07:00",
+      "closes": "16:00"
+    }
+  ],
+  "servesCuisine": ["Śniadania", "Bajgle", "Sałatki", "Kanapki i wrapy", "Kawa"],
   "priceRange": "$$",
-  "url": "https://www.hirschowkabistro.pl"
+  "currenciesAccepted": "PLN",
+  "paymentAccepted": "Gotówka, karta płatnicza, BLIK",
+  "areaServed": { "@type": "City", "name": "Mielec" },
+  "hasMap": "https://share.google/KUucbhFVMvG4YMaJ4",
+  "menu": "https://www.hirschowkabistro.pl/#menu",
+  "hasMenu": "https://www.hirschowkabistro.pl/menu.pdf",
+  "sameAs": [
+    "https://www.facebook.com/hirschowkabistro/",
+    "https://www.instagram.com/hirschowka.bistro/",
+    "https://www.tiktok.com/@hirschowka.bistro"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Od której godziny podajecie śniadania?", "acceptedAnswer": {"@type": "Answer", "text": "Śniadania podajemy od poniedziałku do piątku od 7:00. Omlet, croissanty wytrawne, owsiankę i bajgle zjesz u nas przy Mickiewicza 17 w Mielcu, zabierzesz na wynos albo zamówisz online. Jajecznicę Barona podajemy tylko na miejscu."}},
+    {"@type": "Question", "name": "Czy dowozicie jedzenie po Mielcu?", "acceptedAnswer": {"@type": "Answer", "text": "Tak. Do 0,5 km dowóz jest gratis, do 3 km kosztuje 6 zł, do 6,5 km 10 zł. Przy zamówieniu online od 120 zł dowozimy gratis. Koszt dla Twojego adresu zobaczysz w koszyku."}},
+    {"@type": "Question", "name": "Czy macie dania wegetariańskie?", "acceptedAnswer": {"@type": "Answer", "text": "Tak: Bajgiel Caprese, Bajgiel Ogrodnika, Sałatka Grecka i bagietka na ciepło z mozzarellą."}},
+    {"@type": "Question", "name": "Czy można zamówić jedzenie na wynos?", "acceptedAnswer": {"@type": "Answer", "text": "Tak. Zamów online na tej stronie albo zadzwoń pod numer 511 707 232. Jedzenie, kawę i napary przygotujemy na wynos."}},
+    {"@type": "Question", "name": "Czy macie ofertę dla firm?", "acceptedAnswer": {"@type": "Answer", "text": "Tak: śniadania na spotkania, przerwy kawowe i lunch do pracy. Wystawiamy fakturę VAT. Szczegóły ustalimy telefonicznie: 511 707 232."}},
+    {"@type": "Question", "name": "Hirszówka czy Hirschówka?", "acceptedAnswer": {"@type": "Answer", "text": "To ten sam lokal: Hirschówka Bistro przy ul. Mickiewicza 17 w Mielcu. Często spotykamy pisownię „Hirszówka” – zapraszamy pod ten sam adres."}}
+  ]
 }
 </script>
 </head>
@@ -972,8 +1045,9 @@ body::after{
   <div class="hero-bg" aria-hidden="true"></div>
   <div class="hero-content">
     <div class="hero-tag" id="hero-tag"><span class="live-dot"></span><span id="hero-tag-txt">Mickiewicza 17, Mielec</span></div>
-    <h1>Domowa kuchnia, do której <em>chce się wracać</em></h1>
-    <p class="hero-sub">Śniadania od 7:00, obiady dnia, wypieki i kawy. Zamów online z dowozem albo wpadnij do nas na Mickiewicza 17.</p>
+    <h1>Bistro w Mielcu: <em>śniadania, bajgle, sałatki i&nbsp;kawa</em></h1>
+    <p class="hero-motto">Domowa kuchnia, do której chce się wracać.</p>
+    <p class="hero-sub">Śniadania od 7:00, bajgle, sałatki, kanapki na ciepło i wrapy, kawa i napary. Zamów online z dowozem albo wpadnij na Mickiewicza 17.</p>
     <div class="hero-actions">
       <a href="#menu" class="btn-primary">Zamów online <svg class="ico arr" aria-hidden="true"><use href="#i-arrow"/></svg></a>
       <a href="#daily-section" class="btn-ghost">Co dziś gotujemy</a>
@@ -987,7 +1061,7 @@ body::after{
 
   <div class="hero-visual">
     <div class="hero-photo">
-      <img src="zewn%C4%85trz2.jpg" alt="Ogródek Hirschówki Bistro przy ul. Mickiewicza w Mielcu — drewniane donice, zieleń i stoliki" fetchpriority="high" onerror="this.style.display='none'">
+      <img src="hirschowka-bistro-mielec-ogrodek.jpg" alt="Ogródek Hirschówki Bistro przy ul. Mickiewicza 17 w Mielcu – drewniane donice, zieleń i stoliki" fetchpriority="high" onerror="this.style.display='none'">
     </div>
     <aside class="hero-card" aria-label="Godziny otwarcia i kontakt">
       <div class="hero-card-title">Teraz w Mielcu</div>
@@ -1009,51 +1083,87 @@ body::after{
   </div>
 </section>
 
-<!-- ═══ TRZY KATEGORIE ═══ -->
+<!-- ═══ SZEŚĆ KATEGORII (ceny „od” i zdjęcia 3/4/6 aktualizują się z menu w panelu) ═══ -->
 <section class="section cats-section" aria-labelledby="cats-title">
   <div class="wrap">
     <div class="cats-head">
       <div>
         <div class="section-tag">Co kochamy robić</div>
-        <h2 class="section-title" id="cats-title">Trzy rzeczy, na których nam <em>naprawdę</em> zależy.</h2>
+        <h2 class="section-title" id="cats-title">Sześć rzeczy, na których nam <em>naprawdę</em> zależy.</h2>
       </div>
       <p class="section-lead">Każdego ranka robimy mniej, ale lepiej. Kupujemy lokalnie, pieczemy sami i nie idziemy na skróty.</p>
     </div>
     <div class="cats-grid">
-      <a href="#menu" class="cat-card reveal" data-cat-tab="ctab-niadania">
+      <a href="#menu" class="cat-card reveal" style="--d:0s" data-tile="sniadania">
         <div class="cat-card-img">
-          <img src="breakfast.jpg" alt="Śniadanie w Hirschówce — jajka, pieczywo i świeże warzywa" loading="lazy">
+          <img src="sniadanie-croissant-jajecznica.jpg" alt="Zestaw śniadaniowy: croissant wytrawny z jajecznicą" loading="lazy">
           <span class="cat-card-num">01 · Śniadania</span>
         </div>
         <div class="cat-card-body">
           <h3>Śniadania <em>od 7:00</em></h3>
-          <p>Jajecznica, omlety, kanapki — robione na bieżąco, nigdy z podgrzewacza.</p>
-          <span class="cat-card-price"><small>od</small>15 zł</span>
+          <p>Jajecznica Barona z 3 jajek (tylko na miejscu), Omlet Farmerski, croissanty wytrawne i owsianka. Śniadanie zjesz u nas albo zabierzesz na wynos.</p>
+          <span class="cat-card-price"><small>od</small><span data-tile-price>12</span> zł</span>
           <span class="cat-card-go">Zobacz śniadania <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
         </div>
       </a>
-      <a href="#menu" class="cat-card reveal" style="--d:.08s" data-cat-tab="ctab-bajgle">
+      <a href="#menu" class="cat-card reveal" style="--d:0.06s" data-tile="bajgle">
         <div class="cat-card-img">
-          <img src="bagel.jpg" alt="Bajgiel z jajkiem sadzonym i sałatą" loading="lazy">
+          <img src="bajgiel-farmer.jpg" alt="Bajgiel Farmer z jajkiem sadzonym, boczkiem i sałatą" loading="lazy">
           <span class="cat-card-num">02 · Bajgle</span>
         </div>
         <div class="cat-card-body">
-          <h3>Bajgle z <em>chrupiącą skórką</em></h3>
-          <p>Najpierw gotujemy, potem pieczemy — jak każe tradycja.</p>
-          <span class="cat-card-price"><small>od</small>22 zł</span>
+          <h3>Bajgle <em>z własnego wypieku</em></h3>
+          <p>Najpierw gotujemy, potem pieczemy. Bajgiel Barona, Farmer, Caprese i Ogrodnika (dwa ostatnie wege).</p>
+          <span class="cat-card-price"><small>od</small><span data-tile-price>24</span> zł</span>
           <span class="cat-card-go">Zobacz bajgle <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
         </div>
       </a>
-      <a href="#menu" class="cat-card reveal" style="--d:.16s" data-cat-tab="ctab-kawy-i-gorce-napoje-z-mlekiem">
+      <a href="#menu" class="cat-card reveal" style="--d:0.12s" data-tile="salatki">
         <div class="cat-card-img">
-          <img src="kawa.jpg" alt="Cappuccino z latte art w kształcie serca" loading="lazy">
-          <span class="cat-card-num">03 · Kawy</span>
+          <img src="https://firebasestorage.googleapis.com/v0/b/hirschowka-bistro.firebasestorage.app/o/menu-photos%2Fdish-30-1784712515247.jpg?alt=media&token=4135b0b2-e300-4d8d-9ebb-5bc132175745" alt="Sałatka Filantropa z grillowanym kurczakiem, gruszką i camembertem" loading="lazy">
+          <span class="cat-card-num">03 · Sałatki</span>
         </div>
         <div class="cat-card-body">
-          <h3>Kawy <em>z sercem</em></h3>
-          <p>Cappuccino, latte, mokka i klasyka — z aksamitną pianką.</p>
-          <span class="cat-card-price"><small>od</small>10 zł</span>
+          <h3>Sałatki <em>na lunch</em></h3>
+          <p>Filantropa z gruszką i camembertem, Grecka, Sielska. Sałatka na wynos albo lunch do pracy.</p>
+          <span class="cat-card-price"><small>od</small><span data-tile-price>24</span> zł</span>
+          <span class="cat-card-go">Zobacz sałatki <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+        </div>
+      </a>
+      <a href="#menu" class="cat-card reveal" style="--d:0s" data-tile="wrapy">
+        <div class="cat-card-img">
+          <img src="https://firebasestorage.googleapis.com/v0/b/hirschowka-bistro.firebasestorage.app/o/menu-photos%2Fdish-47-1784713044991.jpg?alt=media&token=792d9a93-9de3-4d80-b80a-fa7e8153cb30" alt="Wrap z szarpaną wieprzowiną i warzywami" loading="lazy">
+          <span class="cat-card-num">04 · Bagietki i wrapy</span>
+        </div>
+        <div class="cat-card-body">
+          <h3>Bagietki na ciepło <em>i wrapy</em></h3>
+          <p>Bagietka z kurczakiem albo z mozzarellą, wrap z grillowanym kurczakiem lub szarpaną wieprzowiną.</p>
+          <span class="cat-card-price"><small>od</small><span data-tile-price>16</span> zł</span>
+          <span class="cat-card-go">Zobacz wrapy <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+        </div>
+      </a>
+      <a href="#menu" class="cat-card reveal" style="--d:0.06s" data-tile="kawy">
+        <div class="cat-card-img">
+          <img src="cappuccino.jpg" alt="Cappuccino Galicyjskie z latte art" loading="lazy">
+          <span class="cat-card-num">05 · Kawy</span>
+        </div>
+        <div class="cat-card-body">
+          <h3>Kawa <em>na miejscu i na wynos</em></h3>
+          <p>Cappuccino Galicyjskie, Latte Hirschowskie, mokka i espresso (tylko na miejscu). Mleko bez laktozy w cenie.</p>
+          <span class="cat-card-price"><small>od</small><span data-tile-price>8</span> zł</span>
           <span class="cat-card-go">Zobacz kawy <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+        </div>
+      </a>
+      <a href="#menu" class="cat-card reveal" style="--d:0.12s" data-tile="napary">
+        <div class="cat-card-img">
+          <img src="https://firebasestorage.googleapis.com/v0/b/hirschowka-bistro.firebasestorage.app/o/menu-photos%2Fdish-24-1784712510337.jpg?alt=media&token=c1dc526a-eda9-45f0-b061-e473d4c8995e" alt="Bursztyn Mickiewicza – napar owocowy z konfiturą malinową i owocami leśnymi" loading="lazy">
+          <span class="cat-card-num">06 · Napary premium</span>
+        </div>
+        <div class="cat-card-body">
+          <h3>Napary <em>premium</em></h3>
+          <p>Chai Latte Barona Hirscha, Złoty Eliksir z imbirem i cytryną, Bursztyn Mickiewicza z malinami.</p>
+          <span class="cat-card-price"><small>od</small><span data-tile-price>13</span> zł</span>
+          <span class="cat-card-go">Zobacz napary <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
         </div>
       </a>
     </div>
@@ -1092,12 +1202,13 @@ body::after{
 
 <!-- PROMOS -->
 <div class="promos-section">
-  <div class="promos-label">Stałe promocje</div>
+  <h2 class="promos-label">Stałe oferty</h2>
   <div class="promos-inner" id="promos-inner">
-    <div class="promo-card"><div class="promo-badge">Codziennie</div><h3>Śniadanie z kawą</h3><p>Jajecznica, tost, masło + espresso lub herbata.</p><span class="promo-price">15 zł</span><span class="promo-price-old">19 zł</span></div>
-    <div class="promo-card"><div class="promo-badge">Pon–Pt</div><h3>Obiad dnia + zupa</h3><p>Zmieniające się codziennie danie z domową zupą.</p><span class="promo-price">22 zł</span><span class="promo-price-old">28 zł</span></div>
-    <div class="promo-card"><div class="promo-badge">Online</div><h3>Darmowy dowóz</h3><p>Przy zamówieniu online od 40 zł dowozimy bezpłatnie na terenie Mielca.</p><span class="promo-price">0 zł</span><span class="promo-price-old">dostawa</span></div>
+    <div class="promo-card"><div class="promo-badge">Pon–Pt od 7:00</div><h3>Śniadanie z kawą</h3><p>Jajecznica Barona z 3 jajek (12 zł) + kawa czarna (5 zł). Tylko na miejscu, przy Mickiewicza 17.</p><span class="promo-price">17 zł</span></div>
+    <div class="promo-card"><div class="promo-badge">Pon–Pt od 11:00</div><h3>Zestaw dnia</h3><p>Zupa + drugie danie. Cena na dziś na tablicy i w zamówieniu online.</p><span class="promo-price">od 36 zł</span></div>
+    <div class="promo-card"><div class="promo-badge">Online</div><h3>Dowóz gratis od 120 zł</h3><p>Strefy dowozu: <span id="promo-zones">do 0,5 km gratis · do 3 km 6 zł · do 6,5 km 10 zł</span>.</p><span class="promo-price">gratis</span></div>
   </div>
+  <div class="promos-inner promos-extra" id="promos-extra"></div>
 </div>
 
 <!-- ═══ MENU ═══ -->
@@ -1199,24 +1310,23 @@ body::after{
   </div>
 </section>
 
-<!-- SEO — niewidoczne dla użytkownika, widoczne dla robotów -->
-<div class="seo-section" aria-hidden="true">
-  <div class="seo-inner">
-    <div class="seo-title">Znajdź nas w Mielcu</div>
-    <div class="seo-tags">
-      <span class="seo-tag">śniadania Mielec</span>
-      <span class="seo-tag">obiady Mielec</span>
-      <span class="seo-tag">kawa Mielec</span>
-      <span class="seo-tag">lunch Mielec</span>
-      <span class="seo-tag">bistro Mielec</span>
-      <span class="seo-tag">zamów jedzenie Mielec</span>
-      <span class="seo-tag">bajgiel Mielec</span>
-      <span class="seo-tag">dowóz jedzenia Mielec</span>
-      <span class="seo-tag">wypieki Mielec</span>
-      <span class="seo-tag">Mickiewicza 17 Mielec</span>
+<!-- ═══ FAQ (dane strukturalne FAQPage w <head>) ═══ -->
+<section class="section faq-section" id="faq" aria-labelledby="faq-title">
+  <div class="wrap faq-wrap">
+    <div>
+      <div class="section-tag">Pytania</div>
+      <h2 class="section-title" id="faq-title">Najczęstsze <em>pytania</em></h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item"><summary><h3>Od której godziny podajecie śniadania?</h3></summary><p>Śniadania podajemy od poniedziałku do piątku od 7:00. Omlet, croissanty wytrawne, owsiankę i bajgle zjesz u nas przy Mickiewicza 17 w Mielcu, zabierzesz na wynos albo zamówisz online. Jajecznicę Barona podajemy tylko na miejscu.</p></details>
+      <details class="faq-item"><summary><h3>Czy dowozicie jedzenie po Mielcu?</h3></summary><p>Tak. Do 0,5 km dowóz jest gratis, do 3 km kosztuje 6 zł, do 6,5 km 10 zł. Przy zamówieniu online od 120 zł dowozimy gratis. Koszt dla Twojego adresu zobaczysz w koszyku.</p></details>
+      <details class="faq-item"><summary><h3>Czy macie dania wegetariańskie?</h3></summary><p>Tak: Bajgiel Caprese, Bajgiel Ogrodnika, Sałatka Grecka i bagietka na ciepło z mozzarellą.</p></details>
+      <details class="faq-item"><summary><h3>Czy można zamówić jedzenie na wynos?</h3></summary><p>Tak. Zamów online na tej stronie albo zadzwoń pod numer <a href="tel:511707232">511 707 232</a>. Jedzenie, kawę i napary przygotujemy na wynos.</p></details>
+      <details class="faq-item"><summary><h3>Czy macie ofertę dla firm?</h3></summary><p>Tak: śniadania na spotkania, przerwy kawowe i lunch do pracy. Wystawiamy fakturę VAT. Szczegóły ustalimy telefonicznie: <a href="tel:511707232">511 707 232</a>.</p></details>
+      <details class="faq-item"><summary><h3>Hirszówka czy Hirschówka?</h3></summary><p>To ten sam lokal: Hirschówka Bistro przy ul. Mickiewicza 17 w Mielcu. Często spotykamy pisownię „Hirszówka” – zapraszamy pod ten sam adres.</p></details>
     </div>
   </div>
-</div>
+</section>
 
 <!-- ═══ KONTAKT ═══ -->
 <section class="contact-section" id="contact-section" aria-labelledby="contact-title">
@@ -1224,7 +1334,7 @@ body::after{
     <div class="contact-info reveal">
       <div class="section-tag">Kontakt</div>
       <h2 id="contact-title">Znajdź nas <em>w Mielcu</em></h2>
-      <p>Jesteśmy w samym centrum. Wpadnij na śniadanie, obiad albo po ciasto na wynos.</p>
+      <p>Hirschówka to bistro i kawiarnia w centrum Mielca, przy Mickiewicza 17. Od 7:00 podajemy śniadania i bajgle, w ciągu dnia sałatki, kanapki na ciepło, wrapy i obiad dnia. Kawę i napary zabierzesz na wynos, a jedzenie dowieziemy po Mielcu.</p>
       <div class="contact-list">
         <div class="contact-row"><div class="contact-icon"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg></div><div><span class="contact-label">Adres</span><div class="contact-val"><a href="https://maps.google.com/?q=Mickiewicza+17,+Mielec" target="_blank" rel="noopener">ul. Mickiewicza 17, 39-300 Mielec</a></div></div></div>
         <div class="contact-row"><div class="contact-icon"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg></div><div><span class="contact-label">Telefon</span><div class="contact-val"><a href="tel:511707232">511 707 232</a></div></div></div>
@@ -1253,6 +1363,10 @@ body::after{
       <a href="tel:+48511707232">511 707 232</a>
       <a href="mailto:kontakt@hirschowkabistro.pl">kontakt@hirschowkabistro.pl</a>
       <a href="https://maps.google.com/?q=Mickiewicza+17,+Mielec" target="_blank" rel="noopener">ul. Mickiewicza 17, Mielec</a>
+      <h4>Znajdziesz nas też na</h4>
+      <a href="https://www.facebook.com/hirschowkabistro/" target="_blank" rel="noopener">Facebook</a>
+      <a href="https://www.instagram.com/hirschowka.bistro/" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://www.tiktok.com/@hirschowka.bistro" target="_blank" rel="noopener">TikTok</a>
       <h4>Godziny otwarcia</h4>
       <p>Pon–Pt: 7:00–16:00</p>
       <p class="muted">Sob–Nd: nieczynne</p>
@@ -1263,6 +1377,8 @@ body::after{
       <a href="/menu.pdf" target="_blank" rel="noopener">Menu do pobrania (PDF)</a>
       <a href="#daily-section">Danie dnia</a>
       <a href="#loyalty-section">Karta stałego gościa</a>
+      <a href="#faq">Najczęstsze pytania</a>
+      <a href="/lunchowki">Lunchboxy do szkoły i pracy</a>
       <a href="#contact-section">Kontakt</a>
       <h4>Dane firmy</h4>
       <p>Fresh Marcin Jastrzębski</p>
@@ -1426,8 +1542,9 @@ const CROSS=[
 const REST_LAT = 50.2884;
 const REST_LNG = 21.4302;
 const DEFAULT_DELIVERY_ZONES = [
+  {km:0.5, cost:0, label:'Do 0,5 km'},
   {km:3, cost:6,  label:'Do 3 km'},
-  {km:6, cost:10, label:'Do 6 km'},
+  {km:6.5, cost:10, label:'Do 6,5 km'},
 ];
 // Haversine — odległość między dwoma punktami GPS w km
 function haversineKm(lat1,lng1,lat2,lng2){
@@ -1648,10 +1765,29 @@ function init(){
   renderLoyaltyStamps();
 }
 
+// Stałe oferty (śniadanie z kawą, zestaw dnia, dowóz) są zawsze widoczne — te same co w postach.
+// Aktywne promocje z panelu pokazujemy pod nimi. Promocję o darmowym dowozie z panelu pomijamy,
+// bo dowóz opisuje już stała karta (strefy brane z panelu, te same co w koszyku).
 function renderAdminPromos(){
-  const ap=(LS('promos')||[]).filter(p=>p.active);
-  if(!ap.length)return;
-  document.getElementById('promos-inner').innerHTML=ap.map(p=>`<div class="promo-card"><div class="promo-badge">${p.type||'Promocja'}</div><h3>${p.name}</h3><p>${p.cond||''}</p><span class="promo-price">${p.val}${p.type?.includes('%')?'%':' zł'}</span></div>`).join('');
+  renderPromoZones();
+  const el=document.getElementById('promos-extra');
+  if(!el)return;
+  const ap=(LS('promos')||[]).filter(p=>p&&p.active&&!/dostaw|dow[oó]z/i.test((p.name||'')+' '+(p.cond||'')));
+  el.innerHTML=ap.map(p=>{
+    const isPct=(p.type||'').includes('%');
+    const val=parseFloat(p.val)||0;
+    const price=val>0?(isPct?val+'%':val+' zł'):'';
+    return `<div class="promo-card"><div class="promo-badge">Promocja</div><h3>${p.name}</h3><p>${p.cond||''}</p>${price?`<span class="promo-price">${price}</span>`:''}</div>`;
+  }).join('');
+}
+// Strefy dowozu w karcie „Dowóz gratis” — z panelu (te same, według których liczy koszyk)
+function fmtKm(k){return String(k).replace('.',',');}
+function renderPromoZones(){
+  const el=document.getElementById('promo-zones');
+  if(!el)return;
+  const zones=(getDeliveryZones()||[]).filter(z=>z&&!z.closed&&z.km).slice().sort((a,b)=>a.km-b.km);
+  if(!zones.length)return;
+  el.textContent=zones.map(z=>`do ${fmtKm(z.km)} km ${(parseFloat(z.cost)||0)===0?'gratis':(parseFloat(z.cost)+' zł')}`).join(' · ');
 }
 
 // ════ DAILY DISH ════
@@ -1674,7 +1810,7 @@ function addDailyItem(type){
 function makeDailyCard(d,emoji,label,type){
   if(!d||!d.name)return'';
   return`<div class="daily-mini-card" onclick="addDailyItem('${type}')">
-    ${d.photo?`<img src="${d.photo}" alt="${d.name}" loading="lazy">`:''}
+    ${d.photo?`<img src="${d.photo}" alt="${dishAlt(d)}" loading="lazy">`:''}
     <div class="daily-mini-body">
       <div class="daily-mini-type">${emoji} ${label}</div>
       <div class="daily-mini-name">${d.name}</div>
@@ -1711,7 +1847,7 @@ function renderDailySetBanner(k){
   const soupP=parseFloat(k.soup.price)||0;
   const mainP=parseFloat(k.main.price)||0;
   const normalPrice=soupP+mainP;
-  const oldPriceHtml=(normalPrice>setPrice)?`<span class="daily-set-old">${normalPrice.toFixed(2)} zł</span>`:'';
+  const oldPriceHtml=''; // bez przekreślonych cen (zasada marketingu / dyrektywa Omnibus)
   el.innerHTML=`
     <div class="daily-set-text">${oldPriceHtml}W zestawie <span class="daily-set-value">${setPrice.toFixed(2)} zł</span></div>
     <button class="daily-set-btn" onclick="addKitchenSet()">Zamów zestaw dnia</button>`;
@@ -1767,7 +1903,6 @@ function renderKitchen(){
         <p>${k.soup?.name||''} + ${k.main?.name||''}</p>
       </div>
       <div class="kitchen-set-price">
-        ${normalPrice>parseFloat(setPrice)?`<span class="price-old">${normalPrice.toFixed(2)} zł</span>`:''}
         <span class="price-big">${setPrice} zł</span>
       </div>
       <button class="kitchen-set-btn" onclick="addKitchenSet()">🛒 Zamów zestaw</button>
@@ -1799,6 +1934,48 @@ function addKitchenSet(){
   toast('Zestaw dnia dodany ✓');
 }
 
+
+// ════ KAFLE KATEGORII (strona główna) ════
+// Kategorie rozpoznajemy po słowie, nie po dokładnej nazwie — zmiana nazwy kategorii w panelu
+// nie psuje kafli. Cena „od X zł” = najniższa cena dostępnego dania w menu (tak jak w zamówieniu
+// online). Zdjęcie: wskazane danie z menu (jeśli zmienisz jego zdjęcie w panelu, kafel też się zmieni).
+const CAT_TILES={
+  // stationary: najtańsza pozycja dostępna tylko na miejscu (nie ma jej w zamówieniu online)
+  sniadania:{cats:/śniadani/i, link:/śniadani/i, stationary:12},  // Jajecznica Barona
+  bajgle:{cats:/bajgl/i, link:/bajgl/i},
+  salatki:{cats:/sałat/i, link:/sałat/i, photo:'Sałatka Filantropa'},
+  wrapy:{cats:/wrap/i, names:/bagietk/i, link:/wrap/i, photo:'Wrap z szarpaną wieprzowiną'},
+  kawy:{cats:/^kaw/i, link:/^kaw/i, stationary:8},  // Espresso po mielecku
+  napary:{cats:/napar/i, link:/napar/i, photo:'Bursztyn Mickiewicza'}
+};
+function itemMinPrice(d){
+  const pp=(d.paramPrices||[]).map(x=>parseFloat(x)).filter(x=>x>0);
+  return pp.length?Math.min(...pp):(parseFloat(d.price)||0);
+}
+function fmtPrice(n){return Number.isInteger(n)?String(n):n.toFixed(2).replace('.',',');}
+function updateCatTiles(){
+  const menu=getMenu();
+  if(!menu.length)return;
+  document.querySelectorAll('.cat-card[data-tile]').forEach(card=>{
+    const cfg=CAT_TILES[card.dataset.tile];if(!cfg)return;
+    const items=menu.filter(d=>d.avail!==false&&(cfg.cats.test(d.cat||'')||(cfg.names&&cfg.names.test(d.name||''))));
+    const prices=items.map(itemMinPrice).filter(x=>x>0);
+    if(cfg.stationary)prices.push(cfg.stationary);
+    const pr=card.querySelector('[data-tile-price]');
+    if(pr&&prices.length)pr.textContent=fmtPrice(Math.min(...prices));
+    if(cfg.photo){
+      const d=menu.find(x=>x.name===cfg.photo&&x.photo);
+      const img=card.querySelector('.cat-card-img img');
+      if(d&&img&&img.getAttribute('src')!==d.photo)img.src=d.photo;
+    }
+  });
+}
+// Opis zdjęcia dania (alt): nazwa + początek opisu, np. „Bajgiel Barona – wolno pieczona wieprzowina, sałata, rukola”
+function dishAlt(d){
+  if(!d||!d.name)return'';
+  const desc=(d.desc||'').split(',').slice(0,3).join(',').trim();
+  return (desc?d.name+' – '+desc:d.name).replace(/"/g,'&quot;');
+}
 
 // ════ MENU ════
 function getCats(){
@@ -1842,6 +2019,7 @@ function buildMenu(){
     html+=`<div class="cat-sec" id="sec-${slug(cat)}"><div class="cat-head">${cat}</div><div class="menu-grid${asCards?' cards':''}">${items.map(renderItem).join('')}</div></div>`;
   });
   document.getElementById('menu-content').innerHTML=html;
+  try{updateCatTiles();}catch(e){}
   const io=new IntersectionObserver(entries=>{
     entries.forEach(e=>{
       if(e.isIntersecting){
@@ -1883,7 +2061,7 @@ function renderItem(item){
   if(!item.avail) priceLabel=`<span class="iprice">${basePrice.toFixed(2)} zł</span>`;
   else if(hasParam&&item.paramPrices.length>0) priceLabel=`<span class="iprice"><span class="ipfrom">od </span>${Math.min(...item.paramPrices.map(p=>parseFloat(p)||0)).toFixed(2)} zł</span>`;
   return`<div class="irow${item.avail?'':' unavail'}" onclick="${item.avail?`openProduct(${item.id})`:''}">
-    ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${item.name}" loading="lazy">`:''}
+    ${item.photo?`<img class="iphoto" src="${item.photo}" alt="${dishAlt(item)}" loading="lazy">`:''}
     <div class="irow-info">${badge}<div class="iname">${item.name}</div>${item.desc?`<div class="idesc">${item.desc}</div>`:''}</div>
     <div class="iact">${priceLabel}${actionArea}</div>
   </div>`;
@@ -1933,7 +2111,7 @@ function openProductItem(item,opts){
   document.getElementById('sp-title').textContent=item.name;
   document.getElementById('sp-name').textContent=item.name;
   const ph=document.getElementById('sp-photo');
-  if(item.photo){ph.src=item.photo;ph.alt=item.name;ph.style.display='block';}else{ph.removeAttribute('src');ph.style.display='none';}
+  if(item.photo){ph.src=item.photo;ph.alt=dishAlt(item).replace(/&quot;/g,'"');ph.style.display='block';}else{ph.removeAttribute('src');ph.style.display='none';}
   const cl=document.getElementById('sp-closed');
   cl.textContent=(typeof isBistroOpenNow==='function'&&!isBistroOpenNow())?'Teraz nie przyjmujemy zamówień online. Możesz dodać danie do koszyka — zamówienie złożysz w godzinach otwarcia.':'';
   const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
@@ -2009,7 +2187,7 @@ function renderPgCross(){
       ?`<div class="xs-step"><button onclick="xsQty(${i},-1)" aria-label="Mniej">−</button><span>${x.qty}</span><button onclick="xsQty(${i},1)" aria-label="Więcej">+</button></div>`
       :`<button class="xs-plus" onclick="xsQty(${i},1)" aria-label="Dodaj ${it.name}">+</button>`;
     return`<div class="xs-card${x.qty>0?' on':''}${it.photo?'':' nophoto'}">
-      ${it.photo?`<img class="xs-img" src="${it.photo}" alt="${it.name}" loading="lazy">`:''}
+      ${it.photo?`<img class="xs-img" src="${it.photo}" alt="${dishAlt(it)}" loading="lazy">`:''}
       <div class="xs-info">
         <div class="xs-name">${it.name}</div>
         <div class="xs-price">${xsUnit(x).toFixed(2).replace('.',',')} zł</div>
@@ -2435,6 +2613,7 @@ async function geocodeAndCheck(street,city,info){
 // do Google Geocoding — używa ostatniej znanej surowej odległości. Wywoływane, gdy
 // panel zmieni strefy dostaw w tle, a klient ma już wpisany adres na stronie.
 function refreshZoneDisplay(){
+  try{renderPromoZones();}catch(e){}
   if(window._deliveryKmRaw==null) return;
   const info=document.getElementById('zone-info');
   if(!info) return;
@@ -3043,36 +3222,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(pop) pop.addEventListener('click', e=>{ if(e.target===pop) closeIosPwaPopup(); });
 });
 
-// ════ POPUP URLOP ════
-function openUrlopPopup(){
-  const el = document.getElementById('urlop-popup');
-  if(el){ el.style.display='flex'; setTimeout(()=>el.classList.add('show'),10); }
-}
-function closeUrlopPopup(){
-  const el = document.getElementById('urlop-popup');
-  if(el){
-    el.classList.remove('show');
-    setTimeout(()=>el.style.display='none',300);
-    try{ localStorage.setItem('hb_urlop_popup_seen', new Date().toISOString().slice(0,10)); }catch(e){}
-  }
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  const pop = document.getElementById('urlop-popup');
-  if(pop) pop.addEventListener('click', e=>{ if(e.target===pop) closeUrlopPopup(); });
-
-  // Pokaż popup tylko w oknie dat urlopu, raz dziennie na urządzenie — po dacie
-  // URLOP_TO popup przestaje się pokazywać sam, nic nie trzeba ręcznie usuwać.
-  const URLOP_FROM = '2026-08-17';
-  const URLOP_TO   = '2026-09-01';
-  const todayStr = new Date().toISOString().slice(0,10);
-  if(todayStr >= URLOP_FROM && todayStr <= URLOP_TO){
-    let seen = null;
-    try{ seen = localStorage.getItem('hb_urlop_popup_seen'); }catch(e){}
-    if(seen !== todayStr){
-      setTimeout(openUrlopPopup, 600);
-    }
-  }
-});
 // Rejestruj Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -3099,11 +3248,13 @@ document.querySelectorAll('#nav-links a').forEach(a=>a.addEventListener('click',
   },{rootMargin:'-45% 0px -50% 0px'});
   links.forEach(l=>{const s=document.querySelector(l.getAttribute('href'));if(s)spy.observe(s);});
 })();
-// Karty kategorii: przewiń do menu i wybierz odpowiednią zakładkę
-document.querySelectorAll('.cat-card[data-cat-tab]').forEach(card=>card.addEventListener('click',e=>{
+// Kafle kategorii: przewiń do menu i wybierz odpowiednią zakładkę
+document.querySelectorAll('.cat-card[data-tile]').forEach(card=>card.addEventListener('click',e=>{
   e.preventDefault();
+  const cfg=CAT_TILES[card.dataset.tile];
+  const cat=cfg&&getCats().find(c=>cfg.link.test(c));
   document.getElementById('menu').scrollIntoView({behavior:'smooth'});
-  setTimeout(()=>{const t=document.getElementById(card.dataset.catTab);if(t)t.click();},600);
+  if(cat)setTimeout(()=>{const t=document.getElementById('ctab-'+slug(cat));if(t)t.click();},600);
 }));
 
 // ════ OVERLAYS ════
@@ -3129,14 +3280,6 @@ window.addEventListener('focus',()=>{
   renderAdminPromos();
 });
 </script>
-
-<!-- ═══ POPUP URLOP ═══ -->
-<div id="urlop-popup" class="popup-backdrop">
-  <div style="position:relative;max-width:420px;width:100%;animation:popIn .35s ease;">
-    <button onclick="closeUrlopPopup()" aria-label="Zamknij" style="position:absolute;top:-14px;right:-14px;background:#fff;border:none;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer;color:#555;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:1;">✕</button>
-    <img src="urlop-baner.png" alt="Jesteśmy na urlopie 17.08–01.09.2026 — Hirschówka Bistro" style="width:100%;height:auto;border-radius:14px;display:block;box-shadow:0 10px 40px rgba(0,0,0,.35);">
-  </div>
-</div>
 
 <!-- ═══ iOS PWA POPUP ═══ -->
 <div id="ios-pwa-popup" class="popup-backdrop sheet-like">
