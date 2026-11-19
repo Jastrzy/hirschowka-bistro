@@ -679,6 +679,7 @@ requestWakeLock();
           <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
             <div class="field" style="margin-bottom:0;"><label>Miesiąc</label><input type="month" id="ut-month" onchange="renderUtargMonth()"></div>
             <button class="btn bo bsm" onclick="utExportXlsx()">⬇ Eksport do Excela</button>
+            <button class="btn bo bsm" onclick="utPrintMonth()">🖨 Drukuj miesiąc</button>
           </div>
         </div>
         <div class="stats-row">
@@ -1157,7 +1158,7 @@ requestWakeLock();
         <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">💾 Kopia zapasowa danych</div>
         <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">
           Pobiera jeden plik z kluczowymi danymi: klienci (pieczątki, kontakty), kupony, historia nagród lojalnościowych,
-          historia realizacji kodów, historia kampanii SMS, archiwum zamówień, menu i nagrody. Firebase nie robi tego
+          historia realizacji kodów, historia kampanii SMS, archiwum zamówień, menu, nagrody oraz utargi dnia (raporty kasowe). Firebase nie robi tego
           automatycznie — rób to ręcznie co jakiś czas (np. raz w tygodniu) i zachowaj plik u siebie na dysku.
         </p>
         <button class="btn bp" onclick="downloadFullBackup()">💾 Pobierz kopię zapasową (JSON)</button>
@@ -6280,7 +6281,7 @@ async function downloadFullBackup(){
   const db=window._firebase&&window._firebase.db;
   if(!db){ statusEl.textContent='⚠️ Brak połączenia z Firebase'; return; }
   statusEl.textContent='Pobieram dane…';
-  const keys=['customers','coupons','loyalty-history','coupon-redemptions','sms-campaign-history','archive','menu','rewards'];
+  const keys=['customers','coupons','loyalty-history','coupon-redemptions','sms-campaign-history','archive','menu','rewards','cash-reports','cash-reports-meta'];
   try{
     const results={};
     for(const k of keys){
@@ -7025,6 +7026,63 @@ function utExportXlsx(){
   XLSX.utils.book_append_sheet(wb,ws2,'Wydatki');
   XLSX.writeFile(wb,'utarg-'+m+'.xlsx');
   toast('✅ Pobrano utarg-'+m+'.xlsx');
+}
+
+// ── Wydruk miesiąca (A4, można też „Zapisz jako PDF”) ──
+function utPrintMonth(){
+  var m=(document.getElementById('ut-month')||{}).value||dayKeyOf(new Date()).slice(0,7);
+  var ch=utChain(), keys=utMonthKeys();
+  if(!keys.length){ toast('Brak wpisów w tym miesiącu'); return; }
+  var MIES=['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+  var mLabel=MIES[+m.slice(5,7)-1]+' '+m.slice(0,4);
+  var T=0,C=0,O=0,E=0,D=0,sales=0, rows='', expRows='', notes='';
+  keys.forEach(function(k){
+    var r=utReports[k], c=ch[k], t=utGr(r.total), cd=utGr(r.card), on=utGr(r.online), ex=utExpSum(r);
+    T+=t;C+=cd;O+=on;E+=ex; if(c.diff!==null) D+=c.diff; if(t>0) sales++;
+    rows+='<tr><td>'+utDayLabel(k)+'</td><td class="n">'+utFmt(t)+'</td><td class="n">'+utFmt(cd)+'</td><td class="n">'+utFmt(on)+'</td>'+
+      '<td class="n">'+utFmt(utCashSales(r))+'</td><td class="n">'+(ex?utFmt(ex):'—')+'</td><td class="n">'+utFmt(c.expected)+'</td>'+
+      '<td class="n">'+(c.counted===null?'—':utFmt(c.counted))+'</td><td class="n'+(c.diff?' bad':'')+'">'+(c.diff===null?'—':(c.diff>0?'+':'')+utFmt(c.diff))+'</td>'+
+      '<td class="n"><b>'+utFmt(c.end)+'</b></td><td>'+utEsc(r.who||'')+'</td></tr>';
+    (r.expenses||[]).filter(Boolean).forEach(function(e){
+      expRows+='<tr><td>'+utDayLabel(k)+'</td><td>'+utEsc(e.desc||'')+'</td><td class="n">'+utFmt(utGr(e.amount))+'</td><td>'+utEsc(r.who||'')+'</td></tr>';
+    });
+    if(r.note) notes+='<li><b>'+utDayLabel(k)+':</b> '+utEsc(r.note)+'</li>';
+  });
+  var pct=function(a){return T?String(Math.round(a/T*1000)/10).replace('.',',')+'%':'—';};
+  var first=ch[keys[0]], last=ch[keys[keys.length-1]];
+  var html='<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Utarg '+mLabel+' – Hirschówka Bistro</title><style>'+
+    '@page{size:A4 portrait;margin:12mm;}*{box-sizing:border-box;}body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:10.5px;margin:0;}'+
+    'h1{font-size:17px;margin:0 0 2px;}h2{font-size:12.5px;margin:16px 0 6px;}.sub{color:#555;font-size:10.5px;margin-bottom:12px;}'+
+    '.tiles{display:flex;gap:8px;margin-bottom:10px;}.tile{flex:1;min-width:0;border:1px solid #bbb;border-radius:5px;padding:6px 8px;}.tile small{display:block;color:#555;font-size:9px;text-transform:uppercase;letter-spacing:.04em;}.tile b{font-size:13px;}'+
+    'table{width:100%;border-collapse:collapse;}th,td{border:1px solid #bbb;padding:3px 4px;font-size:9.5px;}th{background:#eee;font-size:9.5px;text-align:left;}td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}'+
+    'tr.tot td{font-weight:bold;background:#f3f3f3;}td.bad{color:#b91c1c;}tr{page-break-inside:avoid;}'+
+    'ul{margin:4px 0 0 16px;padding:0;}.sign{display:flex;gap:40px;margin-top:36px;}.sign div{flex:1;border-top:1px solid #333;padding-top:4px;text-align:center;color:#555;font-size:10px;}'+
+    '.foot{margin-top:18px;color:#777;font-size:9px;}.noprint{margin:10px 0;}@media print{.noprint{display:none;}}'+
+    '</style></head><body>'+
+    '<div class="noprint"><button onclick="window.print()" style="padding:8px 16px;font-size:14px;">🖨 Drukuj / Zapisz jako PDF</button></div>'+
+    '<h1>Raport utargów — '+mLabel+'</h1>'+
+    '<div class="sub">Hirschówka Bistro · ul. Mickiewicza 17, Mielec</div>'+
+    '<div class="tiles">'+
+      '<div class="tile"><small>Utarg miesiąca</small><b>'+utFmt(T)+'</b></div>'+
+      '<div class="tile"><small>Średnio dziennie</small><b>'+(sales?utFmt(Math.round(T/sales)):'—')+'</b><br><small>dni ze sprzedażą: '+sales+'</small></div>'+
+      '<div class="tile"><small>Karta</small><b>'+utFmt(C)+'</b> ('+pct(C)+')</div>'+
+      '<div class="tile"><small>Online</small><b>'+utFmt(O)+'</b> ('+pct(O)+')</div>'+
+      '<div class="tile"><small>Wydatki z szuflady</small><b>'+utFmt(E)+'</b></div>'+
+    '</div>'+
+    '<div class="sub">Stan szuflady na początek okresu: <b>'+utFmt(first.prev)+'</b> · na koniec okresu: <b>'+utFmt(last.end)+'</b> · suma różnic: <b>'+utFmt(D)+'</b></div>'+
+    '<table><thead><tr><th>Dzień</th><th class="n">Utarg</th><th class="n">Karta</th><th class="n">Online</th><th class="n">Gotówka ze sprz.</th><th class="n">Wydatki</th><th class="n">Powinno być</th><th class="n">Policzono</th><th class="n">Różnica</th><th class="n">Stan szuflady</th><th>Kto</th></tr></thead><tbody>'+
+    rows+'<tr class="tot"><td>Razem</td><td class="n">'+utFmt(T)+'</td><td class="n">'+utFmt(C)+'</td><td class="n">'+utFmt(O)+'</td><td class="n">'+utFmt(T-C-O)+'</td><td class="n">'+utFmt(E)+'</td><td></td><td></td><td class="n">'+utFmt(D)+'</td><td class="n">'+utFmt(last.end)+'</td><td></td></tr>'+
+    '</tbody></table>'+
+    (expRows?'<h2>Wydatki i wypłaty z szuflady</h2><table><thead><tr><th>Dzień</th><th>Opis</th><th class="n">Kwota</th><th>Kto</th></tr></thead><tbody>'+expRows+
+      '<tr class="tot"><td colspan="2">Razem</td><td class="n">'+utFmt(E)+'</td><td></td></tr></tbody></table>':'')+
+    (notes?'<h2>Notatki</h2><ul>'+notes+'</ul>':'')+
+    '<div class="sign"><div>Sporządził(a)</div><div>Sprawdził(a)</div></div>'+
+    '<div class="foot">Wydrukowano '+new Date().toLocaleString('pl-PL')+' z panelu Hirschówka Bistro.</div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>'+
+    '</body></html>';
+  var w=window.open('','_blank');
+  if(!w){ toast('⚠️ Przeglądarka zablokowała nowe okno — zezwól na wyskakujące okna dla panelu'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 
 // Start nasłuchu od razu (kafelek na pulpicie pokazuje, czy dziś wpisano raport)
