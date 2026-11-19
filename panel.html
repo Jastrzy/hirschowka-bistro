@@ -528,6 +528,7 @@ requestWakeLock();
     <div class="ni active" onclick="go('pulpit',this)"><span class="ic">🏠</span><span>Pulpit</span></div>
     <div class="ni" id="nav-zamowienia" onclick="go('zamowienia',this)"><span class="ic">📋</span><span>Zamówienia</span><span class="nb" id="badge-ord">2</span></div>
     <div class="ni" id="nav-klienci" onclick="go('klienci',this)"><span class="ic">👥</span><span>Klienci</span></div>
+    <div class="ni" id="nav-utarg" onclick="go('utarg',this)"><span class="ic">💰</span><span>Utarg dnia</span></div>
 
     <div class="sb-sect">Baza produktów</div>
     <div class="ni" onclick="go('menu',this)"><span class="ic">🥘</span><span>Menu</span></div>
@@ -609,12 +610,98 @@ requestWakeLock();
       <div id="dash-active-orders" style="margin-bottom:16px;"></div>
 
       <div class="dash-grid">
+        <div class="dash-tile" onclick="go('utarg',document.getElementById('nav-utarg'))"><div class="dt-icon">💰</div><div class="dt-title">Utarg dnia</div><div class="dt-sub" id="dash-tile-utarg">Wpisz raport z kasy</div></div>
         <div class="dash-tile" onclick="go('zamowienia',document.getElementById('nav-zamowienia'))"><div class="dt-icon">📋</div><div class="dt-title">Lista zamówień</div><div class="dt-sub" id="dash-tile-orders">Zobacz wszystkie zamówienia</div></div>
         <div class="dash-tile" onclick="go('daniednia',document.querySelector('.ni[onclick*=daniednia]'))"><div class="dt-icon">⭐</div><div class="dt-title">Danie dnia</div><div class="dt-sub" id="dash-tile-daily">Ustaw dzisiejsze danie</div></div>
         <div class="dash-tile" onclick="go('menu',document.querySelector('.ni[onclick*=menu]'))"><div class="dt-icon">🍽</div><div class="dt-title">Modyfikuj menu</div><div class="dt-sub">Dodaj, usuń lub zmień dania</div></div>
         <div class="dash-tile" onclick="go('strefy',document.querySelector('.ni[onclick*=strefy]'))"><div class="dt-icon">🛵</div><div class="dt-title">Obszary dostaw</div><div class="dt-sub">Strefy i stawki dostawy</div></div>
         <div class="dash-tile" onclick="go('klienci',document.getElementById('nav-klienci'))"><div class="dt-icon">👥</div><div class="dt-title">Klienci</div><div class="dt-sub" id="dash-tile-custs">Baza klientów</div></div>
         <div class="dash-tile" onclick="go('importexport',document.querySelector('.ni[onclick*=importexport]'))"><div class="dt-icon">↕</div><div class="dt-title">Import / Eksport</div><div class="dt-sub">Przenieś dane klientów</div></div>
+      </div>
+    </div>
+
+    <!-- UTARG DNIA — elektroniczny raport kasowy (zastępuje zeszyt z utargami) -->
+    <div class="page" id="page-utarg">
+      <style>
+        .ut-sum-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+        .ut-sum-row:last-child{border-bottom:none;}
+        .ut-sum-row strong{font-variant-numeric:tabular-nums;}
+        .ut-big{font-size:16px;font-weight:700;}
+        .ut-exp-row{display:grid;grid-template-columns:1fr 120px 36px;gap:8px;margin-bottom:8px;align-items:center;}
+        .ut-exp-row input{width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:#fff;}
+        .ut-ok{color:var(--green);} .ut-bad{color:var(--red);}
+        .ut-warn{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red);border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;}
+        .ut-hint{font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        #ut-table tbody tr{cursor:pointer;}
+        #ut-table td,#ut-table th{white-space:nowrap;}
+        #ut-table td.num,#ut-table th.num{text-align:right;font-variant-numeric:tabular-nums;}
+        #ut-table tr.ut-total td{font-weight:700;background:var(--bg);}
+        #ut-table tr.ut-sel td{background:rgba(200,146,42,.10);}
+        @media(max-width:700px){.ut-exp-row{grid-template-columns:1fr 96px 36px;}}
+      </style>
+      <div class="sect-hdr"><h2>💰 Utarg dnia</h2></div>
+
+      <div class="card card-pad" style="margin-bottom:14px;" id="ut-form-card">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;" id="ut-form-title">Raport dnia</h3>
+        <div class="frow">
+          <div class="field"><label>Data</label><input type="date" id="ut-date" onchange="utLoadDay(this.value)"></div>
+          <div class="field"><label>Kto wpisuje</label><input type="text" id="ut-who" list="ut-who-list" placeholder="np. Ela" oninput="utRememberWho()"><datalist id="ut-who-list"></datalist></div>
+        </div>
+        <div class="frow3">
+          <div class="field"><label>Utarg z raportu dobowego (zł)</label><input type="text" inputmode="decimal" id="ut-total" placeholder="0,00" oninput="utRecalc()"></div>
+          <div class="field"><label>W tym karta (zł)</label><input type="text" inputmode="decimal" id="ut-card" placeholder="0,00" oninput="utRecalc()"></div>
+          <div class="field"><label>W tym online opłacone (zł)</label><input type="text" inputmode="decimal" id="ut-online" placeholder="0,00" oninput="utRecalc()"></div>
+        </div>
+        <div class="ut-hint" id="ut-online-hint"></div>
+        <div id="ut-warn"></div>
+
+        <div class="field" style="margin-bottom:6px;"><label>Wydatki / wypłaty z szuflady</label></div>
+        <div id="ut-exp-list"></div>
+        <button class="btn bo bsm" onclick="utAddExp()" style="margin-bottom:16px;">+ Dodaj wydatek</button>
+
+        <div class="frow">
+          <div class="field"><label>Gotówka policzona w szufladzie (opcjonalnie)</label><input type="text" inputmode="decimal" id="ut-counted" placeholder="np. 1606,49" oninput="utRecalc()"></div>
+          <div class="field"><label>Notatka</label><input type="text" id="ut-note" placeholder="np. brak drobnych"></div>
+        </div>
+
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;" id="ut-summary"></div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn bp" onclick="utSave()">💾 Zapisz dzień</button>
+          <button class="btn bd" id="ut-del-btn" onclick="utDelete()" style="display:none;">🗑 Usuń wpis</button>
+          <button class="btn bo" onclick="utNewToday()">Dziś</button>
+        </div>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:14px;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+          <h3 style="font-size:14px;font-weight:700;">Zestawienie miesiąca</h3>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+            <div class="field" style="margin-bottom:0;"><label>Miesiąc</label><input type="month" id="ut-month" onchange="renderUtargMonth()"></div>
+            <button class="btn bo bsm" onclick="utExportXlsx()">⬇ Eksport do Excela</button>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-lbl">Utarg miesiąca</div><div class="stat-val" id="ut-st-total">—</div><div class="stat-sub" id="ut-st-days"></div></div>
+          <div class="stat"><div class="stat-lbl">Średnio dziennie</div><div class="stat-val" id="ut-st-avg">—</div></div>
+          <div class="stat"><div class="stat-lbl">Karta</div><div class="stat-val" id="ut-st-card">—</div></div>
+          <div class="stat"><div class="stat-lbl">Online</div><div class="stat-val" id="ut-st-online">—</div></div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl" id="ut-table">
+            <thead><tr><th>Dzień</th><th class="num">Utarg</th><th class="num">Karta</th><th class="num">Online</th><th class="num">Wydatki</th><th class="num">Stan szuflady</th><th class="num">Różnica</th><th>Kto</th></tr></thead>
+            <tbody id="ut-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card card-pad">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">Stan szuflady na start</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Ile gotówki było w szufladzie przed pierwszym wpisem. Od tej kwoty liczą się wszystkie kolejne dni.</p>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div class="field" style="margin-bottom:0;max-width:220px;"><label>Kwota (zł)</label><input type="text" inputmode="decimal" id="ut-start" placeholder="np. 1174,59"></div>
+          <button class="btn bo" onclick="utSaveStart()">Zapisz</button>
+        </div>
       </div>
     </div>
 
@@ -2071,7 +2158,7 @@ const DAYS = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','N
 let schedule = S('schedule') || DAYS.map((d,i)=>({day:d,from:i<5?'07:00':'08:00',to:i<5?'17:00':i===5?'14:00':'',closed:i===6}));
 
 // ── NAVIGATION ──
-const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',newsletter:'Newsletter',qr:'Kody QR',lojalnosc:'Lojalność i kupony',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
+const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',utarg:'Utarg dnia',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',newsletter:'Newsletter',qr:'Kody QR',lojalnosc:'Lojalność i kupony',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
 
 // curMenuCat starts at first category in data
 let curMenuCat = menuData[0]?.cat || 'Śniadania i lunche';
@@ -2082,7 +2169,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad,smsmkt:smsMktRenderHistory};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,utarg:renderUtarg,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad,smsmkt:smsMktRenderHistory};
   if(renders[id]) renders[id]();
 }
 
@@ -6591,6 +6678,358 @@ document.addEventListener('visibilitychange', function(){
     setTimeout(fetchOrdersNow, 800);
   }
 });
+</script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// 💰 UTARG DNIA — elektroniczny raport kasowy (zastępuje zeszyt)
+// Dane: cash-reports/RRRR-MM-DD → {total, card, online, expenses:[{desc,amount}], counted?, who, note, updatedAt}
+//       cash-reports-meta/start → stan szuflady przed pierwszym wpisem
+// Czytane i zapisywane bezpośrednio w Firebase (bez localStorage).
+// Wszystkie obliczenia w groszach (liczby całkowite), żeby nie było błędów zaokrągleń.
+// ══════════════════════════════════════════════════════════════
+var utReports = {};          // { 'RRRR-MM-DD': {...} }
+var utStart = 0;             // zł
+var utLoaded = false;
+var utListening = false;
+var utExpenses = [];         // wiersze formularza [{desc, amount(string)}]
+var UT_WHO_KEY = 'hb_utarg_who';
+
+// "1 174,59" / "1174.59" → 117459 (grosze); puste/niepoprawne → null
+function utParse(v){
+  if(v===null||v===undefined) return null;
+  var s=String(v).replace(/\s| /g,'').replace(',', '.');
+  if(s==='') return null;
+  var n=parseFloat(s);
+  if(isNaN(n)) return null;
+  return Math.round(n*100);
+}
+function utGr(n){ return Math.round((parseFloat(n)||0)*100); }           // zł (liczba) → grosze
+function utZl(gr){ return Math.round(gr)/100; }                         // grosze → zł (liczba)
+function utFmt(gr){
+  var neg=gr<0; gr=Math.abs(Math.round(gr));
+  var zl=Math.floor(gr/100), g=String(gr%100).padStart(2,'0');
+  var z=String(zl).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  return (neg?'−':'')+z+','+g+' zł';
+}
+function utInStr(gr){ return gr===null||gr===undefined ? '' : (utZl(gr).toFixed(2).replace('.',',')); }
+function utEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function utDayLabel(key){
+  var p=key.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]);
+  var dn=['nd','pn','wt','śr','cz','pt','sb'][d.getDay()];
+  return p[2]+'.'+p[1]+' '+dn;
+}
+
+// Gotówka ze sprzedaży i wydatki jednego wpisu (grosze)
+function utCashSales(r){ return utGr(r.total)-utGr(r.card)-utGr(r.online); }
+function utExpSum(r){ return (r.expenses||[]).reduce(function(a,e){return a+utGr(e&&e.amount);},0); }
+
+// Łańcuch stanu szuflady: start → każdy dzień po kolei.
+// Jeśli wpisano gotówkę policzoną, następny dzień liczy od niej.
+function utChain(){
+  var keys=Object.keys(utReports).sort();
+  var drawer=utGr(utStart), out={};
+  keys.forEach(function(k){
+    var r=utReports[k]||{};
+    var prev=drawer;
+    var expected=prev+utCashSales(r)-utExpSum(r);
+    var hasCounted=(r.counted!==undefined&&r.counted!==null&&r.counted!=='');
+    var counted=hasCounted?utGr(r.counted):null;
+    var diff=hasCounted?counted-expected:null;
+    drawer=hasCounted?counted:expected;
+    out[k]={prev:prev,expected:expected,counted:counted,diff:diff,end:drawer};
+  });
+  return out;
+}
+// Stan szuflady na koniec dnia poprzedzającego datę (także dla dnia jeszcze niezapisanego)
+function utPrevBalance(date){
+  var ch=utChain(), keys=Object.keys(ch).filter(function(k){return k<date;}).sort();
+  return keys.length ? ch[keys[keys.length-1]].end : utGr(utStart);
+}
+
+// ── Firebase: start nasłuchu, gdy baza i logowanie panelu są gotowe ──
+function utStartListening(){
+  if(utListening) return;
+  var db=window._firebase&&window._firebase.db;
+  var u=(typeof firebase!=='undefined'&&firebase.auth)?firebase.auth().currentUser:null;
+  if(!db||!u||u.isAnonymous){ setTimeout(utStartListening,800); return; }
+  utListening=true;
+  db.ref('cash-reports').on('value',function(snap){
+    utReports=snap.val()||{};
+    utLoaded=true;
+    utOnData();
+  },function(err){ console.warn('[utarg] cash-reports:',err); toast('⚠️ Brak dostępu do utargów: '+(err&&err.code||err)); });
+  db.ref('cash-reports-meta/start').on('value',function(snap){
+    var v=snap.val(); utStart=(v===null||v===undefined)?0:parseFloat(v)||0;
+    var el=document.getElementById('ut-start');
+    if(el&&document.activeElement!==el) el.value=v===null||v===undefined?'':utInStr(utGr(utStart));
+    utOnData();
+  });
+}
+function utOnData(){
+  utUpdateDashTile();
+  var pg=document.getElementById('page-utarg');
+  if(pg&&pg.classList.contains('active')){ utRecalc(); renderUtargMonth(); }
+}
+function utUpdateDashTile(){
+  var el=document.getElementById('dash-tile-utarg'); if(!el) return;
+  var t=dayKeyOf(new Date());
+  el.textContent = utReports[t] ? ('Dziś: '+utFmt(utGr(utReports[t].total))+' ✓') : 'Wpisz raport z kasy';
+}
+
+// ── Render zakładki ──
+function renderUtarg(){
+  utStartListening();
+  var d=document.getElementById('ut-date');
+  if(d&&!d.value){ d.value=dayKeyOf(new Date()); utLoadDay(d.value); }
+  var m=document.getElementById('ut-month');
+  if(m&&!m.value) m.value=dayKeyOf(new Date()).slice(0,7);
+  utFillWhoList();
+  utRecalc();
+  renderUtargMonth();
+}
+
+function utFillWhoList(){
+  var set={};
+  Object.keys(utReports).forEach(function(k){ var w=utReports[k]&&utReports[k].who; if(w) set[w]=1; });
+  var dl=document.getElementById('ut-who-list'); if(!dl) return;
+  dl.innerHTML=Object.keys(set).map(function(w){return '<option value="'+utEsc(w)+'">';}).join('');
+}
+function utRememberWho(){
+  try{ localStorage.setItem(UT_WHO_KEY,document.getElementById('ut-who').value.trim()); }catch(e){}
+}
+function utSavedWho(){ try{ return localStorage.getItem(UT_WHO_KEY)||''; }catch(e){ return ''; } }
+
+// Załaduj dzień do formularza (istniejący → edycja, nowy → pusty)
+function utLoadDay(date){
+  if(!date) return;
+  var r=utReports[date];
+  document.getElementById('ut-date').value=date;
+  document.getElementById('ut-total').value  = r?utInStr(utGr(r.total)):'';
+  document.getElementById('ut-card').value   = r?utInStr(utGr(r.card)):'';
+  document.getElementById('ut-online').value = r?utInStr(utGr(r.online)):'';
+  var hasC=r&&r.counted!==undefined&&r.counted!==null&&r.counted!=='';
+  document.getElementById('ut-counted').value= hasC?utInStr(utGr(r.counted)):'';
+  document.getElementById('ut-note').value   = r?(r.note||''):'';
+  document.getElementById('ut-who').value    = (r&&r.who)?r.who:utSavedWho();
+  utExpenses = r&&r.expenses ? r.expenses.filter(Boolean).map(function(e){return {desc:e.desc||'',amount:utInStr(utGr(e.amount))};}) : [];
+  document.getElementById('ut-form-title').textContent = r ? ('Edycja dnia '+utDayLabel(date)) : ('Nowy raport — '+utDayLabel(date));
+  document.getElementById('ut-del-btn').style.display = r?'':'none';
+  utRenderExp();
+  utRecalc();
+  utHighlightRow();
+}
+function utNewToday(){ utLoadDay(dayKeyOf(new Date())); }
+function utEditDay(date){
+  utLoadDay(date);
+  var c=document.getElementById('ut-form-card'); if(c&&c.scrollIntoView) c.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── Wydatki ──
+function utRenderExp(){
+  var box=document.getElementById('ut-exp-list'); if(!box) return;
+  if(!utExpenses.length){ box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Brak wydatków tego dnia.</div>'; return; }
+  box.innerHTML=utExpenses.map(function(e,i){
+    return '<div class="ut-exp-row">'+
+      '<input type="text" placeholder="np. chleb, pensja, kupony" value="'+utEsc(e.desc)+'" oninput="utExpenses['+i+'].desc=this.value">'+
+      '<input type="text" inputmode="decimal" placeholder="0,00" value="'+utEsc(e.amount)+'" oninput="utExpenses['+i+'].amount=this.value;utRecalc()">'+
+      '<button class="btn bd bsm" title="Usuń" onclick="utDelExp('+i+')">✕</button></div>';
+  }).join('');
+}
+function utAddExp(){
+  utExpenses.push({desc:'',amount:''}); utRenderExp();
+  var rows=document.querySelectorAll('#ut-exp-list .ut-exp-row input[type=text]:first-child');
+  if(rows.length) rows[rows.length-1].focus();
+}
+function utDelExp(i){ utExpenses.splice(i,1); utRenderExp(); utRecalc(); }
+
+// ── Podpowiedź „online” z zamówień ze strony ──
+function utOnlineFromOrders(date){
+  var seen={}, sum=0, cnt=0;
+  var all=[].concat(typeof orders!=='undefined'?orders:[], typeof archive!=='undefined'?archive:[]);
+  all.forEach(function(o){
+    if(!o) return;
+    var id=o.id!=null?String(o.id):null;
+    if(id){ if(seen[id]) return; seen[id]=1; }
+    if(!isSaleOrder(o)) return;
+    if(['blik','card','gpay'].indexOf(o.payment)<0) return;
+    if(orderDayKey(o)!==date) return;
+    sum+=utGr(o.total); cnt++;
+  });
+  return {sum:sum,cnt:cnt};
+}
+function utInsertOnline(){
+  var date=document.getElementById('ut-date').value;
+  var r=utOnlineFromOrders(date);
+  document.getElementById('ut-online').value=utInStr(r.sum);
+  utRecalc();
+}
+
+// ── Podsumowanie na żywo ──
+function utRecalc(){
+  var dEl=document.getElementById('ut-date'); if(!dEl) return;
+  var date=dEl.value||dayKeyOf(new Date());
+  var total=utParse(document.getElementById('ut-total').value)||0;
+  var card=utParse(document.getElementById('ut-card').value)||0;
+  var online=utParse(document.getElementById('ut-online').value)||0;
+  var counted=utParse(document.getElementById('ut-counted').value);
+  var exp=utExpenses.reduce(function(a,e){return a+(utParse(e.amount)||0);},0);
+  var prev=utPrevBalance(date);
+  var cash=total-card-online;
+  var expected=prev+cash-exp;
+
+  // podpowiedź online
+  var h=utOnlineFromOrders(date), hint=document.getElementById('ut-online-hint');
+  if(hint){
+    hint.innerHTML = h.cnt
+      ? 'Zamówienia ze strony opłacone online tego dnia: <strong>'+h.cnt+'</strong> szt. = <strong>'+utFmt(h.sum)+'</strong> <button class="btn bo bsm" onclick="utInsertOnline()">Wstaw</button>'
+      : 'Brak zamówień ze strony opłaconych online (BLIK/karta/GPay) tego dnia.';
+  }
+  // ostrzeżenie
+  var w=document.getElementById('ut-warn');
+  if(w) w.innerHTML = (card+online>total) ? '<div class="ut-warn">⚠️ Karta + online ('+utFmt(card+online)+') to więcej niż utarg ('+utFmt(total)+'). Sprawdź kwoty z raportu.</div>' : '';
+
+  var html=
+    '<div class="ut-sum-row"><span>Stan szuflady z poprzedniego dnia</span><strong>'+utFmt(prev)+'</strong></div>'+
+    '<div class="ut-sum-row"><span>+ Gotówka ze sprzedaży <span style="color:var(--muted);">(utarg − karta − online)</span></span><strong>'+utFmt(cash)+'</strong></div>'+
+    '<div class="ut-sum-row"><span>− Wydatki / wypłaty</span><strong>'+utFmt(exp)+'</strong></div>'+
+    '<div class="ut-sum-row ut-big"><span>Powinno być w szufladzie</span><strong>'+utFmt(expected)+'</strong></div>';
+  if(counted!==null){
+    var diff=counted-expected;
+    html+='<div class="ut-sum-row"><span>Policzono</span><strong>'+utFmt(counted)+'</strong></div>'+
+          '<div class="ut-sum-row ut-big"><span>Różnica</span><strong class="'+(diff===0?'ut-ok':'ut-bad')+'">'+(diff>0?'+':'')+utFmt(diff)+(diff===0?' ✓':'')+'</strong></div>';
+  }
+  document.getElementById('ut-summary').innerHTML=html;
+}
+
+// ── Zapis / usuwanie ──
+function utDbReady(){
+  var db=window._firebase&&window._firebase.db;
+  if(!db){ toast('⚠️ Baza jeszcze się łączy — spróbuj za chwilę'); return null; }
+  return db;
+}
+function utSave(){
+  var db=utDbReady(); if(!db) return;
+  var date=document.getElementById('ut-date').value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast('⚠️ Wybierz datę'); return; }
+  var total=utParse(document.getElementById('ut-total').value);
+  var card=utParse(document.getElementById('ut-card').value);
+  var online=utParse(document.getElementById('ut-online').value);
+  var counted=utParse(document.getElementById('ut-counted').value);
+  var who=document.getElementById('ut-who').value.trim();
+  var note=document.getElementById('ut-note').value.trim();
+  var expenses=[], bad=false;
+  utExpenses.forEach(function(e){
+    var a=utParse(e.amount), d=(e.desc||'').trim();
+    if(a===null&&!d) return;           // pusty wiersz — pomijamy
+    if(a===null){ bad=true; return; }
+    expenses.push({desc:d||'wydatek',amount:utZl(a)});
+  });
+  if(bad){ toast('⚠️ Uzupełnij kwotę przy każdym wydatku'); return; }
+  if(total===null&&!expenses.length&&counted===null){ toast('⚠️ Wpisz utarg albo przynajmniej wydatek'); return; }
+  if(!who){ toast('⚠️ Wpisz, kto wpisuje'); document.getElementById('ut-who').focus(); return; }
+  var rec={ total:utZl(total||0), card:utZl(card||0), online:utZl(online||0), expenses:expenses,
+            who:who, note:note, updatedAt:Date.now() };
+  if(counted!==null) rec.counted=utZl(counted);
+  utRememberWho();
+  db.ref('cash-reports/'+date).set(rec).then(function(){
+    toast('✅ Zapisano dzień '+utDayLabel(date));
+    utReports[date]=rec;
+    document.getElementById('ut-month').value=date.slice(0,7);
+    utLoadDay(date); renderUtargMonth(); utFillWhoList();
+  }).catch(function(err){ toast('❌ Nie zapisano: '+(err&&err.message||err)); });
+}
+function utDelete(){
+  var db=utDbReady(); if(!db) return;
+  var date=document.getElementById('ut-date').value;
+  if(!utReports[date]) return;
+  if(!confirm('Usunąć wpis z dnia '+utDayLabel(date)+'?\nKolejne dni przeliczą się od nowa.')) return;
+  db.ref('cash-reports/'+date).remove().then(function(){
+    delete utReports[date];
+    toast('🗑 Usunięto wpis '+utDayLabel(date));
+    utLoadDay(date); renderUtargMonth();
+  }).catch(function(err){ toast('❌ Nie usunięto: '+(err&&err.message||err)); });
+}
+function utSaveStart(){
+  var db=utDbReady(); if(!db) return;
+  var v=utParse(document.getElementById('ut-start').value);
+  if(v===null){ toast('⚠️ Wpisz kwotę'); return; }
+  db.ref('cash-reports-meta/start').set(utZl(v)).then(function(){
+    utStart=utZl(v); toast('✅ Zapisano stan na start: '+utFmt(v)); utRecalc(); renderUtargMonth();
+  }).catch(function(err){ toast('❌ Nie zapisano: '+(err&&err.message||err)); });
+}
+
+// ── Zestawienie miesiąca ──
+function utMonthKeys(){
+  var m=(document.getElementById('ut-month')||{}).value||dayKeyOf(new Date()).slice(0,7);
+  return Object.keys(utReports).filter(function(k){return k.slice(0,7)===m;}).sort();
+}
+function renderUtargMonth(){
+  var tb=document.getElementById('ut-tbody'); if(!tb) return;
+  if(!utLoaded){ tb.innerHTML='<tr><td colspan="8" style="color:var(--muted);">Ładowanie…</td></tr>'; return; }
+  var ch=utChain(), keys=utMonthKeys();
+  var T=0,C=0,O=0,E=0,D=0,sales=0;
+  var rows=keys.map(function(k){
+    var r=utReports[k], c=ch[k], t=utGr(r.total), cd=utGr(r.card), on=utGr(r.online), ex=utExpSum(r);
+    T+=t;C+=cd;O+=on;E+=ex; if(c.diff!==null) D+=c.diff; if(t>0) sales++;
+    var diffCell = c.diff===null ? '<span style="color:var(--muted);">—</span>'
+      : '<span class="'+(c.diff===0?'ut-ok':'ut-bad')+'">'+(c.diff>0?'+':'')+utFmt(c.diff)+'</span>';
+    var exTitle=(r.expenses||[]).filter(Boolean).map(function(e){return (e.desc||'')+': '+utFmt(utGr(e.amount));}).join('\n');
+    return '<tr data-day="'+k+'" onclick="utEditDay(\''+k+'\')">'+
+      '<td>'+utDayLabel(k)+(r.note?' <span title="'+utEsc(r.note)+'">📝</span>':'')+'</td>'+
+      '<td class="num">'+utFmt(t)+'</td><td class="num">'+utFmt(cd)+'</td><td class="num">'+utFmt(on)+'</td>'+
+      '<td class="num" title="'+utEsc(exTitle)+'">'+(ex?utFmt(ex):'—')+'</td>'+
+      '<td class="num"><strong>'+utFmt(c.end)+'</strong></td>'+
+      '<td class="num">'+diffCell+'</td><td>'+utEsc(r.who||'')+'</td></tr>';
+  });
+  if(!keys.length) tb.innerHTML='<tr><td colspan="8" style="color:var(--muted);">Brak wpisów w tym miesiącu.</td></tr>';
+  else tb.innerHTML=rows.join('')+'<tr class="ut-total"><td>Razem</td><td class="num">'+utFmt(T)+'</td><td class="num">'+utFmt(C)+'</td><td class="num">'+utFmt(O)+'</td><td class="num">'+utFmt(E)+'</td><td class="num">'+(keys.length?utFmt(ch[keys[keys.length-1]].end):'—')+'</td><td class="num">'+utFmt(D)+'</td><td></td></tr>';
+  var pct=function(a){return T?String(Math.round(a/T*1000)/10).replace('.',',')+'%':'—';};
+  document.getElementById('ut-st-total').textContent=keys.length?utFmt(T):'—';
+  document.getElementById('ut-st-days').textContent=sales?('dni ze sprzedażą: '+sales):'';
+  document.getElementById('ut-st-avg').textContent=sales?utFmt(Math.round(T/sales)):'—';
+  document.getElementById('ut-st-card').textContent=pct(C);
+  document.getElementById('ut-st-online').textContent=pct(O);
+  utHighlightRow();
+}
+function utHighlightRow(){
+  var d=(document.getElementById('ut-date')||{}).value;
+  document.querySelectorAll('#ut-tbody tr[data-day]').forEach(function(tr){ tr.classList.toggle('ut-sel',tr.getAttribute('data-day')===d); });
+}
+
+// ── Eksport do Excela ──
+function utExportXlsx(){
+  if(typeof XLSX==='undefined'){ toast('⚠️ Biblioteka Excela się nie załadowała'); return; }
+  var m=(document.getElementById('ut-month')||{}).value||'';
+  var ch=utChain(), keys=utMonthKeys();
+  if(!keys.length){ toast('Brak wpisów w tym miesiącu'); return; }
+  var head=['Data','Utarg','Karta','Online','Gotówka ze sprzedaży','Wydatki razem','Wydatki – opisy','Stan z poprzedniego dnia','Powinno być','Policzono','Różnica','Stan szuflady (koniec dnia)','Kto','Notatka'];
+  var data=[head], T=0,C=0,O=0,E=0;
+  keys.forEach(function(k){
+    var r=utReports[k], c=ch[k], ex=utExpSum(r);
+    T+=utGr(r.total);C+=utGr(r.card);O+=utGr(r.online);E+=ex;
+    data.push([k.split('-').reverse().join('.'), utZl(utGr(r.total)), utZl(utGr(r.card)), utZl(utGr(r.online)),
+      utZl(utCashSales(r)), utZl(ex),
+      (r.expenses||[]).filter(Boolean).map(function(e){return (e.desc||'')+' '+utZl(utGr(e.amount)).toFixed(2).replace('.',',');}).join('; '),
+      utZl(c.prev), utZl(c.expected), c.counted===null?'':utZl(c.counted), c.diff===null?'':utZl(c.diff), utZl(c.end),
+      r.who||'', r.note||'']);
+  });
+  data.push(['RAZEM',utZl(T),utZl(C),utZl(O),utZl(T-C-O),utZl(E),'','','','','',utZl(ch[keys[keys.length-1]].end),'','']);
+  // Osobny arkusz: każdy wydatek w osobnym wierszu
+  var exp=[['Data','Opis','Kwota','Kto']];
+  keys.forEach(function(k){ (utReports[k].expenses||[]).filter(Boolean).forEach(function(e){ exp.push([k.split('-').reverse().join('.'), e.desc||'', utZl(utGr(e.amount)), utReports[k].who||'']); }); });
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:11},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:40},{wch:12},{wch:12},{wch:10},{wch:9},{wch:14},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws,'Utarg '+m);
+  var ws2=XLSX.utils.aoa_to_sheet(exp); ws2['!cols']=[{wch:11},{wch:36},{wch:10},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Wydatki');
+  XLSX.writeFile(wb,'utarg-'+m+'.xlsx');
+  toast('✅ Pobrano utarg-'+m+'.xlsx');
+}
+
+// Start nasłuchu od razu (kafelek na pulpicie pokazuje, czy dziś wpisano raport)
+utStartListening();
+
 </script>
 </body>
 </html>
