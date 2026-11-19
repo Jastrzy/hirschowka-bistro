@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://www.hirschowkabistro.pl/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="logo-round.png">
 <style>
 /* ════════════════════════════════════════
@@ -25,6 +25,7 @@
    Jedna rodzina ciepłych neutralnych, jeden akcent (złoto),
    jeden ciemny kolor powierzchni (las).
 ════════════════════════════════════════ */
+html{font-synthesis:none;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   /* papier / tła */
@@ -47,8 +48,8 @@
   --text:var(--ink); --muted:var(--ink-2); --muted2:var(--ink-3);
   --white:#FFFFFF; --border:rgba(59,40,22,.12);
 
-  --serif:'Fraunces',Georgia,serif;
-  --sans:'Outfit',system-ui,sans-serif;
+  --serif:'Young Serif',Georgia,serif;
+  --sans:'Instrument Sans',system-ui,sans-serif;
   --r:8px; --r2:12px; --r3:20px; --r4:28px;
   --line:rgba(59,40,22,.1);
   --shadow:0 1px 2px rgba(59,40,22,.05),0 4px 16px rgba(59,40,22,.07);
@@ -3056,7 +3057,7 @@ async function placeOrder(){
     overlay.innerHTML = paid ? `
       <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
         <div style="font-size:56px;margin-bottom:12px;">✅</div>
-        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność przyjęta!</h2>
+        <h2 style="font-family:var(--serif);font-size:24px;color:#2A1A0E;margin-bottom:8px;">Płatność przyjęta!</h2>
         <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
         <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:16px;">Dziękujemy! Restauracja potwierdzi zamówienie wkrótce.<br>Dostaniesz SMS z szacowanym czasem realizacji.</p>
         <div style="background:#FBF6EC;border:1px solid #E8C97A;border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:left;">
@@ -3071,7 +3072,7 @@ async function placeOrder(){
       </div>` : `
       <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
         <div style="font-size:56px;margin-bottom:12px;">⏳</div>
-        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:#2A1A0E;margin-bottom:8px;">Czekamy na potwierdzenie z banku</h2>
+        <h2 style="font-family:var(--serif);font-size:24px;color:#2A1A0E;margin-bottom:8px;">Czekamy na potwierdzenie z banku</h2>
         <p style="font-size:14px;color:#6B4423;margin-bottom:6px;">Numer zamówienia: <strong>${oid}</strong></p>
         <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:24px;">Jeśli płatność została pobrana, zamówienie zostanie przyjęte automatycznie — <strong>nie płać ponownie</strong>.<br>W razie wątpliwości zadzwoń: <a href="tel:+48511707232" style="color:#C8921A;font-weight:700;text-decoration:none;">511 707 232</a></p>
         <button onclick="document.getElementById('payment-result-modal').remove();"
@@ -3091,7 +3092,7 @@ async function placeOrder(){
       el.innerHTML = `
         <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
           <div style="font-size:48px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block;">⏳</div>
-          <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:#2A1A0E;margin-bottom:8px;">Weryfikujemy płatność…</h2>
+          <h2 style="font-family:var(--serif);font-size:22px;color:#2A1A0E;margin-bottom:8px;">Weryfikujemy płatność…</h2>
           <p style="font-size:13px;color:#9B7B5A;line-height:1.6;margin-bottom:16px;">Numer zamówienia: <strong>${oid}</strong><br>Potwierdzenie może zająć do 30 sekund.</p>
           <div style="background:#f5f0e8;border-radius:8px;height:6px;overflow:hidden;margin-bottom:16px;">
             <div id="p24-progress" style="background:#2A1A0E;height:100%;width:0%;transition:width 1s linear;border-radius:8px;"></div>
