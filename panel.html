@@ -531,12 +531,12 @@ requestWakeLock();
 
     <div class="sb-sect">Baza produktów</div>
     <div class="ni" onclick="go('menu',this)"><span class="ic">🥘</span><span>Menu</span></div>
+    <div class="ni" onclick="go('daniednia',this)" style="border-left:3px solid var(--gold);font-weight:700;"><span class="ic">⭐</span><span style="color:var(--gold);">Danie dnia</span></div>
     <div class="ni" onclick="go('dodatki',this)"><span class="ic">➕</span><span>Grupy dodatków</span></div>
     <div class="ni" onclick="go('parametry',this)"><span class="ic">⚙</span><span>Parametry</span></div>
 
     <div class="sb-sect">Optymalizacja sprzedaży</div>
     <div class="ni" onclick="go('promocje',this)"><span class="ic">🏷</span><span>Promocje</span></div>
-    <div class="ni" onclick="go('kupony',this)"><span class="ic">🎟</span><span>Kupony</span></div>
     <div class="ni" onclick="go('crosssell',this)"><span class="ic">🔀</span><span>Cross-selling</span></div>
     <div class="ni" onclick="go('smsmkt',this)"><span class="ic">📱</span><span>Kampanie SMS</span></div>
     <div class="ni" onclick="go('newsletter',this)"><span class="ic">✉️</span><span>Newsletter</span></div>
@@ -544,7 +544,6 @@ requestWakeLock();
     <div class="ni" onclick="go('lojalnosc',this)"><span class="ic">⭐</span><span>Lojalność</span></div>
 
     <div class="sb-sect">Ustawienia</div>
-    <div class="ni" onclick="go('daniednia',this)" style="border-left:3px solid var(--gold);font-weight:700;"><span class="ic">⭐</span><span style="color:var(--gold);">Danie dnia</span></div>
     <div class="ni" onclick="go('strefy',this)"><span class="ic">🗺</span><span>Strefy dostaw</span></div>
     <div class="ni" onclick="go('harmonogramy',this)"><span class="ic">🕐</span><span>Harmonogramy</span></div>
     <div class="ni" onclick="go('przerwy',this)"><span class="ic">⏸</span><span>Przerwy w pracy</span></div>
@@ -595,9 +594,9 @@ requestWakeLock();
           <div class="stat-sub" id="dash-revenue-sub">ze wszystkich zamówień</div>
         </div>
         <div class="stat">
-          <div class="stat-lbl">Śr. wartość zamówienia</div>
-          <div class="stat-val" id="dash-avg-order">—</div>
-          <div class="stat-sub" id="dash-avg-sub">dziś</div>
+          <div class="stat-lbl" id="dash-prev-lbl">Poprzedni dzień</div>
+          <div class="stat-val" id="dash-prev-revenue">—</div>
+          <div class="stat-sub" id="dash-prev-sub">oczekuje na dane</div>
         </div>
         <div class="stat">
           <div class="stat-lbl">Klienci w bazie</div>
@@ -709,34 +708,6 @@ requestWakeLock();
       <div id="promo-list"></div>
     </div>
 
-    <!-- KUPONY -->
-    <div class="page" id="page-kupony">
-      <div class="sect-hdr"><h2>Kupony rabatowe</h2><button class="btn bp bsm" onclick="openModal('mo-coupon')">+ Generuj kupon</button></div>
-      <table class="tbl">
-        <thead><tr><th>Kod</th><th>Rabat</th><th>Ważny do</th><th>Użycia</th><th>Status</th><th>Akcja</th></tr></thead>
-        <tbody id="coupons-body"></tbody>
-      </table>
-
-      <div class="card card-pad" style="margin-top:14px;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">✅ Zrealizuj kupon przy kasie</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Klient podaje kod przy zamówieniu na miejscu / telefonicznie — wpisz kod i numer telefonu klienta, żeby zrealizować rabat.</p>
-        <div class="frow">
-          <div class="field"><label>Kod kuponu</label><input type="text" id="kup-redeem-code" placeholder="np. HIRSCH10" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
-          <div class="field"><label>Numer telefonu klienta *</label><input type="tel" id="kup-redeem-phone" placeholder="511 707 232"></div>
-        </div>
-        <button class="btn bp" onclick="redeemCouponAtKiosk()">✅ Zrealizuj kupon</button>
-        <div id="kup-redeem-result" style="margin-top:12px;"></div>
-      </div>
-
-      <div class="card card-pad" style="margin-top:14px;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🕒 Historia realizacji kodów</h3>
-        <table class="tbl">
-          <thead><tr><th>Data</th><th>Kod</th><th>Telefon</th><th>Klient</th><th>Źródło</th></tr></thead>
-          <tbody id="coupon-redemptions-body"></tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- CROSS-SELLING -->
     <div class="page" id="page-crosssell">
       <div class="sect-hdr"><h2>Cross-selling</h2><button class="btn bp bsm" onclick="openModal('mo-cross')">+ Dodaj regułę</button></div>
@@ -806,20 +777,21 @@ requestWakeLock();
 
     <!-- LOJALNOŚĆ -->
     <div class="page" id="page-lojalnosc">
-      <div class="sect-hdr"><h2>Program lojalnościowy</h2></div>
+      <div class="sect-hdr"><h2>Lojalność i kupony</h2></div>
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
         <div class="stat"><div class="stat-lbl">Aktywni klienci</div><div class="stat-val" id="loy-active">0</div></div>
+        <div class="stat"><div class="stat-lbl">Aktywne kupony</div><div class="stat-val" id="loy-active-coupons">0</div></div>
         <div class="stat"><div class="stat-lbl">Wydane nagrody</div><div class="stat-val" id="loy-rewards-count">0</div></div>
-        <div class="stat"><div class="stat-lbl">Próg pieczątki</div><div class="stat-val">19 zł</div></div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">✅ Zrealizuj kod nagrody</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Klient podaje kod nagrody (np. LOY3ABCD) — wpisz go poniżej, żeby oznaczyć jako zrealizowany.</p>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">✅ Zrealizuj kupon przy kasie</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Kupon rabatowy albo kod nagrody (np. LOY3ABCD). Numer telefonu wiąże realizację z klientem w historii.</p>
         <div class="frow">
-          <div class="field"><label>Kod nagrody</label><input type="text" id="loy-redeem-code" placeholder="np. LOY3ABCD" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="field"><label>Kod kuponu lub nagrody</label><input type="text" id="till-code" placeholder="np. HIRSCH10 albo LOY3ABCD" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+          <div class="field"><label>Numer telefonu klienta *</label><input type="tel" id="till-phone" placeholder="511 707 232"></div>
         </div>
-        <button class="btn bp" onclick="redeemLoyaltyCode()">✅ Zrealizuj kod</button>
-        <div id="loy-redeem-result" style="margin-top:12px;"></div>
+        <button class="btn bp" onclick="redeemAtTill()">✅ Zrealizuj</button>
+        <div id="till-result" style="margin-top:12px;"></div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">⭐ Wbij pieczątkę klientowi</h3>
@@ -847,13 +819,27 @@ requestWakeLock();
         <div id="loy-rew-result" style="margin-top:12px;"></div>
       </div>
       <div class="card card-pad" style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <h3 style="font-size:14px;font-weight:700;">🎟 Aktywne kupony</h3>
+          <button class="btn bp bsm" onclick="openCouponModal(null)">+ Generuj kupon</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Tylko kupony, które można jeszcze użyć. Wykorzystane i przeterminowane same przechodzą do historii. 🎁 = nagroda z karty lojalnościowej.</p>
+        <table class="tbl">
+          <thead><tr><th>Kod</th><th>Rabat</th><th>Ważny do</th><th>Użycia</th><th></th></tr></thead>
+          <tbody id="coupons-body"></tbody>
+        </table>
+      </div>
+      <div class="card card-pad" style="margin-bottom:14px;">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Nagrody na karcie lojalnościowej</h3>
         <div class="stamp-track" id="loy-stamps-preview"></div>
         <div id="loy-rewards-list" style="margin-top:12px;"></div>
       </div>
       <div class="card card-pad">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📋 Historia przyznanych nagród</h3>
-        <div id="loy-history-list"></div>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🕒 Historia kuponów i nagród</h3>
+        <table class="tbl">
+          <thead><tr><th>Data</th><th>Kod</th><th>Rodzaj</th><th>Klient</th><th>Status</th></tr></thead>
+          <tbody id="loy-history-body"></tbody>
+        </table>
       </div>
     </div>
 
@@ -1558,21 +1544,21 @@ requestWakeLock();
 <!-- Generuj kupon -->
 <div class="mo" id="mo-coupon">
   <div class="modal">
-    <div class="modal-hd"><h3>Generuj kupon rabatowy</h3><button class="mc" onclick="closeModal('mo-coupon')">✕</button></div>
+    <div class="modal-hd"><h3 id="coup-modal-title">Generuj kupon rabatowy</h3><button class="mc" onclick="closeModal('mo-coupon')">✕</button></div>
     <div class="modal-bd">
       <div class="frow">
-        <div class="field"><label>Kod kuponu</label><input id="coup-code" placeholder="np. HIRSCH10"><button class="btn bo bsm" style="margin-top:6px;" onclick="genCode()">Generuj losowy</button></div>
+        <div class="field"><label>Kod kuponu</label><input id="coup-code" placeholder="np. HIRSCH10" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"><button class="btn bo bsm" id="coup-gen-btn" style="margin-top:6px;" onclick="genCode()">Generuj losowy</button></div>
         <div class="field"><label>Rabat (%)</label><input type="number" id="coup-disc" value="10" min="1" max="100"></div>
       </div>
       <div class="frow">
         <div class="field"><label>Ważny do</label><input type="date" id="coup-exp"></div>
-        <div class="field"><label>Limit użyć</label><input type="number" id="coup-limit" value="100" placeholder="puste = bez limitu"></div>
+        <div class="field"><label>Limit użyć</label><input type="number" id="coup-limit" value="100" min="1" placeholder="np. 100"></div>
       </div>
       <div class="field"><label>Min. wartość zamówienia (zł)</label><input type="number" id="coup-min" value="0"></div>
     </div>
     <div class="modal-ft">
       <button class="btn bo" onclick="closeModal('mo-coupon')">Anuluj</button>
-      <button class="btn bp" onclick="saveCoupon()">Generuj kupon</button>
+      <button class="btn bp" id="coup-save-btn" onclick="saveCoupon()">Generuj kupon</button>
     </div>
   </div>
 </div>
@@ -2070,7 +2056,7 @@ const DAYS = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','N
 let schedule = S('schedule') || DAYS.map((d,i)=>({day:d,from:i<5?'07:00':'08:00',to:i<5?'17:00':i===5?'14:00':'',closed:i===6}));
 
 // ── NAVIGATION ──
-const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',kupony:'Kupony rabatowe',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',newsletter:'Newsletter',qr:'Kody QR',lojalnosc:'Program lojalnościowy',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
+const titles = {pulpit:'Pulpit',zamowienia:'Zamówienia',klienci:'Klienci',menu:'Menu',dodatki:'Grupy dodatków',parametry:'Parametry',promocje:'Promocje',crosssell:'Cross-selling',marketing:'Marketing automatyczny',smsmkt:'Kampanie SMS',newsletter:'Newsletter',qr:'Kody QR',lojalnosc:'Lojalność i kupony',strefy:'Strefy dostaw',harmonogramy:'Harmonogramy',przerwy:'Przerwy w pracy',galeria:'Galeria',daniednia:'Danie dnia',ustawienia:'Ustawienia',importexport:'Import / Eksport',www:'WWW',podglad:'Podgląd strony klienta'};
 
 // curMenuCat starts at first category in data
 let curMenuCat = menuData[0]?.cat || 'Śniadania i lunche';
@@ -2081,7 +2067,7 @@ function go(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('page-title').textContent = titles[id]||'';
-  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,kupony:function(){renderCoupons();if(typeof window.renderCouponRedemptions==='function')window.renderCouponRedemptions();},crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad,smsmkt:smsMktRenderHistory};
+  const renders = {pulpit:renderDashboard,zamowienia:renderOrders,klienci:renderCusts,menu:renderMenu,dodatki:renderAddons,parametry:renderParams,promocje:renderPromos,crosssell:renderCross,strefy:renderZones,harmonogramy:renderSchedule,przerwy:renderHolidays,galeria:renderGallery,lojalnosc:renderLoyalty,qr:renderQR,daniednia:renderDanieDnia,ustawienia:loadPackaging,newsletter:nlPanelLoad,smsmkt:smsMktRenderHistory};
   if(renders[id]) renders[id]();
 }
 
@@ -2267,6 +2253,8 @@ function renderOrderCard(o){
     : '';
   const timing = o.timing?`<span class="ord-meta-chip">⏰ ${o.timing}</span>`:'';
   const coupon = o.couponCode?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🏷 Rabat:</strong> -${o.couponDiscountAmount!=null?o.couponDiscountAmount.toFixed(2)+' zł':((o.couponDiscountPct||0)+'%')}${o.couponDiscountPct!=null?' ('+o.couponDiscountPct+'%)':''} · kod: <code style="background:var(--bg);padding:1px 6px;border-radius:4px;letter-spacing:1px;">${o.couponCode}</code></div>`:'';
+  // Zestaw dnia: zupa + danie dnia zamówione osobno, policzone w cenie zestawu (index.html)
+  const dailySetInfo = o.dailySetDiscount>0?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🍲 Zestaw dnia${o.dailySetPairs>1?' ×'+o.dailySetPairs:''}:</strong> zupa + drugie danie w cenie zestawu (-${Number(o.dailySetDiscount).toFixed(2)} zł)</div>`:'';
   const comment = o.comment?`<div style="margin-top:8px;padding:8px 10px;background:rgba(200,146,42,.06);border:1px solid rgba(200,146,42,.15);border-radius:var(--r);font-size:12px;"><strong>💬 Uwagi klienta:</strong> ${o.comment}</div>`:'' ;
   const invoiceInfo = o.invoice&&o.invoice.nip?`<div style="margin-top:6px;padding:8px 10px;background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:var(--r);font-size:12px;"><strong>🧾 Faktura VAT:</strong> ${o.invoice.company||''} · NIP: ${o.invoice.nip} · ${o.invoice.address||''} ${o.invoice.city||''}</div>`:'';
 
@@ -2320,6 +2308,7 @@ function renderOrderCard(o){
     </div>
     ${itemsHtml}
     <div class="ord-meta">${payment}${paymentBadge}${deliveryCost}${packagingCost}${zone}${dist}${timing}</div>
+    ${dailySetInfo}
     ${coupon}
     ${comment}
     ${invoiceInfo}
@@ -2918,6 +2907,7 @@ async function sendOrderEmail(order){
     } else if(Array.isArray(order.items)){
       items = order.items.map(i=>`${i.qty||1}x ${i.name}`).join('\n');
     }
+    if(order.dailySetDiscount>0) items += `\nZestaw dnia${order.dailySetPairs>1?' x'+order.dailySetPairs:''} (zupa + drugie danie) — -${Number(order.dailySetDiscount).toFixed(2)} zł`;
     await emailjs.send(serviceId, templateId, {
       order_id: order.id,
       customer_name: order.customer || 'Klient',
@@ -3072,9 +3062,29 @@ let manualOverrideDate = null;
 })();
 
 // ── DASHBOARD ──
+// ── Sprzedaż do statystyk pulpitu ──
+// Liczymy tylko prawdziwą sprzedaż: przyjęte, w realizacji, gotowe i zrealizowane.
+// Bez odrzuconych, nieudanych płatności, nieopłaconych online i czekających na akceptację.
+function isSaleOrder(o){
+  if(!o) return false;
+  if(typeof isUnpaidOnline==='function' && isUnpaidOnline(o)) return false;
+  return ['accepted','delivering','ready','done'].includes(normStatus(o.status));
+}
+// Dzień zamówienia jako RRRR-MM-DD (z timestamp, a gdy go brak — z pola date „DD.MM.RRRR”)
+function orderDayKey(o){
+  let d=null;
+  if(o.timestamp) d=new Date(o.timestamp);
+  else if(o.date){const m=String(o.date).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/); if(m) d=new Date(+m[3],+m[2]-1,+m[1]);}
+  if(!d||isNaN(d)) return null;
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dayKeyOf(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
 function renderDashboard(){
   const today = new Date().toLocaleDateString('pl');
-  const allOrders = [...orders, ...archive];
+  // Zamówienie może być jednocześnie w orders i archive (krótko po archiwizacji) — licz raz
+  const _seen = new Set();
+  const allOrders = [...orders, ...archive].filter(o=>{ if(!o||!o.id) return !!o; if(_seen.has(o.id)) return false; _seen.add(o.id); return true; });
 
   // Zamówienia i przychód dziś
   const todayOrders = allOrders.filter(o => {
@@ -3082,11 +3092,16 @@ function renderDashboard(){
     return o.date === today || (!o.date && true); // jeśli brak daty — pokaż wszystkie bieżące
   });
   // Bezpieczniej: licz wszystkie zamówienia z dzisiaj po czasie
-  const todayReal = allOrders.filter(o => o.date === today);
-  const ordCount  = todayReal.length || orders.length; // fallback na bieżące
-  const revenue   = todayReal.reduce((s,o)=>s+(parseFloat(o.total)||0),0) ||
-                    orders.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
-  const avg       = ordCount > 0 ? (revenue / ordCount) : 0;
+  const todayKey  = dayKeyOf(new Date());
+  const todayReal = allOrders.filter(o => isSaleOrder(o) && orderDayKey(o) === todayKey);
+  const ordCount  = todayReal.length;
+  const revenue   = todayReal.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
+  // Poprzedni dzień ze sprzedażą (np. w poniedziałek — piątek, jeśli w weekend nic nie było)
+  const sales = allOrders.filter(isSaleOrder);
+  let prevKey = null;
+  sales.forEach(o=>{ const k=orderDayKey(o); if(k && k<todayKey && (!prevKey || k>prevKey)) prevKey=k; });
+  const prevOrders = prevKey ? sales.filter(o=>orderDayKey(o)===prevKey) : [];
+  const prevRevenue = prevOrders.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
   const pending   = orders.filter(o=>o.status==='pending').length;
   const active    = orders.filter(o=>o.status==='accepted'||o.status==='delivering'||o.status==='ready').length;
 
@@ -3095,7 +3110,19 @@ function renderDashboard(){
 
   set('dash-orders-today', ordCount);
   set('dash-revenue-today', revenue > 0 ? revenue.toFixed(2)+' zł' : '0,00 zł');
-  set('dash-avg-order',    avg > 0 ? avg.toFixed(2)+' zł' : '—');
+  set('dash-prev-revenue', prevKey ? prevRevenue.toFixed(2)+' zł' : '—');
+  {
+    const lbl=document.getElementById('dash-prev-lbl');
+    if(lbl){
+      if(!prevKey) lbl.textContent='Poprzedni dzień';
+      else{
+        const [y,m,d]=prevKey.split('-').map(Number);
+        const pd=new Date(y,m-1,d);
+        const yest=new Date();yest.setDate(yest.getDate()-1);
+        lbl.textContent = dayKeyOf(yest)===prevKey ? 'Wczoraj' : 'Ostatnio: '+pd.toLocaleDateString('pl-PL',{weekday:'long'})+' '+String(d).padStart(2,'0')+'.'+String(m).padStart(2,'0');
+      }
+    }
+  }
   set('dash-customers',    customers.length);
 
   // Podtytuły
@@ -3112,10 +3139,10 @@ function renderDashboard(){
     }
   }
   const revSub = document.getElementById('dash-revenue-sub');
-  if(revSub) revSub.textContent = todayReal.length > 0 ? `z ${todayReal.length} zamówień dziś` : 'łącznie z bieżących';
+  if(revSub) revSub.textContent = todayReal.length > 0 ? `z ${todayReal.length} przyjętych zamówień` : 'brak przyjętych zamówień';
 
-  const avgSub = document.getElementById('dash-avg-sub');
-  if(avgSub) avgSub.textContent = ordCount > 0 ? `z ${ordCount} zamówień` : 'brak danych';
+  const prevSub = document.getElementById('dash-prev-sub');
+  if(prevSub) prevSub.textContent = prevKey ? `${prevOrders.length} ${prevOrders.length===1?'zamówienie':(prevOrders.length%10>=2&&prevOrders.length%10<=4&&(prevOrders.length%100<10||prevOrders.length%100>=20)?'zamówienia':'zamówień')}` : 'brak sprzedaży w historii';
 
   const custSub = document.getElementById('dash-customers-sub');
   if(custSub){
@@ -3659,7 +3686,11 @@ function renderMenu(){
 }
 function switchCat(c,el){curMenuCat=c;document.querySelectorAll('.cchip').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderMenuItems();}
 function renderMenuItems(){
-  const items=menuData.filter(d=>d.cat===curMenuCat);
+  // Aktywne dania (włączone „W menu” i „Dostępne”) na górze listy, pozostałe pod nimi —
+  // w obu grupach zachowana dotychczasowa kolejność
+  const isActive=d=>d.avail&&d.visible!==false;
+  const inCat=menuData.filter(d=>d.cat===curMenuCat);
+  const items=[...inCat.filter(isActive),...inCat.filter(d=>!isActive(d))];
   document.getElementById('menu-list').innerHTML=items.map(d=>`
   <div class="menu-row ${d.avail?'':'unavail'}" id="mrow-${d.id}">
     <div class="mphoto" onclick="triggerDishPhoto(${d.id})">
@@ -4106,24 +4137,127 @@ function savePromo(){
 function delPromo(i){promos.splice(i,1);W('promos',promos);renderPromos();toast('Usunięto');}
 
 // ── COUPONS ──
+// ════ KUPONY I NAGRODY (zakładka „Lojalność”) ════
+// Zapisy do 'coupons' i 'loyalty-history' idą przez transakcje Firebase — zmieniają tylko
+// jeden kupon/wpis i nie nadpisują zmian zrobionych w tym samym czasie na stronie (WWW)
+// albo na drugim urządzeniu. Wcześniej całe listy były zapisywane naraz (ryzyko utraty danych).
+async function txArray(key, mutate){
+  const db=window._firebase&&window._firebase.db;
+  if(!db){
+    // awaryjnie (bez połączenia): zmiana lokalna + zwykły zapis
+    const local=(S(key)||[]).filter(Boolean);
+    const r=mutate(local.slice());
+    if(r===undefined) return {ok:false,list:local};
+    W(key,r); return {ok:true,list:r};
+  }
+  try{
+    const res=await db.ref(key).transaction(function(arr){
+      const list=arr?(Array.isArray(arr)?arr:Object.values(arr)).filter(Boolean):[];
+      return mutate(list);
+    });
+    const val=res.snapshot&&res.snapshot.val();
+    const list=val?(Array.isArray(val)?val:Object.values(val)).filter(Boolean):[];
+    if(res.committed){try{localStorage.setItem(key,JSON.stringify(list));}catch(e){}}
+    return {ok:!!res.committed,list};
+  }catch(e){
+    toast('⚠️ Błąd zapisu „'+key+'”: '+e.message);
+    return {ok:false,list:null};
+  }
+}
+function _cleanPhone(p){return String(p||'').replace(/[\s-]/g,'').replace(/^\+48/,'');}
+function custByPhone(phone){
+  const p=_cleanPhone(phone); if(!p) return null;
+  return customers.find(c=>c&&_cleanPhone(c.phone)===p)||null;
+}
+function custLabel(phone,fallbackName){
+  const c=custByPhone(phone);
+  const name=(c&&c.name)||fallbackName||'';
+  if(name&&phone) return `${name} · ${phone}`;
+  return name||phone||'—';
+}
+// Limit użyć: brak limitu działa przy realizacji jak 1 (tak liczy realizacja na WWW i przy kasie)
+function couponLimit(c){return parseInt(c&&c.limit)||1;}
+function couponExpired(c){
+  if(!c||!c.exp) return false;
+  const d=new Date(c.exp); d.setHours(23,59,59,999);
+  return Date.now()>d.getTime();
+}
+function isCouponActive(c){return !!c && (c.used||0)<couponLimit(c) && !couponExpired(c);}
+function rewardPhoneOf(code){
+  const h=(loyaltyHistory||[]).find(x=>x&&(x.code||'').toUpperCase()===(code||'').toUpperCase());
+  return h?h.phone:'';
+}
+function fmtExp(e){if(!e)return'—';const m=String(e).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}.${m[2]}.${m[1]}`:e;}
+
 function renderCoupons(){
-  document.getElementById('coupons-body').innerHTML=coupons.map((c,i)=>`<tr>
-    <td><strong style="font-family:monospace;letter-spacing:1px;">${c.code}</strong></td>
-    <td>-${c.disc}%</td>
-    <td>${c.exp||'Bez limitu'}</td>
-    <td>${c.used||0} / ${c.limit||'∞'}</td>
-    <td><span class="badge bg-ok">Aktywny</span></td>
-    <td><button class="btn bd bsm" onclick="delCoupon(${i})">Usuń</button></td>
-  </tr>`).join('');
+  const body=document.getElementById('coupons-body');
+  const active=coupons.filter(isCouponActive);
+  const cnt=document.getElementById('loy-active-coupons'); if(cnt) cnt.textContent=active.length;
+  if(!body) return;
+  body.innerHTML=active.length?active.map(c=>{
+    const isRew=!!c.loyaltyReward;
+    const ph=isRew?rewardPhoneOf(c.code):'';
+    const who=isRew?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">🎁 ${c.rewardName||'Nagroda'}${ph?' · '+custLabel(ph):''}</div>`:'';
+    const code=String(c.code).replace(/'/g,'');
+    return `<tr>
+      <td><strong style="font-family:monospace;letter-spacing:1px;">${isRew?'🎁 ':''}${c.code}</strong>${who}</td>
+      <td>-${c.disc}%${c.min>0?`<div style="font-size:11px;color:var(--muted);">od ${c.min} zł</div>`:''}</td>
+      <td>${fmtExp(c.exp)}</td>
+      <td>${c.used||0} / ${couponLimit(c)}</td>
+      <td style="white-space:nowrap;text-align:right;"><button class="btn bo bsm" onclick="openCouponModal('${code}')">Edytuj</button> <button class="btn bd bsm" onclick="delCoupon('${code}')">Usuń</button></td>
+    </tr>`;}).join(''):'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">Brak aktywnych kuponów.</td></tr>';
 }
 function genCode(){document.getElementById('coup-code').value='HIRSCH'+Math.random().toString(36).slice(2,7).toUpperCase();}
-function saveCoupon(){
+let _editCouponCode=null;
+function openCouponModal(code){
+  _editCouponCode=code||null;
+  const c=code?coupons.find(x=>x&&x.code===code):null;
+  document.getElementById('coup-modal-title').textContent=c?'Edytuj kupon '+c.code:'Generuj kupon rabatowy';
+  document.getElementById('coup-save-btn').textContent=c?'Zapisz zmiany':'Generuj kupon';
+  const codeInp=document.getElementById('coup-code');
+  codeInp.value=c?c.code:''; codeInp.readOnly=!!c;
+  document.getElementById('coup-gen-btn').style.display=c?'none':'';
+  document.getElementById('coup-disc').value=c?c.disc:10;
+  document.getElementById('coup-exp').value=c?(c.exp||''):'';
+  document.getElementById('coup-limit').value=c?couponLimit(c):100;
+  document.getElementById('coup-min').value=c?(c.min||0):0;
+  openModal('mo-coupon');
+}
+async function saveCoupon(){
   const code=document.getElementById('coup-code').value.trim().toUpperCase();
   if(!code){toast('Podaj kod kuponu');return;}
-  coupons.push({code,disc:parseInt(document.getElementById('coup-disc').value)||10,exp:document.getElementById('coup-exp').value,limit:parseInt(document.getElementById('coup-limit').value)||null,used:0,min:parseFloat(document.getElementById('coup-min').value)||0});
-  W('coupons',coupons);closeModal('mo-coupon');renderCoupons();toast('Kupon wygenerowany: '+code);
+  const fields={
+    disc:Math.min(100,Math.max(1,parseInt(document.getElementById('coup-disc').value)||10)),
+    exp:document.getElementById('coup-exp').value,
+    limit:Math.max(1,parseInt(document.getElementById('coup-limit').value)||1),
+    min:parseFloat(document.getElementById('coup-min').value)||0
+  };
+  const editing=_editCouponCode;
+  let dup=false;
+  const r=await txArray('coupons',function(list){
+    const idx=list.findIndex(c=>(c.code||'').toUpperCase()===code);
+    if(editing){
+      if(idx===-1) return; // kupon zniknął w międzyczasie
+      list[idx]=Object.assign({},list[idx],fields);
+    } else {
+      if(idx!==-1){dup=true;return;}
+      list.push(Object.assign({code,used:0},fields));
+    }
+    return list;
+  });
+  if(!r.ok){toast(dup?'Kupon o kodzie '+code+' już istnieje':'Nie udało się zapisać kuponu');return;}
+  coupons=r.list; closeModal('mo-coupon'); renderLoyalty();
+  toast(editing?'Kupon zapisany ✓':'Kupon wygenerowany: '+code);
 }
-function delCoupon(i){coupons.splice(i,1);W('coupons',coupons);renderCoupons();}
+async function delCoupon(code){
+  if(!confirm('Usunąć kupon '+code+'? Klient nie będzie mógł go już użyć.'))return;
+  const r=await txArray('coupons',function(list){
+    const idx=list.findIndex(c=>c.code===code);
+    if(idx===-1) return;
+    list.splice(idx,1); return list;
+  });
+  if(r.ok){coupons=r.list; renderLoyalty(); toast('Kupon usunięty');}
+}
 
 // ── Aktualizacja lokalnej tablicy kuponów w czasie rzeczywistym z Firebase ──
 // (potrzebne, żeby licznik "used" zwiększany transakcją — z WWW albo z drugiego tabletu — był widoczny)
@@ -4158,26 +4292,68 @@ window.onFirebaseHolidays = function(freshArr){
 
 window.onFirebaseCoupons = function(freshArr){
   coupons = freshArr;
-  const pg = document.getElementById('page-kupony');
-  if(pg && pg.classList.contains('active')) renderCoupons();
+  const pg = document.getElementById('page-lojalnosc');
+  if(pg && pg.classList.contains('active')) renderLoyalty();
 };
 
 // ── HISTORIA REALIZACJI KODÓW (real-time z Firebase, klucz coupon-redemptions) ──
 window.couponRedemptions = window.couponRedemptions || [];
-window.renderCouponRedemptions = function(){
-  const body=document.getElementById('coupon-redemptions-body');
+// Wspólna historia: realizacje (kasa + WWW), zrealizowane nagrody i kody przeterminowane bez użycia
+function _histTs(d){
+  if(!d) return 0;
+  if(typeof d==='number') return d;
+  let m=String(d).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m) return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0),+(m[6]||0)).getTime();
+  m=String(d).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3],23,59).getTime();
+  return 0;
+}
+function buildLoyaltyHistory(){
+  const rows=[], seen=new Set();
+  const isReward=code=>{const c=coupons.find(x=>x&&x.code===code);return (c&&c.loyaltyReward)||/^LOY/i.test(code||'');};
+  (window.couponRedemptions||[]).forEach(r=>{
+    if(!r||!r.code) return;
+    seen.add(r.code.toUpperCase());
+    rows.push({ts:r.timestamp||_histTs(r.date),date:r.date||'',code:r.code,reward:isReward(r.code),
+      who:custLabel(r.phone||rewardPhoneOf(r.code),r.name),status:`Zrealizowany · ${r.source==='panel'?'kasa':'WWW'}`,ok:true});
+  });
+  (loyaltyHistory||[]).forEach(h=>{
+    if(!h||!h.code||!h.used||seen.has(h.code.toUpperCase())) return;
+    seen.add(h.code.toUpperCase());
+    rows.push({ts:_histTs(h.usedAt||h.date),date:h.usedAt||h.date||'',code:h.code,reward:true,who:custLabel(h.phone),status:'Zrealizowany',ok:true});
+  });
+  coupons.forEach(c=>{
+    if(!c||!c.code||isCouponActive(c)||seen.has(c.code.toUpperCase())) return;
+    seen.add(c.code.toUpperCase());
+    const used=(c.used||0)>=couponLimit(c);
+    const ph=c.loyaltyReward?rewardPhoneOf(c.code):'';
+    rows.push({ts:used?_histTs(c.usedAt):_histTs(c.exp),date:used?(c.usedAt||''):fmtExp(c.exp),code:c.code,reward:!!c.loyaltyReward,
+      who:ph?custLabel(ph):'—',status:used?'Wykorzystany':'Przeterminowany',ok:used});
+  });
+  (loyaltyHistory||[]).forEach(h=>{
+    if(!h||!h.code||h.used||seen.has(h.code.toUpperCase())) return;
+    if(!couponExpired({exp:h.exp})) return;
+    seen.add(h.code.toUpperCase());
+    rows.push({ts:_histTs(h.exp),date:fmtExp(h.exp),code:h.code,reward:true,who:custLabel(h.phone),status:'Przeterminowany',ok:false});
+  });
+  return rows.sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+function renderLoyaltyHistory(){
+  const body=document.getElementById('loy-history-body');
   if(!body) return;
-  const list=[...(window.couponRedemptions||[])].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-  body.innerHTML = list.length ? list.map(r=>{
-    const cust=customers.find(c=>c&&(c.phone||'').replace(/\s/g,'')===(r.phone||'').replace(/\s/g,''));
-    return `<tr>
-      <td>${r.date||''}</td>
-      <td><strong style="font-family:monospace;letter-spacing:1px;">${r.code||''}</strong></td>
-      <td>${r.phone||'—'}</td>
-      <td>${cust?cust.name:(r.name||'—')}</td>
-      <td><span class="badge ${r.source==='panel'?'bg-ok':'bg-done'}">${r.source==='panel'?'Kasa':'WWW'}</span></td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">Brak realizacji.</td></tr>';
+  const rows=buildLoyaltyHistory().slice(0,150);
+  body.innerHTML=rows.length?rows.map(r=>`<tr>
+      <td style="white-space:nowrap;">${r.date||'—'}</td>
+      <td><strong style="font-family:monospace;letter-spacing:1px;">${r.code}</strong></td>
+      <td>${r.reward?'🎁 Nagroda':'Kupon'}</td>
+      <td>${r.who}</td>
+      <td><span class="badge ${r.ok?'bg-ok':'bg-done'}">${r.status}</span></td>
+    </tr>`).join(''):'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">Brak historii.</td></tr>';
+}
+// Wywoływane przez firebase-config.js po każdej nowej realizacji (klucz coupon-redemptions)
+window.renderCouponRedemptions = function(){
+  const pg=document.getElementById('page-lojalnosc');
+  if(pg&&pg.classList.contains('active')) renderLoyaltyHistory();
 };
 
 // ── ATOMOWA REALIZACJA KUPONU — transakcja Firebase, bezpieczna przy równoczesnym użyciu ──
@@ -4256,36 +4432,40 @@ async function markLoyaltyHistoryUsed(code){
   }
 }
 
-async function redeemCouponAtKiosk(){
-  const code=(document.getElementById('kup-redeem-code').value||'').trim().toUpperCase();
-  const phone=(document.getElementById('kup-redeem-phone').value||'').trim();
-  const resEl=document.getElementById('kup-redeem-result');
-  if(!code){toast('Wpisz kod kuponu');return;}
-  if(!phone){
-    toast('Podaj numer telefonu klienta');
-    resEl.innerHTML='<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">⚠️ Numer telefonu jest wymagany do realizacji kodu.</div>';
-    return;
+// Realizacja przy kasie — jeden formularz dla kuponów i kodów nagród (LOY…).
+// Transakcja Firebase (redeemCouponAtomic) — bezpieczna przy równoczesnej realizacji na WWW.
+async function redeemAtTill(){
+  const code=(document.getElementById('till-code').value||'').trim().toUpperCase();
+  const phone=(document.getElementById('till-phone').value||'').trim();
+  const resEl=document.getElementById('till-result');
+  const err=msg=>{resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">${msg}</div>`;};
+  if(!code){toast('Wpisz kod');return;}
+  if(!phone){toast('Podaj numer telefonu klienta');err('⚠️ Numer telefonu jest wymagany — wiąże realizację z klientem w historii.');return;}
+  if(_cleanPhone(phone).replace(/\D/g,'').length<9){err('⚠️ Sprawdź numer telefonu (9 cyfr).');return;}
+  // Czytelny komunikat przed realizacją (sama realizacja i tak sprawdza wszystko w transakcji)
+  const local=coupons.find(c=>c&&(c.code||'').toUpperCase()===code);
+  if(local){
+    if((local.used||0)>=couponLimit(local)){err(`⚠️ Kod <strong>${code}</strong> został już wykorzystany.`);return;}
+    if(couponExpired(local)){err(`⚠️ Kod <strong>${code}</strong> wygasł ${fmtExp(local.exp)}.`);return;}
   }
-
   resEl.innerHTML='<div style="font-size:13px;color:var(--muted);">Sprawdzam kod…</div>';
   const r=await redeemCouponAtomic(code);
-  if(!r.ok){
-    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ ${r.msg}</div>`;
-    return;
-  }
-  // Zsynchronizuj lokalną tablicę kuponów Z WYNIKIEM TRANSAKCJI od razu — nie czekaj
-  // na osobny nasłuch z Firebase, żeby tabela "Kupony" pokazała nowy licznik natychmiast
+  if(!r.ok){err('❌ '+r.msg);return;}
   coupons=r.list;
-  const cust=customers.find(c=>c&&(c.phone||'').replace(/\s/g,'')===phone.replace(/\s/g,''));
+  const cust=custByPhone(phone);
   logCouponRedemption(code,phone,cust?cust.name:'','panel',null);
-  if(r.coupon && r.coupon.loyaltyReward){
+  let note='';
+  if(r.coupon&&r.coupon.loyaltyReward){
     markLoyaltyHistoryUsed(code);
+    const rp=rewardPhoneOf(code);
+    if(rp&&_cleanPhone(rp)!==_cleanPhone(phone)) note=`<br><span style="color:var(--rust);">Uwaga: ta nagroda była przyznana na numer ${rp}.</span>`;
   }
-  resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Kupon <strong>${code}</strong> zrealizowany! Rabat: -${r.coupon.disc}%${cust?' · '+cust.name:''}</div>`;
-  toast(`✅ Kupon ${code} zrealizowany`);
-  document.getElementById('kup-redeem-code').value='';
-  document.getElementById('kup-redeem-phone').value='';
-  renderCoupons();
+  const what=r.coupon&&r.coupon.loyaltyReward?`🎁 ${r.coupon.rewardName||'Nagroda'}`:`Rabat -${r.coupon?r.coupon.disc:'?'}%`;
+  resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Kod <strong>${code}</strong> zrealizowany! ${what}${cust?` · ${cust.name}`:''}${note}</div>`;
+  toast(`✅ Kod ${code} zrealizowany`);
+  document.getElementById('till-code').value='';
+  document.getElementById('till-phone').value='';
+  renderLoyalty();
 }
 
 // ── AUTH — zmiana hasła ──
@@ -4538,15 +4718,8 @@ function renderLoyalty(){
     </div>`).join('');
   document.getElementById('loy-active').textContent=customers.length;
   document.getElementById('loy-rewards-count').textContent=loyaltyHistory.length;
-  const hist=[...loyaltyHistory].reverse().slice(0,20);
-  document.getElementById('loy-history-list').innerHTML=hist.length?hist.map(h=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-      <span style="color:var(--muted);min-width:80px;">${h.date}</span>
-      <span style="flex:1;">${h.phone||'—'} — ${h.rewardName}</span>
-      <code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:12px;letter-spacing:1px;">${h.code}</code>
-      <span style="font-size:11px;color:var(--muted);min-width:90px;">${h.exp?'do '+h.exp:''}</span>
-      <span style="font-size:11px;color:${h.used?'var(--muted)':'var(--green2)'};">${h.used?`Zrealizowany${h.usedAt?' '+h.usedAt:''}`:'Aktywny'}</span>
-    </div>`).join(''):'<div style="font-size:13px;color:var(--muted);padding:12px 0;">Brak historii nagród</div>';
+  renderCoupons();
+  renderLoyaltyHistory();
 }
 async function addStampByPhone(){
   const query=(document.getElementById('loy-phone').value||'').trim();
@@ -4636,60 +4809,6 @@ async function addStampByPhone(){
   document.getElementById('loy-amount').value='';
   toast(hitReward?`🎉 ${c.name} osiągnął ${c.stamps} pieczątek — kod nagrody wysłany SMS-em ✓`:msg);
 }
-async function redeemLoyaltyCode(){
-  const code=(document.getElementById('loy-redeem-code').value||'').trim().toUpperCase();
-  const resEl=document.getElementById('loy-redeem-result');
-  if(!code){toast('Wpisz kod nagrody');return;}
-
-  // Szukaj w kuponach
-  const allCoupons=S('coupons')||[];
-  const idx=allCoupons.findIndex(x=>(x.code||'').toUpperCase()===code);
-
-  if(idx===-1){
-    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ Nie znaleziono kodu <strong>${code}</strong></div>`;
-    return;
-  }
-
-  const coupon=allCoupons[idx];
-
-  if(!coupon.loyaltyReward){
-    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">❌ To nie jest kod nagrody lojalnościowej</div>`;
-    return;
-  }
-
-  if(coupon.used && coupon.used>=1){
-    resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">⚠️ Kod <strong>${code}</strong> został już zrealizowany</div>`;
-    return;
-  }
-
-  // Sprawdź datę ważności
-  if(coupon.exp){
-    const expDate=new Date(coupon.exp);
-    expDate.setHours(23,59,59,999);
-    if(Date.now()>expDate.getTime()){
-      resEl.innerHTML=`<div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:13px;color:var(--red);">⚠️ Kod wygasł ${coupon.exp}</div>`;
-      return;
-    }
-  }
-
-  // Oznacz jako użyty
-  allCoupons[idx].used=1;
-  allCoupons[idx].usedAt=new Date().toLocaleString('pl-PL');
-  W('coupons',allCoupons);
-
-  // Oznacz w historii nagród
-  const now=new Date().toLocaleString('pl-PL');
-  loyaltyHistory=loyaltyHistory.map(h=>
-    (h.code||'').toUpperCase()===code ? {...h,used:true,usedAt:now} : h
-  );
-  W('loyalty-history',loyaltyHistory);
-
-  resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Kod <strong>${code}</strong> zrealizowany! Nagroda: ${coupon.rewardName||'nagroda lojalnościowa'}</div>`;
-  document.getElementById('loy-redeem-code').value='';
-  toast(`✅ Kod ${code} zrealizowany`);
-  renderLoyalty();
-}
-
 // Tworzy jednorazowy kod nagrody lojalnościowej i wysyła SMS z kodem.
 // Współdzielone przez: ręczne przyznanie (Lojalność), automatyczne przyznanie
 // przy osiągnięciu 3/6/9 pieczątek (accept, done, ręczne dodanie pieczątki).
@@ -4699,10 +4818,13 @@ async function createLoyaltyRewardCode(phone, stampLevel){
   const code='LOY'+stampLevel+Math.random().toString(36).slice(2,6).toUpperCase();
   const expDate=new Date();expDate.setDate(expDate.getDate()+30);
   const expStr=expDate.toISOString().slice(0,10);
-  coupons.push({code,disc:rew.discVal||100,exp:expStr,limit:1,used:0,min:0,loyaltyReward:true,rewardStamp:stampLevel,rewardName:rew.name,cats:rew.cats||''});
-  W('coupons',coupons);
-  loyaltyHistory.push({phone,code,rewardName:rew.name,stampLevel,date:new Date().toLocaleDateString('pl-PL'),exp:expStr,used:false});
-  W('loyalty-history',loyaltyHistory);
+  const newCoupon={code,disc:rew.discVal||100,exp:expStr,limit:1,used:0,min:0,loyaltyReward:true,rewardStamp:stampLevel,rewardName:rew.name,cats:rew.cats||''};
+  const rc=await txArray('coupons',function(list){list.push(newCoupon);return list;});
+  if(!rc.ok) return {ok:false,msg:'Nie udało się zapisać kodu nagrody — spróbuj ponownie'};
+  coupons=rc.list;
+  const histEntry={phone,code,rewardName:rew.name,stampLevel,date:new Date().toLocaleDateString('pl-PL'),exp:expStr,used:false};
+  const rh=await txArray('loyalty-history',function(list){list.push(histEntry);return list;});
+  if(rh.ok) loyaltyHistory=rh.list; else loyaltyHistory.push(histEntry);
   const smsText=stampLevel===3?`Hirschowka: Gratulacje! Masz 3 pieczatki. Twoja nagroda: 50% na kawe lub deser. Kod: ${code}. Wazny 30 dni.`:stampLevel===6?`Hirschowka: Gratulacje! Masz 6 pieczątek. Twoja nagroda: darmowa kawa lub deser. Kod: ${code}. Wazny 30 dni.`:`Hirschowka: Gratulacje! Masz 9 pieczątek. Twoja nagroda: 50% na bajgiel lub danie dnia. Kod: ${code}. Wazny 30 dni.`;
   const hasToken=!!(S('smsapi-token'));
   let smsStatus='';
@@ -6125,8 +6247,12 @@ async function migrateLoyaltyRewardCats(){
     }
   });
   if(changed){
-    W('coupons', coupons);
-    console.log('[Hirschówka] Uzupełniono brakujące kategorie w starych kodach nagród ✓');
+    const fix={}; coupons.forEach(c=>{ if(c&&c.loyaltyReward&&c.cats) fix[c.code]=c.cats; });
+    txArray('coupons',function(list){
+      let ch=false;
+      list.forEach(c=>{ if(c&&c.loyaltyReward&&!c.cats&&fix[c.code]){ c.cats=fix[c.code]; ch=true; } });
+      return ch?list:undefined;
+    }).then(r=>{ if(r.ok){ coupons=r.list; console.log('[Hirschówka] Uzupełniono brakujące kategorie w starych kodach nagród ✓'); } });
   }
 })();
 
