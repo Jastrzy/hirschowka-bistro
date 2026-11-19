@@ -87,6 +87,15 @@ function couponProblem(c) {
   return null;
 }
 
+// Kody „1 raz na numer telefonu”: lista numerów (9 cyfr), które już użyły kodu
+const phone9 = p => normPhone(p).replace(/^\+48/, '').replace(/\D/g, '');
+function phoneAlreadyUsed(c, phone) {
+  if (!c || !c.onePerPhone) return false;
+  const p = phone9(phone);
+  return !!p && (Array.isArray(c.usedPhones) ? c.usedPhones : Object.values(c.usedPhones || {})).includes(p);
+}
+const PHONE_USED_MSG = 'Ten kod został już wykorzystany na ten numer telefonu.';
+
 async function findCustomer({ phone, email }) {
   const all = entriesOf(await fbGet('customers'));
   const found = phone
@@ -124,11 +133,17 @@ const actions = {
     const problem = couponProblem(hit.coupon);
     if (problem) return { ok: false, msg: problem };
     const c = hit.coupon;
+    if (body.phone && phoneAlreadyUsed(c, body.phone)) return { ok: false, msg: PHONE_USED_MSG };
     return {
       ok: true,
       coupon: {
         code: c.code, disc: c.disc, min: c.min || 0, cats: c.cats || '', exp: c.exp || '',
         loyaltyReward: !!c.loyaltyReward, rewardName: c.rewardName || '',
+        // Rodzaj rabatu: 'percent' (domyślnie), 'amount' (kwota w zł), 'price' (cena produktu w zł)
+        discType: c.discType || 'percent', maxDisc: c.maxDisc || 0,
+        // Kod na jeden produkt (rabat na jedną sztukę, reszta koszyka po normalnej cenie)
+        itemId: c.itemId || null, itemName: c.itemName || '',
+        onePerPhone: !!c.onePerPhone,
       },
     };
   },
@@ -138,11 +153,21 @@ const actions = {
   async 'coupon-redeem'(body) {
     const hit = await findCoupon(body.code);
     if (!hit) return { ok: false, msg: 'Ten kod właśnie wygasł lub został w pełni wykorzystany.' };
+    const p9 = phone9(body.phone);
+    if (hit.coupon.onePerPhone && p9.length !== 9) return { ok: false, msg: 'Ten kod wymaga numeru telefonu.' };
+    let phoneBlocked = false;
     const result = await fbTransaction('coupons/' + hit.key, c => {
+      phoneBlocked = false;
       if (!c || couponProblem(c)) return undefined;
-      return Object.assign({}, c, { used: (c.used || 0) + 1, usedAt: nowPL() });
+      if (phoneAlreadyUsed(c, p9)) { phoneBlocked = true; return undefined; }
+      const upd = { used: (c.used || 0) + 1, usedAt: nowPL() };
+      if (c.onePerPhone) {
+        const list = Array.isArray(c.usedPhones) ? c.usedPhones : Object.values(c.usedPhones || {});
+        upd.usedPhones = list.concat([p9]);
+      }
+      return Object.assign({}, c, upd);
     });
-    if (!result.committed) return { ok: false, msg: 'Ten kod właśnie wygasł lub został w pełni wykorzystany.' };
+    if (!result.committed) return { ok: false, msg: phoneBlocked ? PHONE_USED_MSG : 'Ten kod właśnie wygasł lub został w pełni wykorzystany.' };
 
     // Nagroda lojalnościowa — oznacz wpis w historii jako zrealizowany, żeby panel
     // (zakładka Lojalność) pokazywał realizację. Błąd tutaj nie cofa użycia kodu.

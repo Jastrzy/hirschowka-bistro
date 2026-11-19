@@ -2224,7 +2224,7 @@ function doAdd(){
   for(const ag of curAddons){if(ag.group.required&&!ag.isCheckbox&&!ag.selected){toast('Wybierz '+ag.group.name);return;}}
   const mods=[];
   if(curSizes.length>1&&curSizes[selSize]?.n)mods.push({n:curSizes[selSize].n,p:curSizes[selSize].p});
-  curAddons.forEach(ag=>{if(ag.isCheckbox)ag.selected.forEach(s=>{const o=ag.group.opts.find(x=>x.n===s);if(o)mods.push({n:s,p:o.p});});else if(ag.selected){const o=ag.group.opts.find(x=>x.n===ag.selected);mods.push({n:ag.selected,p:o?.p||0});}});
+  curAddons.forEach(ag=>{if(ag.isCheckbox)ag.selected.forEach(s=>{const o=ag.group.opts.find(x=>x.n===s);if(o)mods.push(pkgMod(ag.group,s,o.p));});else if(ag.selected){const o=ag.group.opts.find(x=>x.n===ag.selected);mods.push(pkgMod(ag.group,ag.selected,o?.p||0));}});
   const unitPrice=curItem.price+(curSizes[selSize]?.p||0)+mods.reduce((s,m)=>s+(m.p||0),0);
   let uid=Date.now(); // każda pozycja dostaje własny uid (kilka pozycji w tej samej milisekundzie)
   if(curItem._dailyType){
@@ -2470,22 +2470,69 @@ function renderCart(){
 // Porównanie nazw kategorii odporne na wielkość liter i podwójne spacje
 // (np. "Kawy i  napoje z mlekiem") — inaczej rabat / wyjątki cicho nie działały.
 function _normCat(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+// ════ RABAT Z KODU ════
+// Rodzaje rabatu (pole discType): 'percent' — procent (opcjonalnie z limitem maxDisc zł),
+// 'amount' — kwota w zł, 'price' — ustalona cena produktu w zł (tylko kod na produkt).
+// Zakres: kod na produkt (itemId/itemName) albo na kategorie (cats) → rabat na JEDNĄ sztukę
+// (najtańszą pasującą), reszta koszyka po normalnej cenie; bez zakresu → cały koszyk.
+// Pozycje z kafelków „Danie dnia” mają kategorie „🍲 Zupa dnia” / „🍽 Danie główne”,
+// więc dla kodów liczą się dodatkowo jako „Dania obiadowe” (np. nagroda za 9 pieczątek).
+const DAILY_COUPON_CAT='dania obiadowe';
+function _itemCouponCats(c){
+  const cats=[_normCat(c.cat)];
+  if(c.dailyType||_dailyRoleOf(c)) cats.push(DAILY_COUPON_CAT);
+  return cats;
+}
+function _unitBase(c){return Math.max(0,(parseFloat(c.unitPrice)||0)-(c.mods||[]).reduce((s,m)=>s+(parseFloat(m.p)||0),0));}
+function couponMatchesItem(coupon,c){
+  if(coupon.itemId||coupon.itemName){
+    if(coupon.itemId&&c.itemId&&String(c.itemId)===String(coupon.itemId)) return true;
+    return !!coupon.itemName&&_normCat(c.name)===_normCat(coupon.itemName);
+  }
+  if(coupon.cats&&coupon.cats.trim()){
+    const catList=coupon.cats.split(',').map(_normCat).filter(Boolean);
+    return _itemCouponCats(c).some(x=>catList.includes(x));
+  }
+  return true;
+}
+function couponIsScoped(coupon){return !!(coupon&&(coupon.itemId||coupon.itemName||(coupon.cats&&coupon.cats.trim())));}
+function _discOn(amount,base,coupon){
+  const type=coupon.discType||'percent';
+  const v=parseFloat(coupon.disc)||0;
+  let d;
+  if(type==='amount') d=v;
+  else if(type==='price') d=base-v;
+  else { d=amount*(v/100); const cap=parseFloat(coupon.maxDisc)||0; if(cap>0) d=Math.min(d,cap); }
+  return Math.max(0,Math.min(amount,d));
+}
 function calcCouponDiscount(sub, cartItems, coupon){
   if(!coupon) return 0;
-  if(coupon.cats && coupon.cats.trim()){
-    const catList = coupon.cats.split(',').map(_normCat).filter(Boolean);
-    // Rabat obejmuje TYLKO JEDNĄ SZTUKĘ — najtańszą pasującą pozycję z kategorii —
-    // a nie całą linię (ilość) ani sumę wszystkich pasujących pozycji w koszyku.
-    let cheapestUnitPrice = null;
+  if(couponIsScoped(coupon)){
+    // Rabat obejmuje TYLKO JEDNĄ SZTUKĘ — najtańszą pasującą pozycję
+    let best=null;
     cartItems.forEach(function(c){
-      if(catList.includes(_normCat(c.cat)) && (cheapestUnitPrice===null || c.unitPrice < cheapestUnitPrice)){
-        cheapestUnitPrice = c.unitPrice;
-      }
+      if(couponMatchesItem(coupon,c) && (best===null || c.unitPrice < best.unitPrice)) best=c;
     });
-    if(!cheapestUnitPrice || cheapestUnitPrice <= 0) return 0;
-    return Math.min(cheapestUnitPrice, cheapestUnitPrice*(coupon.disc/100));
+    if(!best || !(best.unitPrice>0)) return 0;
+    return parseFloat(_discOn(best.unitPrice,_unitBase(best),coupon).toFixed(2));
   }
-  return Math.min(sub, sub*(coupon.disc/100));
+  if((coupon.discType||'percent')==='price') return 0;
+  return parseFloat(_discOn(sub,sub,coupon).toFixed(2));
+}
+// Opis kodu dla klienta i do zamówienia, np. „-10%”, „-5 zł”, „Bajgiel Barona za 20 zł”
+function couponLabel(c){
+  if(!c) return '';
+  const v=parseFloat(c.disc)||0, t=c.discType||'percent';
+  const zl=n=>(Number.isInteger(n)?n:n.toFixed(2).replace('.',','))+' zł';
+  if(t==='amount') return '-'+zl(v)+(c.itemName?' na '+c.itemName:'');
+  if(t==='price') return (c.itemName||'produkt')+' za '+zl(v);
+  if(v>=100&&!c.itemName) return 'Darmowe!';
+  return '-'+v+'%'+(c.itemName?' na '+c.itemName:'')+((parseFloat(c.maxDisc)||0)>0?' (maks. '+zl(parseFloat(c.maxDisc))+')':'');
+}
+function couponScopeText(c){
+  if(c.itemName) return c.itemName;
+  if(c.cats&&c.cats.trim()) return c.cats.split(',').map(x=>x.trim()).filter(Boolean).join(', ');
+  return '';
 }
 function getDeliveryMinOrder(){return parseFloat(LS('delivery-min-order'))||0;}
 function renderCartSum(){
@@ -2535,6 +2582,14 @@ function calcDel(){
 // • Pozycja, przy której klient wybrał opcję z dawnej grupy dodatków
 //   "Opakowanie na wynos" (Na wynos / Własny), nie jest liczona drugi raz.
 const PKG_DEFAULT_CAT_RATES='Śniadania: 1\nDania obiadowe: 1\nSałatki: 1';
+// Opcja z grupy opakowań („Na wynos” / „Własny”) — kwota nie wchodzi w cenę produktu,
+// tylko w „Opakowania” w podsumowaniu (pole pkg); przy produkcie zostaje sam napis dla kuchni.
+function isPkgOption(group,name){
+  return /opakow/i.test(String(group&&group.name||''))||/^(na wynos|własny)$/i.test(String(name||'').trim());
+}
+function pkgMod(group,name,price){
+  return isPkgOption(group,name)?{n:name,p:0,pkg:parseFloat(price)||0}:{n:name,p:price};
+}
 function calcPackaging(){
   if(delType==='miejsce')return 0;
   const pkg=LS('packaging')||{soup:1,main:1,set:2};
@@ -2553,7 +2608,12 @@ function calcPackaging(){
       total+=(parseFloat(pkg[type])||0)*ci.qty;
       return;
     }
-    if((ci.mods||[]).some(m=>/^(na wynos|własny)$/i.test(String(m&&m.n||'').trim())))return;
+    const pm=(ci.mods||[]).filter(m=>m&&(m.pkg!==undefined||/^(na wynos|własny)$/i.test(String(m.n||'').trim())));
+    if(pm.length){
+      // nowy zapis: kwota opakowania w polu pkg; stary (koszyk sprzed zmiany): była już w cenie produktu
+      total+=pm.reduce((s,m)=>s+(parseFloat(m.pkg)||0),0)*ci.qty;
+      return;
+    }
     const key=_normCat(ci.cat);
     const rate=Object.prototype.hasOwnProperty.call(catRates,key)?catRates[key]:itemRate;
     total+=rate*ci.qty;
@@ -2704,7 +2764,8 @@ async function applyCoupon(){
   res.style.color='var(--muted)';res.textContent='Sprawdzam kod…';
   let check;
   try{
-    check=await clientApi('coupon-check',{code});
+    const ph=(document.getElementById('c-phone')?.value||'').replace(/\s/g,'');
+    check=await clientApi('coupon-check',ph?{code,phone:ph}:{code});
   }catch(e){
     res.style.color='var(--rust)';res.textContent='❌ Nie udało się sprawdzić kodu. Spróbuj ponownie.';return;
   }
@@ -2713,11 +2774,19 @@ async function applyCoupon(){
   // Sprawdź minimalną wartość
   const sub=cartSubtotal();
   if(sub<(found.min||0)){res.style.color='var(--rust)';res.textContent=`❌ Minimalna wartość zamówienia: ${found.min} zł`;return;}
+  // Kod, który nie obejmuje niczego w koszyku, nie jest przyjmowany (i nie zostanie zużyty)
+  if(calcCouponDiscount(sub,cart,found)<=0){
+    const scope=couponScopeText(found);
+    res.style.color='var(--rust)';
+    res.textContent=scope?`❌ Ten kod działa na: ${scope}. Dodaj do koszyka pasujący produkt.`:'❌ Ten kod nie obejmuje produktów w koszyku.';
+    return;
+  }
   appliedCoupon=found;
-  const label=found.disc>=100?'Darmowe!':'-'+found.disc+'%';
+  const label=couponLabel(found);
   const rewardInfo=found.loyaltyReward?` (${found.rewardName||'Nagroda lojalnościowa'})`:''
+  const once=found.onePerPhone?' · 1 raz na numer telefonu':'';
   res.style.color='var(--green2)';
-  res.textContent=`✅ Zastosowano: ${label}${rewardInfo}`;
+  res.textContent=`✅ Zastosowano: ${label}${rewardInfo}${once}`;
   renderCartSum();
 }
 
@@ -2725,9 +2794,9 @@ async function applyCoupon(){
 // wielu klientów próbuje użyć tego samego kodu w tym samym czasie (limit np. 100
 // osób). Przy nagrodzie lojalnościowej serwer oznacza też wpis w historii nagród
 // jako zrealizowany (widoczne w panelu, zakładka Lojalność).
-async function redeemCouponAtomic(code){
+async function redeemCouponAtomic(code,phone){
   try{
-    const result=await clientApi('coupon-redeem',{code});
+    const result=await clientApi('coupon-redeem',{code,phone:phone||''});
     return result.ok?{ok:true}:{ok:false,msg:result.msg||'Ten kod właśnie wygasł lub został w pełni wykorzystany.'};
   }catch(e){
     return {ok:false,msg:'Błąd zapisu kodu: '+e.message};
@@ -2879,10 +2948,20 @@ async function placeOrder(){
 
   // Jeśli zastosowano kod — zarezerwuj go atomowo w Firebase ZANIM policzymy rabat i złożymy zamówienie.
   // Chroni przed sytuacją, gdy dwóch klientów "ostatnie miejsce" limitu użyje kodu w tej samej chwili.
+  if(appliedCoupon && calcCouponDiscount(cartSubtotal(),cart,appliedCoupon)<=0){
+    // Klient usunął z koszyka produkt, którego dotyczył kod — nie zużywamy kodu
+    const scope=couponScopeText(appliedCoupon);
+    const cr=document.getElementById('coup-res');
+    const msg=scope?`Kod ${appliedCoupon.code} działa na: ${scope} — nie ma tego w koszyku.`:`Kod ${appliedCoupon.code} nie obejmuje produktów w koszyku.`;
+    if(cr){cr.style.color='var(--rust)';cr.textContent='❌ '+msg+' Kod nie został użyty.';}
+    toast('❌ '+msg);
+    appliedCoupon=null; renderCartSum();
+    return;
+  }
   if(appliedCoupon){
     const btnChk=document.querySelector('.order-btn');
     if(btnChk){btnChk.disabled=true;btnChk.textContent='Sprawdzam kod…';}
-    const redemption=await redeemCouponAtomic(appliedCoupon.code);
+    const redemption=await redeemCouponAtomic(appliedCoupon.code,phone);
     if(btnChk){btnChk.disabled=false;}
     if(!redemption.ok){
       toast('❌ '+redemption.msg);
@@ -2923,7 +3002,8 @@ async function placeOrder(){
     dailySetPairs:dailySet.pairs||0,
     dailySetDiscount:dailySet.discount||0,
     couponCode:appliedCoupon?appliedCoupon.code:null,
-    couponDiscountPct:appliedCoupon?appliedCoupon.disc:null,
+    couponDiscountPct:appliedCoupon&&(appliedCoupon.discType||'percent')==='percent'?appliedCoupon.disc:null,
+    couponLabel:appliedCoupon?couponLabel(appliedCoupon):null,
     couponDiscountAmount:appliedCoupon?parseFloat(disc.toFixed(2)):0,
     invoice:document.getElementById('need-invoice')?.checked?{
       company:(document.getElementById('inv-company')?.value||'').trim(),

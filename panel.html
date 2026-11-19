@@ -1548,13 +1548,28 @@ requestWakeLock();
     <div class="modal-bd">
       <div class="frow">
         <div class="field"><label>Kod kuponu</label><input id="coup-code" placeholder="np. HIRSCH10" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"><button class="btn bo bsm" id="coup-gen-btn" style="margin-top:6px;" onclick="genCode()">Generuj losowy</button></div>
-        <div class="field"><label>Rabat (%)</label><input type="number" id="coup-disc" value="10" min="1" max="100"></div>
+        <div class="field"><label>Rodzaj rabatu</label>
+          <select id="coup-type" onchange="couponTypeUI()">
+            <option value="percent">Procent (%)</option>
+            <option value="amount">Kwota (zł)</option>
+            <option value="price">Cena produktu (zł)</option>
+          </select></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label id="coup-disc-lbl">Rabat (%)</label><input type="number" id="coup-disc" value="10" min="0" step="0.5"></div>
+        <div class="field" id="coup-max-wrap"><label>Maks. rabat (zł)</label><input type="number" id="coup-max" value="" min="0" step="0.5" placeholder="bez limitu"></div>
+      </div>
+      <div class="field"><label>Produkt</label>
+        <select id="coup-item" onchange="couponTypeUI()"><option value="">Całe zamówienie</option></select>
+        <div id="coup-hint" style="font-size:11px;color:var(--muted);margin-top:4px;">Kod na produkt obniża jedną sztukę tego produktu — reszta koszyka po normalnej cenie.</div>
       </div>
       <div class="frow">
         <div class="field"><label>Ważny do</label><input type="date" id="coup-exp"></div>
         <div class="field"><label>Limit użyć</label><input type="number" id="coup-limit" value="100" min="1" placeholder="np. 100"></div>
       </div>
       <div class="field"><label>Min. wartość zamówienia (zł)</label><input type="number" id="coup-min" value="0"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:4px;"><input type="checkbox" id="coup-oneper" style="width:16px;height:16px;accent-color:var(--brown);"> 1 raz na numer telefonu</label>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Każdy klient (numer telefonu) użyje kodu tylko raz — na stronie i przy kasie. „Limit użyć” to łączna liczba użyć wszystkich klientów.</div>
     </div>
     <div class="modal-ft">
       <button class="btn bo" onclick="closeModal('mo-coupon')">Anuluj</button>
@@ -2252,7 +2267,7 @@ function renderOrderCard(o){
         : `<span class="ord-meta-chip" style="background:rgba(239,68,68,.12);color:#ef4444;font-weight:700;">⏳ Oczekuje na płatność</span>`)
     : '';
   const timing = o.timing?`<span class="ord-meta-chip">⏰ ${o.timing}</span>`:'';
-  const coupon = o.couponCode?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🏷 Rabat:</strong> -${o.couponDiscountAmount!=null?o.couponDiscountAmount.toFixed(2)+' zł':((o.couponDiscountPct||0)+'%')}${o.couponDiscountPct!=null?' ('+o.couponDiscountPct+'%)':''} · kod: <code style="background:var(--bg);padding:1px 6px;border-radius:4px;letter-spacing:1px;">${o.couponCode}</code></div>`:'';
+  const coupon = o.couponCode?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🏷 Rabat:</strong> -${o.couponDiscountAmount!=null?o.couponDiscountAmount.toFixed(2)+' zł':((o.couponDiscountPct||0)+'%')}${o.couponLabel?' ('+o.couponLabel+')':(o.couponDiscountPct!=null?' ('+o.couponDiscountPct+'%)':'')} · kod: <code style="background:var(--bg);padding:1px 6px;border-radius:4px;letter-spacing:1px;">${o.couponCode}</code></div>`:'';
   // Zestaw dnia: zupa + danie dnia zamówione osobno, policzone w cenie zestawu (index.html)
   const dailySetInfo = o.dailySetDiscount>0?`<div style="margin-top:8px;padding:8px 10px;background:rgba(45,74,47,.06);border:1px solid rgba(45,74,47,.2);border-radius:var(--r);font-size:12px;"><strong>🍲 Zestaw dnia${o.dailySetPairs>1?' ×'+o.dailySetPairs:''}:</strong> zupa + drugie danie w cenie zestawu (-${Number(o.dailySetDiscount).toFixed(2)} zł)</div>`:'';
   const comment = o.comment?`<div style="margin-top:8px;padding:8px 10px;background:rgba(200,146,42,.06);border:1px solid rgba(200,146,42,.15);border-radius:var(--r);font-size:12px;"><strong>💬 Uwagi klienta:</strong> ${o.comment}</div>`:'' ;
@@ -4201,13 +4216,40 @@ function renderCoupons(){
     const code=String(c.code).replace(/'/g,'');
     return `<tr>
       <td><strong style="font-family:monospace;letter-spacing:1px;">${isRew?'🎁 ':''}${c.code}</strong>${who}</td>
-      <td>-${c.disc}%${c.min>0?`<div style="font-size:11px;color:var(--muted);">od ${c.min} zł</div>`:''}</td>
+      <td>${couponDiscText(c)}${c.itemName?`<div style="font-size:11px;color:var(--muted);">na: ${c.itemName}</div>`:''}${c.min>0?`<div style="font-size:11px;color:var(--muted);">od ${c.min} zł</div>`:''}${c.onePerPhone?`<div style="font-size:11px;color:var(--muted);">1 raz na numer</div>`:''}</td>
       <td>${fmtExp(c.exp)}</td>
       <td>${c.used||0} / ${couponLimit(c)}</td>
       <td style="white-space:nowrap;text-align:right;"><button class="btn bo bsm" onclick="openCouponModal('${code}')">Edytuj</button> <button class="btn bd bsm" onclick="delCoupon('${code}')">Usuń</button></td>
     </tr>`;}).join(''):'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">Brak aktywnych kuponów.</td></tr>';
 }
 function genCode(){document.getElementById('coup-code').value='HIRSCH'+Math.random().toString(36).slice(2,7).toUpperCase();}
+function couponDiscText(c){
+  const v=parseFloat(c.disc)||0, t=c.discType||'percent';
+  const zl=n=>(Number.isInteger(n)?n:n.toFixed(2))+' zł';
+  if(t==='amount') return '-'+zl(v);
+  if(t==='price') return 'cena '+zl(v);
+  return '-'+v+'%'+((parseFloat(c.maxDisc)||0)>0?` <span style="font-size:11px;color:var(--muted);">(maks. ${zl(parseFloat(c.maxDisc))})</span>`:'');
+}
+function fillCouponItems(selected){
+  const sel=document.getElementById('coup-item');
+  const items=(menuData||[]).filter(d=>d&&d.name).slice().sort((a,b)=>String(a.cat).localeCompare(String(b.cat),'pl')||String(a.name).localeCompare(String(b.name),'pl'));
+  let html='<option value="">Całe zamówienie</option>', cat=null;
+  items.forEach(d=>{
+    if(d.cat!==cat){ if(cat!==null) html+='</optgroup>'; cat=d.cat; html+=`<optgroup label="${String(cat).replace(/"/g,'&quot;')}">`; }
+    html+=`<option value="${d.id}">${String(d.name).replace(/</g,'&lt;')} — ${d.price} zł</option>`;
+  });
+  if(cat!==null) html+='</optgroup>';
+  sel.innerHTML=html;
+  sel.value=selected!=null?String(selected):'';
+}
+function couponTypeUI(){
+  const t=document.getElementById('coup-type').value;
+  const hasItem=!!document.getElementById('coup-item').value;
+  document.getElementById('coup-disc-lbl').textContent=t==='percent'?'Rabat (%)':(t==='amount'?'Rabat (zł)':'Cena produktu z kodem (zł)');
+  document.getElementById('coup-max-wrap').style.visibility=t==='percent'?'visible':'hidden';
+  document.getElementById('coup-hint').style.color=(t==='price'&&!hasItem)?'var(--red)':'var(--muted)';
+  document.getElementById('coup-hint').textContent=(t==='price'&&!hasItem)?'Przy rodzaju „Cena produktu” wybierz produkt.':'Kod na produkt obniża jedną sztukę tego produktu — reszta koszyka po normalnej cenie.';
+}
 let _editCouponCode=null;
 function openCouponModal(code){
   _editCouponCode=code||null;
@@ -4221,13 +4263,30 @@ function openCouponModal(code){
   document.getElementById('coup-exp').value=c?(c.exp||''):'';
   document.getElementById('coup-limit').value=c?couponLimit(c):100;
   document.getElementById('coup-min').value=c?(c.min||0):0;
+  document.getElementById('coup-type').value=c?(c.discType||'percent'):'percent';
+  document.getElementById('coup-max').value=c&&c.maxDisc?c.maxDisc:'';
+  document.getElementById('coup-oneper').checked=!!(c&&c.onePerPhone);
+  fillCouponItems(c?c.itemId:null);
+  couponTypeUI();
   openModal('mo-coupon');
 }
 async function saveCoupon(){
   const code=document.getElementById('coup-code').value.trim().toUpperCase();
   if(!code){toast('Podaj kod kuponu');return;}
+  const discType=document.getElementById('coup-type').value||'percent';
+  const rawDisc=parseFloat(String(document.getElementById('coup-disc').value).replace(',','.'));
+  const itemId=document.getElementById('coup-item').value;
+  const item=itemId?(menuData||[]).find(d=>String(d.id)===String(itemId)):null;
+  if(discType==='price'&&!item){toast('Przy rodzaju „Cena produktu” wybierz produkt');return;}
+  if(!(rawDisc>0)&&discType!=='price'){toast('Podaj wartość rabatu');return;}
+  if(discType==='price'&&!(rawDisc>=0)){toast('Podaj cenę produktu z kodem');return;}
   const fields={
-    disc:Math.min(100,Math.max(1,parseInt(document.getElementById('coup-disc').value)||10)),
+    discType,
+    disc:discType==='percent'?Math.min(100,Math.max(1,Math.round(rawDisc))):Math.round(rawDisc*100)/100,
+    maxDisc:discType==='percent'?(parseFloat(String(document.getElementById('coup-max').value).replace(',','.'))||0):0,
+    itemId:item?item.id:null,
+    itemName:item?item.name:'',
+    onePerPhone:document.getElementById('coup-oneper').checked,
     exp:document.getElementById('coup-exp').value,
     limit:Math.max(1,parseInt(document.getElementById('coup-limit').value)||1),
     min:parseFloat(document.getElementById('coup-min').value)||0
@@ -4358,8 +4417,15 @@ window.renderCouponRedemptions = function(){
 
 // ── ATOMOWA REALIZACJA KUPONU — transakcja Firebase, bezpieczna przy równoczesnym użyciu ──
 // (np. gdy kod jest realizowany jednocześnie przez WWW i przez pracownika przy kasie)
-async function redeemCouponAtomic(code){
+function _phone9(p){return String(p||'').replace(/\s/g,'').replace(/^\+48/,'').replace(/\D/g,'');}
+function couponPhoneUsed(c,phone){
+  if(!c||!c.onePerPhone) return false;
+  const p=_phone9(phone);
+  return !!p&&(Array.isArray(c.usedPhones)?c.usedPhones:Object.values(c.usedPhones||{})).includes(p);
+}
+async function redeemCouponAtomic(code,phone){
   const db=window._firebase&&window._firebase.db;
+  let phoneBlocked=false;
   if(!db) return {ok:false,msg:'Brak połączenia z Firebase. Spróbuj ponownie.'};
   try{
     const result=await db.ref('coupons').transaction(function(arr){
@@ -4375,10 +4441,17 @@ async function redeemCouponAtomic(code){
         const expDate=new Date(c.exp);expDate.setHours(23,59,59,999);
         if(Date.now()>expDate.getTime()) return; // przerwij — wygasł
       }
-      list[idx]=Object.assign({},c,{used:used+1,usedAt:new Date().toLocaleString('pl-PL')});
+      phoneBlocked=false;
+      if(couponPhoneUsed(c,phone)){phoneBlocked=true;return;} // przerwij — ten numer już użył kodu
+      const upd={used:used+1,usedAt:new Date().toLocaleString('pl-PL')};
+      if(c.onePerPhone){
+        const lst=Array.isArray(c.usedPhones)?c.usedPhones:Object.values(c.usedPhones||{});
+        upd.usedPhones=lst.concat([_phone9(phone)]);
+      }
+      list[idx]=Object.assign({},c,upd);
       return list;
     });
-    if(!result.committed) return {ok:false,msg:'Kod nie istnieje, wygasł albo limit użyć został wyczerpany.'};
+    if(!result.committed) return {ok:false,msg:phoneBlocked?'Ten kod został już wykorzystany na ten numer telefonu.':'Kod nie istnieje, wygasł albo limit użyć został wyczerpany.'};
     const val=result.snapshot.val();
     const list=Array.isArray(val)?val:Object.values(val).filter(function(c){return c;});
     const coupon=list.find(c=>c&&(c.code||'').toUpperCase()===code.toUpperCase());
@@ -4447,9 +4520,10 @@ async function redeemAtTill(){
   if(local){
     if((local.used||0)>=couponLimit(local)){err(`⚠️ Kod <strong>${code}</strong> został już wykorzystany.`);return;}
     if(couponExpired(local)){err(`⚠️ Kod <strong>${code}</strong> wygasł ${fmtExp(local.exp)}.`);return;}
+    if(couponPhoneUsed(local,phone)){err(`⚠️ Kod <strong>${code}</strong> został już wykorzystany na numer ${phone}.`);return;}
   }
   resEl.innerHTML='<div style="font-size:13px;color:var(--muted);">Sprawdzam kod…</div>';
-  const r=await redeemCouponAtomic(code);
+  const r=await redeemCouponAtomic(code,phone);
   if(!r.ok){err('❌ '+r.msg);return;}
   coupons=r.list;
   const cust=custByPhone(phone);
@@ -4460,7 +4534,7 @@ async function redeemAtTill(){
     const rp=rewardPhoneOf(code);
     if(rp&&_cleanPhone(rp)!==_cleanPhone(phone)) note=`<br><span style="color:var(--rust);">Uwaga: ta nagroda była przyznana na numer ${rp}.</span>`;
   }
-  const what=r.coupon&&r.coupon.loyaltyReward?`🎁 ${r.coupon.rewardName||'Nagroda'}`:`Rabat -${r.coupon?r.coupon.disc:'?'}%`;
+  const what=r.coupon&&r.coupon.loyaltyReward?`🎁 ${r.coupon.rewardName||'Nagroda'}`:`Rabat ${r.coupon?couponDiscText(r.coupon).replace(/<[^>]+>/g,''):''}${r.coupon&&r.coupon.itemName?' na '+r.coupon.itemName:''}`;
   resEl.innerHTML=`<div style="background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:10px;font-size:13px;color:var(--green);">✅ Kod <strong>${code}</strong> zrealizowany! ${what}${cust?` · ${cust.name}`:''}${note}</div>`;
   toast(`✅ Kod ${code} zrealizowany`);
   document.getElementById('till-code').value='';
