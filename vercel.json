@@ -11,6 +11,10 @@
     {
       "source": "/karta",
       "destination": "/lojalnosc.html"
+    },
+    {
+      "source": "/swieta",
+      "destination": "/swieta.html"
     }
   ],
   "redirects": [
@@ -22,6 +26,11 @@
     {
       "source": "/stolik",
       "destination": "/?src=qr-stolik#menu",
+      "permanent": false
+    },
+    {
+      "source": "/święta",
+      "destination": "/swieta",
       "permanent": false
     }
   ],
