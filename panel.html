@@ -6855,18 +6855,34 @@ function utDelExp(i){ utExpenses.splice(i,1); utRenderExp(); utRecalc(); }
 
 // ── Podpowiedź „online” z zamówień ze strony ──
 function utOnlineFromOrders(date){
-  var seen={}, sum=0, cnt=0;
+  // Zwraca sumę zamówień ze strony opłaconych online w danym dniu + listę policzonych
+  // i pominiętych (z powodem), żeby dało się porównać z kasą / panelem Przelewy24.
+  var seen={}, sum=0, cnt=0, list=[], skipped=[];
   var all=[].concat(typeof orders!=='undefined'?orders:[], typeof archive!=='undefined'?archive:[]);
   all.forEach(function(o){
     if(!o) return;
     var id=o.id!=null?String(o.id):null;
     if(id){ if(seen[id]) return; seen[id]=1; }
-    if(!isSaleOrder(o)) return;
-    if(['blik','card','gpay'].indexOf(o.payment)<0) return;
+    if(['blik','card','gpay'].indexOf((o.payment||'').toLowerCase())<0) return;
     if(orderDayKey(o)!==date) return;
-    sum+=utGr(o.total); cnt++;
+    var row={id:o.id||'?', time:o.time||'', total:utGr(o.total), customer:o.customer||'', payment:o.payment, status:normStatus(o.status)};
+    if(isSaleOrder(o)){ sum+=row.total; cnt++; list.push(row); return; }
+    var st=row.status;
+    row.reason = isUnpaidOnline(o) ? 'brak potwierdzenia płatności z P24'
+      : st==='pending' ? 'nie zaakceptowane w panelu'
+      : st==='rejected' ? 'odrzucone'
+      : st==='payment_failed' ? 'płatność nieudana' : ('status: '+(o.status||'?'));
+    skipped.push(row);
   });
-  return {sum:sum,cnt:cnt};
+  var byTime=function(a,b){return String(a.time).localeCompare(String(b.time));};
+  list.sort(byTime); skipped.sort(byTime);
+  return {sum:sum,cnt:cnt,list:list,skipped:skipped};
+}
+function utOrderRowsHtml(rows,withReason){
+  return rows.map(function(r){
+    return '<tr><td>'+utEsc(r.time)+'</td><td>'+utEsc(r.id)+'</td><td>'+utEsc(r.customer)+'</td><td>'+utEsc(String(r.payment).toUpperCase())+'</td>'+
+      '<td style="text-align:right;white-space:nowrap;">'+utFmt(r.total)+'</td>'+(withReason?'<td style="color:var(--red);">'+utEsc(r.reason)+'</td>':'')+'</tr>';
+  }).join('');
 }
 function utInsertOnline(){
   var date=document.getElementById('ut-date').value;
@@ -6892,9 +6908,18 @@ function utRecalc(){
   // podpowiedź online
   var h=utOnlineFromOrders(date), hint=document.getElementById('ut-online-hint');
   if(hint){
-    hint.innerHTML = h.cnt
+    var open=!!(hint.querySelector('details')&&hint.querySelector('details').open);
+    var txt = h.cnt
       ? 'Zamówienia ze strony opłacone online tego dnia: <strong>'+h.cnt+'</strong> szt. = <strong>'+utFmt(h.sum)+'</strong> <button class="btn bo bsm" onclick="utInsertOnline()">Wstaw</button>'
-      : 'Brak zamówień ze strony opłaconych online (BLIK/karta/GPay) tego dnia.';
+      : 'Brak policzonych zamówień ze strony opłaconych online (BLIK/karta/GPay) tego dnia.';
+    if(h.cnt||h.skipped.length){
+      var tbl='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">';
+      if(h.list.length) tbl+='<tr><td colspan="6" style="font-weight:700;padding-top:4px;">Policzone ('+h.list.length+')</td></tr>'+utOrderRowsHtml(h.list,false);
+      if(h.skipped.length) tbl+='<tr><td colspan="6" style="font-weight:700;padding-top:8px;">Pominięte ('+h.skipped.length+')</td></tr>'+utOrderRowsHtml(h.skipped,true);
+      tbl+='</table><div style="margin-top:6px;">Dzień liczony jest wg godziny złożenia zamówienia. Porównaj tę listę z panelem Przelewy24 / raportem z kasy.</div>';
+      txt+='<details style="width:100%;margin-top:4px;"'+(open?' open':'')+'><summary style="cursor:pointer;">Pokaż zamówienia'+(h.skipped.length?' (w tym '+h.skipped.length+' pominięte)':'')+'</summary>'+tbl+'</details>';
+    }
+    hint.innerHTML = txt;
   }
   // ostrzeżenie
   var w=document.getElementById('ut-warn');
