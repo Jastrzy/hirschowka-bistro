@@ -627,7 +627,7 @@ requestWakeLock();
         .ut-sum-row:last-child{border-bottom:none;}
         .ut-sum-row strong{font-variant-numeric:tabular-nums;}
         .ut-big{font-size:16px;font-weight:700;}
-        .ut-exp-row{display:grid;grid-template-columns:1fr 120px 36px;gap:8px;margin-bottom:8px;align-items:center;}
+        .ut-exp-row{display:grid;grid-template-columns:auto 1fr 120px 36px;gap:8px;margin-bottom:8px;align-items:center;}
         .ut-exp-row input{width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;background:#fff;}
         .ut-ok{color:var(--green);} .ut-bad{color:var(--red);}
         .ut-warn{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red);border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;}
@@ -637,7 +637,10 @@ requestWakeLock();
         #ut-table td.num,#ut-table th.num{text-align:right;font-variant-numeric:tabular-nums;}
         #ut-table tr.ut-total td{font-weight:700;background:var(--bg);}
         #ut-table tr.ut-sel td{background:rgba(200,146,42,.10);}
-        @media(max-width:700px){.ut-exp-row{grid-template-columns:1fr 96px 36px;}}
+        @media(max-width:700px){.ut-exp-row{grid-template-columns:auto 1fr 90px 36px;}}
+        .ut-dir{min-width:92px;justify-content:center;font-weight:700;border:1px solid var(--border2);}
+        .ut-dir.out{background:var(--red-bg);color:var(--red);border-color:#fca5a5;}
+        .ut-dir.in{background:#dcfce7;color:#15803d;border-color:#86efac;}
       </style>
       <div class="sect-hdr"><h2>💰 Utarg dnia</h2></div>
 
@@ -655,9 +658,10 @@ requestWakeLock();
         <div class="ut-hint" id="ut-online-hint"></div>
         <div id="ut-warn"></div>
 
-        <div class="field" style="margin-bottom:6px;"><label>Wydatki / wypłaty z szuflady</label></div>
+        <div class="field" style="margin-bottom:6px;"><label>Wydatki, wypłaty i wpłaty do szuflady</label></div>
+        <div style="font-size:12px;color:var(--muted);margin:-2px 0 8px;">Kwotę wpisuj bez minusa. Przycisk z lewej przełącza: <b>− Wypłata</b> (zabierasz z szuflady) / <b>+ Wpłata</b> (dokładasz, np. drobne).</div>
         <div id="ut-exp-list"></div>
-        <button class="btn bo bsm" onclick="utAddExp()" style="margin-bottom:16px;">+ Dodaj wydatek</button>
+        <button class="btn bo bsm" onclick="utAddExp()" style="margin-bottom:16px;">+ Dodaj wypłatę / wpłatę</button>
 
         <div class="frow">
           <div class="field"><label>Gotówka policzona w szufladzie (opcjonalnie)</label><input type="text" inputmode="decimal" id="ut-counted" placeholder="np. 1606,49" oninput="utRecalc()"></div>
@@ -6692,7 +6696,11 @@ var utReports = {};          // { 'RRRR-MM-DD': {...} }
 var utStart = 0;             // zł
 var utLoaded = false;
 var utListening = false;
-var utExpenses = [];         // wiersze formularza [{desc, amount(string)}]
+var utExpenses = [];         // wiersze formularza [{desc, amount(string, zawsze dodatnia), dir:'out'|'in'}]
+// W Firebase: amount > 0 = wypłata/wydatek (pomniejsza szufladę), amount < 0 = wpłata (powiększa).
+function utExpLbl(gr){ return gr<0 ? '+'+utFmt(-gr)+' (wpłata)' : '−'+utFmt(gr); }
+function utSignedGr(e){ var a=Math.abs(utParse(e.amount)||0); return e.dir==='in' ? -a : a; }
+function utToggleDir(i){ utExpenses[i].dir = utExpenses[i].dir==='in' ? 'out' : 'in'; utRenderExp(); utRecalc(); }
 var UT_WHO_KEY = 'hb_utarg_who';
 
 // "1 174,59" / "1174.59" → 117459 (grosze); puste/niepoprawne → null
@@ -6812,7 +6820,7 @@ function utLoadDay(date){
   document.getElementById('ut-counted').value= hasC?utInStr(utGr(r.counted)):'';
   document.getElementById('ut-note').value   = r?(r.note||''):'';
   document.getElementById('ut-who').value    = (r&&r.who)?r.who:utSavedWho();
-  utExpenses = r&&r.expenses ? r.expenses.filter(Boolean).map(function(e){return {desc:e.desc||'',amount:utInStr(utGr(e.amount))};}) : [];
+  utExpenses = r&&r.expenses ? r.expenses.filter(Boolean).map(function(e){var g=utGr(e.amount); return {desc:e.desc||'',amount:utInStr(Math.abs(g)),dir:g<0?'in':'out'};}) : [];
   document.getElementById('ut-form-title').textContent = r ? ('Edycja dnia '+utDayLabel(date)) : ('Nowy raport — '+utDayLabel(date));
   document.getElementById('ut-del-btn').style.display = r?'':'none';
   utRenderExp();
@@ -6830,14 +6838,16 @@ function utRenderExp(){
   var box=document.getElementById('ut-exp-list'); if(!box) return;
   if(!utExpenses.length){ box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Brak wydatków tego dnia.</div>'; return; }
   box.innerHTML=utExpenses.map(function(e,i){
+    var inn=e.dir==='in';
     return '<div class="ut-exp-row">'+
-      '<input type="text" placeholder="np. chleb, pensja, kupony" value="'+utEsc(e.desc)+'" oninput="utExpenses['+i+'].desc=this.value">'+
-      '<input type="text" inputmode="decimal" placeholder="0,00" value="'+utEsc(e.amount)+'" oninput="utExpenses['+i+'].amount=this.value;utRecalc()">'+
+      '<button type="button" class="btn bsm ut-dir '+(inn?'in':'out')+'" onclick="utToggleDir('+i+')" title="Kliknij, aby zmienić">'+(inn?'+ Wpłata':'− Wypłata')+'</button>'+
+      '<input type="text" placeholder="'+(inn?'np. drobne do kasy':'np. chleb, pensja, kupony')+'" value="'+utEsc(e.desc)+'" oninput="utExpenses['+i+'].desc=this.value">'+
+      '<input type="text" inputmode="decimal" placeholder="0,00" value="'+utEsc(e.amount)+'" oninput="utExpenses['+i+'].amount=this.value.replace(/-/g,\'\');utRecalc()">'+
       '<button class="btn bd bsm" title="Usuń" onclick="utDelExp('+i+')">✕</button></div>';
   }).join('');
 }
 function utAddExp(){
-  utExpenses.push({desc:'',amount:''}); utRenderExp();
+  utExpenses.push({desc:'',amount:'',dir:'out'}); utRenderExp();
   var rows=document.querySelectorAll('#ut-exp-list .ut-exp-row input[type=text]:first-child');
   if(rows.length) rows[rows.length-1].focus();
 }
@@ -6873,7 +6883,8 @@ function utRecalc(){
   var card=utParse(document.getElementById('ut-card').value)||0;
   var online=utParse(document.getElementById('ut-online').value)||0;
   var counted=utParse(document.getElementById('ut-counted').value);
-  var exp=utExpenses.reduce(function(a,e){return a+(utParse(e.amount)||0);},0);
+  var exp=utExpenses.reduce(function(a,e){return a+utSignedGr(e);},0);
+  var expOut=utExpenses.reduce(function(a,e){var g=utSignedGr(e);return a+(g>0?g:0);},0), expIn=expOut-exp;
   var prev=utPrevBalance(date);
   var cash=total-card-online;
   var expected=prev+cash-exp;
@@ -6892,7 +6903,8 @@ function utRecalc(){
   var html=
     '<div class="ut-sum-row"><span>Stan szuflady z poprzedniego dnia</span><strong>'+utFmt(prev)+'</strong></div>'+
     '<div class="ut-sum-row"><span>+ Gotówka ze sprzedaży <span style="color:var(--muted);">(utarg − karta − online)</span></span><strong>'+utFmt(cash)+'</strong></div>'+
-    '<div class="ut-sum-row"><span>− Wydatki / wypłaty</span><strong>'+utFmt(exp)+'</strong></div>'+
+    '<div class="ut-sum-row"><span>− Wydatki / wypłaty</span><strong>'+utFmt(expOut)+'</strong></div>'+
+    (expIn?'<div class="ut-sum-row"><span>+ Wpłaty do szuflady</span><strong>'+utFmt(expIn)+'</strong></div>':'')+
     '<div class="ut-sum-row ut-big"><span>Powinno być w szufladzie</span><strong>'+utFmt(expected)+'</strong></div>';
   if(counted!==null){
     var diff=counted-expected;
@@ -6923,7 +6935,8 @@ function utSave(){
     var a=utParse(e.amount), d=(e.desc||'').trim();
     if(a===null&&!d) return;           // pusty wiersz — pomijamy
     if(a===null){ bad=true; return; }
-    expenses.push({desc:d||'wydatek',amount:utZl(a)});
+    a=Math.abs(a);
+    expenses.push({desc:d||(e.dir==='in'?'wpłata':'wydatek'),amount:utZl(e.dir==='in'?-a:a)});
   });
   if(bad){ toast('⚠️ Uzupełnij kwotę przy każdym wydatku'); return; }
   if(total===null&&!expenses.length&&counted===null){ toast('⚠️ Wpisz utarg albo przynajmniej wydatek'); return; }
@@ -6974,7 +6987,7 @@ function renderUtargMonth(){
     T+=t;C+=cd;O+=on;E+=ex; if(c.diff!==null) D+=c.diff; if(t>0) sales++;
     var diffCell = c.diff===null ? '<span style="color:var(--muted);">—</span>'
       : '<span class="'+(c.diff===0?'ut-ok':'ut-bad')+'">'+(c.diff>0?'+':'')+utFmt(c.diff)+'</span>';
-    var exTitle=(r.expenses||[]).filter(Boolean).map(function(e){return (e.desc||'')+': '+utFmt(utGr(e.amount));}).join('\n');
+    var exTitle=(r.expenses||[]).filter(Boolean).map(function(e){return (e.desc||'')+': '+utExpLbl(utGr(e.amount));}).join('\n');
     return '<tr data-day="'+k+'" onclick="utEditDay(\''+k+'\')">'+
       '<td>'+utDayLabel(k)+(r.note?' <span title="'+utEsc(r.note)+'">📝</span>':'')+'</td>'+
       '<td class="num">'+utFmt(t)+'</td><td class="num">'+utFmt(cd)+'</td><td class="num">'+utFmt(on)+'</td>'+
@@ -7044,7 +7057,7 @@ function utPrintMonth(){
       '<td class="n">'+(c.counted===null?'—':utFmt(c.counted))+'</td><td class="n'+(c.diff?' bad':'')+'">'+(c.diff===null?'—':(c.diff>0?'+':'')+utFmt(c.diff))+'</td>'+
       '<td class="n"><b>'+utFmt(c.end)+'</b></td><td>'+utEsc(r.who||'')+'</td></tr>';
     (r.expenses||[]).filter(Boolean).forEach(function(e){
-      expRows+='<tr><td>'+utDayLabel(k)+'</td><td>'+utEsc(e.desc||'')+'</td><td class="n">'+utFmt(utGr(e.amount))+'</td><td>'+utEsc(r.who||'')+'</td></tr>';
+      expRows+='<tr><td>'+utDayLabel(k)+'</td><td>'+utEsc(e.desc||'')+'</td><td class="n">'+utExpLbl(utGr(e.amount))+'</td><td>'+utEsc(r.who||'')+'</td></tr>';
     });
     if(r.note) notes+='<li><b>'+utDayLabel(k)+':</b> '+utEsc(r.note)+'</li>';
   });
