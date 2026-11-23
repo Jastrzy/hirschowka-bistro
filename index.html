@@ -1712,6 +1712,30 @@ function isBistroOpenNow(){
   return LS('bistro-open') === true && !onHoliday;
 }
 
+// Czy strona przyjmuje teraz zamówienia online. Godziny lokalu (from–to) to co innego
+// niż przyjmowanie zamówień: zamówienia kończą się o `ordersTo` (gdy brak — o `to`).
+// Ręczne zamknięcie z panelu zamyka też zamówienia; ręczne otwarcie nie wydłuża
+// zamówień poza `ordersTo` danego dnia (chyba że dzień jest w harmonogramie nieczynny).
+function isOrderingOpenNow(){
+  if(!isBistroOpenNow()) return false;
+  const schedule = LS('schedule');
+  if(!(schedule && schedule.length>=7)) return true;
+  const now = new Date(), dow = now.getDay();
+  const day = schedule[dow===0?6:dow-1];
+  if(!day || day.closed) return true;            // otwarte ręcznie w dzień nieczynny
+  const until = day.ordersTo || day.to;
+  if(!until) return true;
+  const [oh,om] = until.split(':').map(Number);
+  return now.getHours()*60+now.getMinutes() < oh*60+om;
+}
+function orderingClosedMsg(){
+  const schedule = LS('schedule'); const now=new Date(), dow=now.getDay();
+  const day = schedule && schedule.length>=7 ? schedule[dow===0?6:dow-1] : null;
+  if(isBistroOpenNow() && day && !day.closed && (day.ordersTo||day.to))
+    return 'Zamówienia online przyjmujemy dziś do '+(day.ordersTo||day.to)+'. Zapraszamy do lokalu lub zadzwoń: 511 707 232';
+  return 'Restauracja jest teraz zamknięta. Zadzwoń: 511 707 232';
+}
+
 function updateClock(){
   const now=new Date();const h=now.getHours(),m=now.getMinutes(),dow=now.getDay();
   const pad=n=>String(n).padStart(2,'0');
@@ -2116,7 +2140,7 @@ function openProductItem(item,opts){
   const ph=document.getElementById('sp-photo');
   if(item.photo){ph.src=item.photo;ph.alt=dishAlt(item).replace(/&quot;/g,'"');ph.style.display='block';}else{ph.removeAttribute('src');ph.style.display='none';}
   const cl=document.getElementById('sp-closed');
-  cl.textContent=(typeof isBistroOpenNow==='function'&&!isBistroOpenNow())?'Teraz nie przyjmujemy zamówień online. Możesz dodać danie do koszyka — zamówienie złożysz w godzinach otwarcia.':'';
+  cl.textContent=(typeof isOrderingOpenNow==='function'&&!isOrderingOpenNow())?'Teraz nie przyjmujemy zamówień online. Możesz dodać danie do koszyka — zamówienie złożysz w godzinach otwarcia.':'';
   const de=document.getElementById('sp-desc');if(item.desc){de.textContent=item.desc;de.style.display='block';}else de.style.display='none';
   const sz=document.getElementById('sp-sizes');
   if(curSizes.length>=1){sz.innerHTML=`<div style="padding:12px 22px;border-bottom:1px solid rgba(59,37,18,.08);"><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Wariant</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${curSizes.map((s,i)=>`<button onclick="selSz(${i})" id="sz-${i}" style="flex:1;min-width:80px;padding:10px;border-radius:var(--r);border:2px solid ${i===0?'var(--brown)':'rgba(59,37,18,.15)'};background:${i===0?'rgba(59,37,18,.05)':'transparent'};color:${i===0?'var(--brown)':'var(--muted)'};font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);">${s.n||'Standard'}<br><span style="font-size:11px;">${(item.price+s.p).toFixed(2)} zł</span></button>`).join('')}</div></div>`;}else sz.innerHTML='';
@@ -2832,8 +2856,8 @@ async function placeOrder(){
   // Sprawdź czy bistro jest otwarte — ta sama funkcja co przy wyświetlaniu
   // statusu na stronie (patrz isBistroOpenNow), więc nie zależy od tego, czy
   // ktoś akurat ma otwarty panel do przeliczenia bistro-open
-  if(!isBistroOpenNow()){
-    toast('🔒 Restauracja jest teraz zamknięta. Zadzwoń: 511 707 232');
+  if(!isOrderingOpenNow()){
+    toast('🔒 '+orderingClosedMsg());
     return;
   }
   // Sprawdź, czy "danie/zestaw/zupa dnia" w koszyku nie zdążyły się zmienić od momentu

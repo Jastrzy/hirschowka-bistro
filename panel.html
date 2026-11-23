@@ -1010,7 +1010,8 @@ requestWakeLock();
     <div class="page" id="page-harmonogramy">
       <div class="sect-hdr"><h2>Harmonogramy</h2></div>
       <div class="card card-pad">
-        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">Godziny przyjmowania zamówień</h3>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;">Godziny lokalu i zamówień online</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">„Lokal otwarty” – godziny pokazywane klientom na stronie. „Zamówienia online do” – po tej godzinie strona nie przyjmie zamówienia (dostawa i odbiór).</p>
         <div id="schedule-rows"></div>
         <button class="btn bp bsm" style="margin-top:10px;" onclick="saveSchedule()">Zapisz harmonogram</button>
       </div>
@@ -2387,7 +2388,8 @@ function renderOrderCard(o){
   } else if(normStatus(o.status) === 'done'){
     actions = `<span style="font-size:12px;color:var(--muted2);">✓ Zrealizowane ${o.doneAt||''}</span>`;
   } else if(normStatus(o.status) === 'rejected'){
-    actions = `<span style="font-size:12px;color:#ef4444;">✕ Odrzucone ${o.rejectedAt||''}</span>`;
+    actions = `<span style="font-size:12px;color:#ef4444;">✕ Odrzucone ${o.rejectedAt||''}</span>
+      <button class="btn bo bsm" style="margin-left:8px;" onclick="restoreRejectedOrd('${o.id}')">↩ Przywróć do przyjętych</button>`;
   } else if(normStatus(o.status) === 'payment_failed'){
     actions = `<span style="font-size:12px;color:#ef4444;">✕ Płatność nie doszła do skutku</span>`;
   }
@@ -2863,6 +2865,38 @@ async function setOrdStatus(id, newStatus){
   renderOrders();
   const labels={delivering:'W drodze 🚗',ready:'Gotowe do odbioru 🔔'};
   toast(`Zamówienie ${id}: ${labels[newStatus]||newStatus}`);
+}
+
+// Przywrócenie omyłkowo odrzuconego zamówienia: archiwum → orders (status 'accepted').
+// Najpierw zapis do orders/<klucz> (tylko jeśli klucz jest wolny), potem usunięcie
+// z archiwum transakcją — nigdy pełnym nadpisaniem lokalną kopią.
+async function restoreRejectedOrd(id){
+  const o = archive.find(x=>x && x.id===id);
+  if(!o){ toast('Nie znaleziono zamówienia w archiwum'); return; }
+  if(!confirm(`Przywrócić zamówienie ${id} do przyjętych?\nKlient NIE dostanie SMS-a — w razie potrzeby zadzwoń do niego.`)) return;
+  const db = window._firebase && window._firebase.db;
+  if(!db){ toast('⚠️ Brak połączenia z Firebase'); return; }
+  try{
+    const existing = await findOrderKey(db, id);
+    if(existing!==null){ toast('To zamówienie jest już na liście zamówień'); refreshOrdersFromFirebase(); return; }
+    const key = String(id).replace(/^#/,'');
+    const restored = {...o, status:'accepted', restoredAt: new Date().toLocaleString('pl')};
+    delete restored.rejectedAt; delete restored.doneAt;
+    const res = await db.ref('orders/'+key).transaction(function(cur){ return cur ? undefined : restored; });
+    if(!res.committed){ toast('⚠️ Pod tym numerem jest już inne zamówienie — nie przywrócono'); return; }
+    await db.ref('archive').transaction(function(arr){
+      const list = arr ? (Array.isArray(arr)?arr:Object.values(arr)) : [];
+      return list.filter(function(x){ return !(x && x.id===id); });
+    });
+    archive = archive.filter(x=>!(x && x.id===id));
+    try{ localStorage.setItem('archive', JSON.stringify(archive)); }catch(e){}
+    fbLog('INFO','Przywrócono odrzucone zamówienie',{orderId:id,key});
+    await refreshOrdersFromFirebase();
+    toast('↩ Zamówienie '+id+' przywrócone do przyjętych (zakładka Bieżące)');
+  }catch(e){
+    fbLog('ERROR','restoreRejectedOrd: błąd',{orderId:id,message:e.message});
+    toast('⚠️ Błąd przywracania: '+e.message);
+  }
 }
 
 async function rejectOrd(id){
@@ -4824,18 +4858,34 @@ function delCross(i){crossRules.splice(i,1);W('cross',crossRules);renderCross();
 
 // ── SCHEDULE ──
 function renderSchedule(){
-  document.getElementById('schedule-rows').innerHTML=schedule.map((d,i)=>`
-  <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+  const inp='padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:13px;';
+  document.getElementById('schedule-rows').innerHTML=
+  `<div style="display:flex;gap:12px;padding:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);flex-wrap:wrap;">
+     <span style="width:100px;">Dzień</span><span style="min-width:190px;">Lokal otwarty</span><span>Zamówienia online do</span></div>`+
+  schedule.map((d,i)=>`
+  <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
     <span style="font-size:13px;font-weight:500;width:100px;flex-shrink:0;">${d.day}</span>
-    ${d.closed?`<span style="font-size:13px;color:var(--red);">Nieczynne</span>`:
-    `<input type="time" value="${d.from}" style="padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:13px;" onchange="schedule[${i}].from=this.value">
-     <span style="color:var(--muted)">–</span>
-     <input type="time" value="${d.to}" style="padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:13px;" onchange="schedule[${i}].to=this.value">`}
+    ${d.closed?`<span style="font-size:13px;color:var(--red);min-width:190px;">Nieczynne</span>`:
+    `<span style="display:flex;align-items:center;gap:6px;min-width:190px;">
+       <input type="time" value="${d.from}" style="${inp}" onchange="schedule[${i}].from=this.value">
+       <span style="color:var(--muted)">–</span>
+       <input type="time" value="${d.to}" style="${inp}" onchange="schedule[${i}].to=this.value">
+     </span>
+     <span style="display:flex;align-items:center;gap:6px;">🛵 <input type="time" value="${d.ordersTo||d.to}" style="${inp}" onchange="schedule[${i}].ordersTo=this.value" title="Ostatnia godzina składania zamówień przez stronę"></span>`}
     <label class="toggle" title="Zamknij ten dzień"><input type="checkbox" ${d.closed?'checked':''} onchange="schedule[${i}].closed=this.checked;renderSchedule()"><span class="tslider"></span></label>
     <span style="font-size:11px;color:var(--muted);">Zamkn.</span>
   </div>`).join('');
 }
-function saveSchedule(){W('schedule',schedule);toast('Harmonogram zapisany ✓');}
+function saveSchedule(){
+  for(const d of schedule){
+    if(d.closed) continue;
+    if(!d.from||!d.to){ toast('⚠️ Uzupełnij godziny lokalu: '+d.day); return; }
+    if(!d.ordersTo) d.ordersTo=d.to;
+    if(d.ordersTo>d.to){ toast('⚠️ '+d.day+': zamówienia online nie mogą kończyć się później niż lokal'); return; }
+    if(d.ordersTo<=d.from){ toast('⚠️ '+d.day+': godzina zamówień online musi być po otwarciu lokalu'); return; }
+  }
+  W('schedule',schedule);toast('Harmonogram zapisany ✓');
+}
 
 // ── HOLIDAYS ──
 function renderHolidays(){
