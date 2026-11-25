@@ -1432,7 +1432,7 @@ body::after{
     <div id="addr-block" class="sblk">
       <h4>Adres dostawy</h4>
       <input class="finp" id="addr-street" placeholder="Ulica i numer domu *" oninput="checkZone()">
-      <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;"><input class="finp" id="addr-city" placeholder="Miasto" value="Mielec"><input class="finp" id="addr-floor" placeholder="Piętro"></div>
+      <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;"><input class="finp" id="addr-city" placeholder="Miejscowość" value="Mielec" oninput="checkZone()"><input class="finp" id="addr-floor" placeholder="Piętro"></div>
       <input class="finp" id="addr-apt" placeholder="Numer mieszkania (opcjonalnie)">
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="no-contact" style="accent-color:var(--brown);width:15px;height:15px;"> Dostawa bez kontaktu (wymaga płatności online)</label>
       <div class="zinf" id="zone-info">📍 Podaj adres, aby poznać cenę dostawy.</div>
@@ -2619,8 +2619,18 @@ function calcPackaging(){
   const pkg=LS('packaging')||{soup:1,main:1,set:2};
   const itemRate=(pkg.item===undefined||pkg.item===null||pkg.item==='')?0.5:(parseFloat(pkg.item)||0);
   const catRates={};
+  // Reguły po nazwie produktu (mają pierwszeństwo przed kategorią), np.
+  //   nazwa: bajgiel, croissant, -zestaw = 0,5
+  // = produkt, którego nazwa zawiera „bajgiel” LUB „croissant”, ale NIE zawiera „zestaw”.
+  const nameRules=[];
   const rateText=(pkg.catRates===undefined||pkg.catRates===null)?PKG_DEFAULT_CAT_RATES:String(pkg.catRates);
   rateText.split(/\n|;/).forEach(line=>{
+    const nr=line.match(/^\s*nazwa\s*:\s*(.+?)\s*=\s*([0-9]+(?:[.,][0-9]+)?)\s*(zł)?\s*$/i);
+    if(nr){
+      const words=nr[1].split(',').map(w=>_normCat(w)).filter(Boolean);
+      nameRules.push({inc:words.filter(w=>w[0]!=='-'),exc:words.filter(w=>w[0]==='-').map(w=>w.slice(1).trim()).filter(Boolean),rate:parseFloat(nr[2].replace(',','.'))});
+      return;
+    }
     const m=line.match(/^(.+?)\s*[:=]\s*([0-9]+(?:[.,][0-9]+)?)\s*(zł)?\s*$/i);
     if(m) catRates[_normCat(m[1])]=parseFloat(m[2].replace(',','.'));
   });
@@ -2638,6 +2648,9 @@ function calcPackaging(){
       total+=pm.reduce((s,m)=>s+(parseFloat(m.pkg)||0),0)*ci.qty;
       return;
     }
+    const nm=_normCat(ci.name);
+    const rule=nameRules.find(r=>r.inc.some(w=>nm.includes(w))&&!r.exc.some(w=>nm.includes(w)));
+    if(rule){ total+=rule.rate*ci.qty; return; }
     const key=_normCat(ci.cat);
     const rate=Object.prototype.hasOwnProperty.call(catRates,key)?catRates[key]:itemRate;
     total+=rate*ci.qty;
@@ -2648,6 +2661,19 @@ function ciqCh(uid,d){const c=cart.find(x=>x.uid===uid);if(c){c.qty=Math.max(1,c
 function ciRm(uid){cart=cart.filter(c=>c.uid!==uid);updateCartBadge();renderCart();renderCartFreeDelBar();}
 
 // ════ DELIVERY / PAYMENT ════
+// Pełny adres dostawy do zamówienia: ulica i nr domu + nr mieszkania + piętro
+// (+ miasto, gdy inne niż Mielec, + dostawa bez kontaktu). Wcześniej zapisywała się
+// tylko ulica — numer mieszkania i piętro nie docierały do panelu.
+function fullDeliveryAddr(){
+  const v=id=>(document.getElementById(id)?.value||'').trim();
+  const street=v('addr-street'), apt=v('addr-apt').replace(/^(m\.?|mieszk\w*\.?)\s*/i,''), floor=v('addr-floor').replace(/^(p\.?|piętro)\s*/i,''), city=v('addr-city');
+  let a=street;
+  if(apt) a+=' m. '+apt;
+  if(floor) a+=', piętro '+floor;
+  if(city && city.toLowerCase()!=='mielec') a+=', '+city;
+  if(document.getElementById('no-contact')?.checked) a+=' — DOSTAWA BEZ KONTAKTU';
+  return a;
+}
 function setDel(type,el){delType=type;document.querySelectorAll('.del-chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
 function toggleInvoice(show){
   document.getElementById('invoice-block').style.display=show?'block':'none';
@@ -2930,6 +2956,8 @@ async function placeOrder(){
   if(delType==='dostawa'&&window._deliveryKm===null&&document.getElementById('addr-street').value.trim()){
     const info=document.getElementById('zone-info');
     if(info&&info.innerHTML.includes('poza zasięgiem')){toast('⛔ Adres poza zasięgiem dostawy. Zadzwoń: +48 511 707 232');return;}
+    // Adres jeszcze sprawdzany (klient kliknął „Zamów” zaraz po wpisaniu) — nie przepuszczaj bez sprawdzenia strefy
+    if(info&&info.innerHTML.includes('Sprawdzam adres')){toast('⏳ Chwileczkę — sprawdzamy adres dostawy. Kliknij ponownie za moment.');return;}
   }
   // Zawieszone strefy dostawy — świeże zapytanie do Firebase (nie localStorage),
   // żeby nie dało się obejść zawieszenia zrobionego w panelu chwilę wcześniej.
@@ -3018,7 +3046,10 @@ async function placeOrder(){
     date:new Date().toLocaleDateString('pl'),
     status: isOnline ? 'awaiting_payment' : 'pending',
     customer:name,phone,email,
-    addr:delType==='dostawa'?(document.getElementById('addr-street')?.value||''):'',
+    addr:delType==='dostawa'?fullDeliveryAddr():'',
+    addrApt:delType==='dostawa'?(document.getElementById('addr-apt')?.value||'').trim():'',
+    addrFloor:delType==='dostawa'?(document.getElementById('addr-floor')?.value||'').trim():'',
+    noContact:delType==='dostawa'&&!!document.getElementById('no-contact')?.checked,
     payment:payType,
     comment:(document.getElementById('order-notes')?.value||'').trim(),
     deliveryCost:dc,
