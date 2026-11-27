@@ -3049,6 +3049,7 @@ async function placeOrder(){
     addr:delType==='dostawa'?fullDeliveryAddr():'',
     addrApt:delType==='dostawa'?(document.getElementById('addr-apt')?.value||'').trim():'',
     addrFloor:delType==='dostawa'?(document.getElementById('addr-floor')?.value||'').trim():'',
+    addrCity:delType==='dostawa'?((document.getElementById('addr-city')?.value||'').trim()||'Mielec'):'',
     noContact:delType==='dostawa'&&!!document.getElementById('no-contact')?.checked,
     payment:payType,
     comment:(document.getElementById('order-notes')?.value||'').trim(),
